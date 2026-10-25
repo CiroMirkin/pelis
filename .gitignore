@@ -1,0 +1,15 @@
+target/
+Peliculas/
+dev/pelis.toml
+.venv/
+__pycache__/
+dev/pelis.db
+dist/
+build/
+dev/preferencias.ini
+.venv-linux/
+Pelis-dev.desktop
+ignore
+*.log
+.pytest_cache/
+*.egg-info/

@@ -1,0 +1,340 @@
+"""Escaneo de la biblioteca (reglas en .scratch/biblioteca-multimedia/spec.md)."""
+
+import random
+import re
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from . import archivo_metadatos, db
+from .nombres import parsear_carpeta, parsear_video
+from .omdb import ErrorRed
+
+EXTENSIONES_VIDEO = {".mkv", ".mp4", ".avi", ".m4v", ".mov", ".wmv", ".ts", ".webm"}
+EXTENSIONES_POSTER = {".jpg", ".jpeg", ".png"}
+# En orden de preferencia; la palabra puede estar en cualquier parte del nombre ("Alien-poster", "poster_2")
+PALABRAS_POSTER = ["poster", "folder", "cover"]
+DIAS_ROTACION = 7
+
+
+@dataclass
+class Informe:
+    agregadas: int = 0
+    no_encontradas: list = field(default_factory=list)
+    pendientes: list = field(default_factory=list)
+    faltantes: list = field(default_factory=list)
+    reactivadas: list = field(default_factory=list)
+    reasignadas: list = field(default_factory=list)  # [(carpeta vieja, carpeta nueva)]
+    problemas: list = field(default_factory=list)  # [(carpeta, motivo)]
+    desde_archivo: list = field(default_factory=list)  # importadas desde pelis.json, sin OMDb
+    archivos_invalidos: list = field(default_factory=list)  # [(carpeta, motivo)]
+    aviso_omdb: str = ""
+    aviso_tmdb: str = ""
+
+
+def carpeta_posters(carpeta):
+    """La subcarpeta `posters` de la película (sin importar mayúsculas), o dónde crearla si no está."""
+    return next((d for d in carpeta.iterdir() if d.is_dir() and d.name.lower() == "posters"), carpeta / "posters")
+
+
+def _imagenes(carpeta):
+    return [p for p in carpeta.iterdir() if p.is_file() and p.suffix.lower() in EXTENSIONES_POSTER]
+
+
+def posters_de(biblioteca, folder_path):
+    """Rutas (relativas a la biblioteca) de los posters de la película, en orden de preferencia.
+
+    Primero toda imagen de `posters/`, sea cual sea su nombre; después las sueltas en la carpeta de la
+    película según PALABRAS_POSTER. En cada grupo, primero la que se llama exactamente así
+    ("poster.jpg") y después por nombre.
+    """
+    carpeta = Path(biblioteca) / folder_path
+    if not carpeta.is_dir():
+        return []
+    sub = carpeta_posters(carpeta)
+    elegidas = sorted(_imagenes(sub), key=lambda p: (p.stem.lower() != "poster", p.name.lower())) if sub.is_dir() else []
+    sueltas = _imagenes(carpeta)
+    for palabra in PALABRAS_POSTER:
+        candidatos = [p for p in sueltas if re.search(palabra, p.stem, re.IGNORECASE)]
+        elegidas += sorted(candidatos, key=lambda p: (p.stem.lower() != palabra, p.name.lower()))
+        sueltas = [p for p in sueltas if p not in candidatos]
+    return [f"{folder_path}/{p.relative_to(carpeta).as_posix()}" for p in elegidas]
+
+
+def actualizar_poster(conn, biblioteca, pelicula_id, folder_path):
+    """Revisa la carpeta y cambia el poster si hace falta; devuelve True si cambió.
+
+    Mientras el archivo del poster actual exista y siga siendo un poster, se respeta (puede venir de la
+    rotación). Solo una imagen nueva (no registrada) desplaza al poster bajado de OMDb. Si el archivo
+    actual se borró o ya no cuenta como poster (p. ej. un `backdrop.jpg` de la rotación vieja), se
+    busca otro.
+    """
+    if not (Path(biblioteca) / folder_path).is_dir():
+        return False
+    validos = posters_de(biblioteca, folder_path)
+    actual = db.poster_actual(conn, pelicula_id)
+    bajados = db.posters_bajados(conn, pelicula_id)
+    if (actual and (Path(biblioteca) / actual["path"]).is_file()
+            and (actual["origen"] == "manual" or actual["path"] in validos)):
+        if actual["origen"] != "omdb":
+            return False
+        registrados = db.posters_registrados(conn, pelicula_id)
+        nuevo = next((r for r in validos if r not in registrados), None)
+        if nuevo is None:
+            return False
+        db.usar_poster(conn, pelicula_id, nuevo, "existente")
+        return True
+    encontrado = next((r for r in validos if r not in bajados), None)
+    if encontrado is not None:
+        ruta, origen = encontrado, "existente"
+    else:
+        # Sin imágenes propias: se vuelve al de OMDb
+        ruta = next((p for p in sorted(bajados) if (Path(biblioteca) / p).is_file()), None)
+        if ruta is None:
+            if actual is None:
+                return False
+            db.sin_poster(conn, pelicula_id)
+            return True
+        origen = "omdb"
+    if actual and actual["path"] == ruta:
+        return False
+    db.usar_poster(conn, pelicula_id, ruta, origen)
+    return True
+
+
+def rotar_posters(conn, biblioteca, ahora="now", azar=random, dias=DIAS_ROTACION):
+    """Cambia el poster de las películas que llevan `dias` días con el mismo (0 = todas, a mano).
+
+    El set son los posters de la película (`posters_de`); se elige al azar uno distinto del actual. Las
+    películas con un solo poster no cambian. Devuelve cuántas rotaron.
+    """
+    rotadas = 0
+    for fila in db.posters_vencidos(conn, ahora, dias):
+        imagenes = sorted(posters_de(biblioteca, fila["folder_path"]))
+        if len(imagenes) < 2:
+            continue
+        bajados = db.posters_bajados(conn, fila["id"])
+        # Registrarlas todas evita que actualizar_poster tome una como "nueva" y deshaga la rotación
+        for ruta in imagenes:
+            db.registrar_poster(conn, fila["id"], ruta, "omdb" if ruta in bajados else "existente")
+        actual = db.poster_actual(conn, fila["id"])
+        elegida = azar.choice([r for r in imagenes if not actual or r != actual["path"]])
+        db.usar_poster(conn, fila["id"], elegida, "omdb" if elegida in bajados else "existente")
+        rotadas += 1
+    conn.commit()
+    return rotadas
+
+
+def _lista(valor):
+    if not valor or valor == "N/A":
+        return []
+    return [x.strip() for x in valor.split(",") if x.strip()]
+
+
+def _texto(valor):
+    return None if not valor or valor == "N/A" else valor
+
+
+def _anio(valor):
+    valor = _texto(valor)
+    return int(valor[:4]) if valor and valor[:4].isdigit() else None
+
+
+def buscar_en_omdb(omdb, nombre_carpeta, nombre_video, imdb_id=None):
+    """Cascada de match. Devuelve los datos de OMDb o None; ErrorRed se propaga.
+
+    imdb_id (de pelis.json) tiene prioridad sobre el [tt…] del nombre de la carpeta.
+    """
+    titulo, anio, imdb_id_carpeta = parsear_carpeta(nombre_carpeta)
+    imdb_id = imdb_id or imdb_id_carpeta
+    titulo_video, anio_video = parsear_video(nombre_video)
+    intentos = []
+    if imdb_id:
+        intentos.append(lambda: omdb.por_id(imdb_id))
+    if anio:
+        intentos.append(lambda: omdb.por_titulo(titulo, anio))
+    if titulo_video and anio_video:
+        intentos.append(lambda: omdb.por_titulo(titulo_video, anio_video))
+    intentos.append(lambda: omdb.por_titulo(titulo))
+    for intento in intentos:
+        if datos := intento():
+            return datos
+    return None
+
+
+def metadatos_de_omdb(datos):
+    """Respuesta de OMDb -> campos de pelis.json."""
+    return {
+        "imdb_id": datos.get("imdbID"),
+        "year": _anio(datos.get("Year")),
+        "sinopsis": _texto(datos.get("Plot")),
+        "sinopsis_idioma": "en" if _texto(datos.get("Plot")) else None,
+        "pais": _texto(datos.get("Country")),
+        "genero": _texto(datos.get("Genre")),
+        "director": _lista(datos.get("Director")),
+        "elenco": _lista(datos.get("Actors")),
+        "poster_url": _texto(datos.get("Poster")),
+        "metadatos_origen": "omdb",
+    }
+
+
+class Escaneo:
+    def __init__(self, conn, biblioteca, omdb, progreso=lambda actual, total, nombre: None,
+                 tmdb=None, idiomas_sinopsis=("es-MX", "es-ES"), marcar_faltantes=True):
+        self.conn = conn
+        self.biblioteca = Path(biblioteca)
+        self.omdb = omdb  # None si no hay API key
+        self.tmdb = tmdb  # None si no hay API key: la sinopsis queda la de OMDb (inglés)
+        self.idiomas_sinopsis = list(idiomas_sinopsis)
+        self.tmdb_caido = False
+        self.progreso = progreso
+        self.marcar_faltantes = marcar_faltantes
+        self.informe = Informe()
+        self._reasignadas = set()  # ids que pasaron a otra carpeta: no se marcan faltantes
+        self.omdb_caido = False  # tras el primer error de red no se insiste: el resto queda pendiente
+        if omdb is None:
+            self.informe.aviso_omdb = "Falta omdb_api_key en pelis.toml: las películas quedan pendientes de metadatos."
+
+    def ejecutar(self):
+        existentes = db.peliculas_por_carpeta(self.conn)
+        carpetas = sorted((p for p in self.biblioteca.iterdir() if p.is_dir()), key=lambda p: p.name.lower())
+        self._presentes = {c.name for c in carpetas}
+
+        for i, carpeta in enumerate(carpetas, 1):
+            self.progreso(i, len(carpetas), carpeta.name)
+            fila = existentes.get(carpeta.name)
+            if fila is None:
+                self._nueva(carpeta)
+            else:
+                if fila["estado"] == "faltante":
+                    db.cambiar_estado(self.conn, fila["id"], "activa")
+                    self.informe.reactivadas.append(carpeta.name)
+                if fila["estado"] != "papelera":
+                    actualizar_poster(self.conn, self.biblioteca, fila["id"], carpeta.name)
+                    if fila["omdb_estado"] == "pendiente":
+                        self._metadatos(fila["id"], carpeta)
+            self.conn.commit()
+
+        if not self.marcar_faltantes:
+            return self.informe
+        for folder_path, fila in existentes.items():
+            if fila["estado"] == "activa" and folder_path not in self._presentes and fila["id"] not in self._reasignadas:
+                db.cambiar_estado(self.conn, fila["id"], "faltante")
+                self.informe.faltantes.append(folder_path)
+        self.conn.commit()
+        return self.informe
+
+    def _nueva(self, carpeta):
+        videos = [p for p in carpeta.iterdir() if p.is_file() and p.suffix.lower() in EXTENSIONES_VIDEO]
+        if len(videos) != 1:
+            motivo = "no tiene video" if not videos else f"tiene {len(videos)} videos"
+            self.informe.problemas.append((carpeta.name, motivo))
+            return
+        titulo, anio, imdb_id = parsear_carpeta(carpeta.name)
+        archivo = self._leer_archivo(carpeta)
+        video_path = f"{carpeta.name}/{videos[0].name}"
+        # Una carpeta renombrada (o movida) se reconoce por su IMDb ID: el registro viejo la toma
+        imdb_id = (archivo or {}).get("imdb_id") or imdb_id
+        anterior = db.con_omdb_id(self.conn, imdb_id, self._presentes) if imdb_id else None
+        if anterior is not None:
+            viejo = self.conn.execute("SELECT folder_path FROM peliculas WHERE id = ?", (anterior,)).fetchone()[0]
+            db.reasignar(self.conn, anterior, carpeta.name, video_path)
+            self._reasignadas.add(anterior)
+            self.informe.reasignadas.append((viejo, carpeta.name))
+            actualizar_poster(self.conn, self.biblioteca, anterior, carpeta.name)
+            return
+        pelicula_id = db.insertar_pelicula(self.conn, titulo, anio, carpeta.name, video_path)
+        self.informe.agregadas += 1
+        actualizar_poster(self.conn, self.biblioteca, pelicula_id, carpeta.name)
+        self._metadatos(pelicula_id, carpeta, videos[0].name, archivo)
+
+    def _leer_archivo(self, carpeta):
+        """pelis.json de la carpeta; si es inválido lo reporta y devuelve False (no se sobrescribe)."""
+        try:
+            return archivo_metadatos.leer(carpeta)
+        except archivo_metadatos.ArchivoInvalido as e:
+            self.informe.archivos_invalidos.append((carpeta.name, str(e)))
+            return False
+
+    def _metadatos(self, pelicula_id, carpeta, nombre_video=None, archivo=None):
+        if nombre_video is None:
+            fila = self.conn.execute("SELECT video_path FROM peliculas WHERE id = ?", (pelicula_id,)).fetchone()
+            nombre_video = fila[0].rsplit("/", 1)[-1]
+
+        if archivo is None:
+            archivo = self._leer_archivo(carpeta)
+        if archivo_metadatos.es_completo(archivo):
+            self._guardar(pelicula_id, carpeta, archivo)
+            self.informe.desde_archivo.append(carpeta.name)
+            return
+
+        if self.omdb is None or self.omdb_caido:
+            db.marcar_pendiente(self.conn, pelicula_id)
+            self.informe.pendientes.append(carpeta.name)
+            return
+        try:
+            datos = buscar_en_omdb(self.omdb, carpeta.name, nombre_video, (archivo or {}).get("imdb_id"))
+        except ErrorRed as e:
+            db.marcar_pendiente(self.conn, pelicula_id)
+            self.informe.pendientes.append(carpeta.name)
+            self.informe.aviso_omdb = f"OMDb no respondió ({e}); las que faltan quedan pendientes para el próximo escaneo."
+            self.omdb_caido = True
+            return
+        if datos is None:
+            db.guardar_metadatos(self.conn, pelicula_id, "no_encontrada")
+            self.informe.no_encontradas.append(carpeta.name)
+            return
+        metadatos = metadatos_de_omdb(datos)
+        self._sinopsis_traducida(metadatos)
+        self._guardar(pelicula_id, carpeta, metadatos)
+        if archivo is not False:
+            archivo_metadatos.escribir(carpeta, metadatos)
+
+    def _sinopsis_traducida(self, metadatos):
+        """Reemplaza la sinopsis de OMDb por la de TMDb en el primer idioma disponible."""
+        if self.tmdb is None or self.tmdb_caido or not metadatos.get("imdb_id"):
+            return
+        try:
+            texto, idioma = self.tmdb.sinopsis(metadatos["imdb_id"], self.idiomas_sinopsis)
+        except ErrorRed as e:
+            self.tmdb_caido = True
+            self.informe.aviso_tmdb = f"TMDb no respondió ({e}); las sinopsis quedaron en inglés."
+            return
+        if texto:
+            metadatos["sinopsis"], metadatos["sinopsis_idioma"] = texto, idioma
+
+    def _guardar(self, pelicula_id, carpeta, metadatos):
+        db.guardar_metadatos(
+            self.conn, pelicula_id, "encontrada",
+            omdb_id=metadatos.get("imdb_id"),
+            year=metadatos.get("year"),
+            sinopsis=metadatos.get("sinopsis"),
+            pais=metadatos.get("pais"),
+            genero=metadatos.get("genero"),
+            directores=metadatos.get("director") or [],
+            actores=metadatos.get("elenco") or [],
+            origen=metadatos.get("metadatos_origen") or "omdb",
+            titulo=metadatos.get("titulo"),
+        )
+        url = metadatos.get("poster_url")
+        if url and self.omdb is not None and not self.omdb_caido and not db.tiene_poster(self.conn, pelicula_id):
+            destino = carpeta_posters(carpeta)
+            destino.mkdir(exist_ok=True)
+            try:
+                self.omdb.bajar_poster(url, destino / "poster.jpg")
+            except ErrorRed:
+                return
+            db.agregar_poster(self.conn, pelicula_id, f"{carpeta.name}/{destino.name}/poster.jpg", "omdb")
+
+
+def escanear(conn, biblioteca, omdb, progreso=lambda actual, total, nombre: None, tmdb=None,
+             idiomas_sinopsis=("es-MX", "es-ES")):
+    return Escaneo(conn, biblioteca, omdb, progreso, tmdb, idiomas_sinopsis).ejecutar()
+
+
+def importar_sin_red(conn, biblioteca):
+    """Al abrir la app: suma las carpetas nuevas sin consultar internet.
+
+    Las que traen pelis.json completo entran con todos sus datos; el resto queda pendiente de
+    metadatos hasta el próximo escaneo. No marca faltantes: un disco desconectado no oculta nada.
+    """
+    return Escaneo(conn, biblioteca, None, marcar_faltantes=False).ejecutar()

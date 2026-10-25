@@ -1,0 +1,15 @@
+singleton Tema 1.0 Tema.qml
+Boton 1.0 Boton.qml
+Catalogo 1.0 Catalogo.qml
+Detalle 1.0 Detalle.qml
+Reproductor 1.0 Reproductor.qml
+DialogoEscaneo 1.0 DialogoEscaneo.qml
+SelectorEpoca 1.0 SelectorEpoca.qml
+EtiquetaVista 1.0 EtiquetaVista.qml
+Campo 1.0 Campo.qml
+Editar 1.0 Editar.qml
+Faltantes 1.0 Faltantes.qml
+BotonMas 1.0 BotonMas.qml
+OpcionMenu 1.0 OpcionMenu.qml
+Tarjeta 1.0 Tarjeta.qml
+Persona 1.0 Persona.qml

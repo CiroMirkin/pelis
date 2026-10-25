@@ -1,0 +1,7 @@
+# Copiar como pelis.toml (en esta misma carpeta) y completar las claves.
+biblioteca      = "../../Peliculas"   # relativa a esta carpeta, o absoluta
+omdb_api_key    = ""                  # https://www.omdbapi.com/apikey.aspx ; vacío = no busca metadatos
+tmdb_api_key    = ""                  # sinopsis en español; vacío = sinopsis de OMDb en inglés
+idiomas_sinopsis = ["es-MX", "es-ES"] # se prueba en este orden
+audio_preferido = "es"
+subs_preferido  = "es"
