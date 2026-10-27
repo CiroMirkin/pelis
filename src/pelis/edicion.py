@@ -6,8 +6,7 @@ Cada cambio se guarda con `metadatos`, en la base y en el pelis.json de la carpe
 import re
 from pathlib import Path
 
-from . import db, metadatos
-from .escaneo import actualizar_poster, carpeta_posters
+from . import db, metadatos, poster
 from .omdb import ErrorRed
 
 ID_IMDB = re.compile(r"tt\d{7,}", re.IGNORECASE)
@@ -60,10 +59,10 @@ def bajar_poster(omdb, url, destino):
 def destino_poster(conn, biblioteca, pelicula_id):
     """Dónde bajar el poster de OMDb, o None si la película tiene uno propio que no hay que pisar."""
     p = db.pelicula(conn, pelicula_id)
-    actual = db.poster_actual(conn, pelicula_id)
+    actual = poster._actual(conn, pelicula_id)
     if actual is not None and actual["origen"] != "omdb":
         return None
-    return carpeta_posters(Path(biblioteca) / p["folder_path"]) / "poster.jpg"
+    return poster._carpeta_posters(Path(biblioteca) / p["folder_path"]) / "poster.jpg"
 
 
 def aplicar_omdb(conn, biblioteca, pelicula_id, datos, poster_bajado):
@@ -75,8 +74,8 @@ def aplicar_omdb(conn, biblioteca, pelicula_id, datos, poster_bajado):
     aviso = metadatos.aplicar(conn, biblioteca, pelicula_id,
                               {**datos, "titulo": p["titulo"], "year": datos.get("year") or p["year"]}, explicita=True)
     if poster_bajado:
-        destino = carpeta_posters(Path(biblioteca) / p["folder_path"]) / "poster.jpg"
-        db.usar_poster(conn, pelicula_id, destino.relative_to(biblioteca).as_posix(), "omdb")
+        destino = poster._carpeta_posters(Path(biblioteca) / p["folder_path"]) / "poster.jpg"
+        poster._usar(conn, pelicula_id, destino.relative_to(biblioteca).as_posix(), "omdb")
         conn.commit()
     return aviso
 
@@ -119,8 +118,7 @@ def fusionar(conn, biblioteca, faltante_id, nueva_id):
     """Reasignación manual: el registro faltante toma la carpeta de `nueva_id`. Devuelve un aviso o ""."""
     db.fusionar(conn, faltante_id, nueva_id)
     p = db.pelicula(conn, faltante_id)
-    actualizar_poster(conn, biblioteca, faltante_id, p["folder_path"])
-    conn.commit()
+    poster.revisar(conn, biblioteca, faltante_id)
     if p["omdb_estado"] != "encontrada":
         return ""
     return metadatos.escribir_archivo(conn, biblioteca, faltante_id)

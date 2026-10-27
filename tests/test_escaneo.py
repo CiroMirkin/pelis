@@ -4,7 +4,7 @@ import shutil
 import pytest
 
 from pelis import db
-from pelis.escaneo import actualizar_poster, escanear, importar_sin_red, posters_de, rotar_posters
+from pelis.escaneo import escanear, importar_sin_red
 from pelis.omdb import ErrorRed
 
 
@@ -83,26 +83,6 @@ def test_poster_existente_no_se_descarga(biblioteca, conn):
     assert not (biblioteca / "Alien (1979)" / "posters").exists()
 
 
-@pytest.mark.parametrize("nombre", ["poster.jpg", "Alien-poster.png", "POSTER Alien.jpeg", "poster-goodfelas.jpg", "alien_poster_2.jpg",
-                                    "AlienPoster.jpg"])
-def test_poster_con_la_palabra_en_cualquier_parte(biblioteca, conn, nombre):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "fanart.jpg", nombre)
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == f"Alien (1979)/{nombre}"
-
-
-def test_poster_preferencias(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "cover.jpg", "folder.jpg", "alien-poster.jpg", "poster.png")
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/poster.png"  # "poster" antes que folder/cover, exacto antes
-
-
-def test_poster_poster_txt_no_cuenta(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "poster.txt", "Cover-alien.jpg")
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/Cover-alien.jpg"
-
-
 def test_poster_agregado_despues_se_toma_al_escanear(biblioteca, conn):
     c = carpeta(biblioteca, "Alien (1979)", "Alien.mp4")
     escanear(conn, biblioteca, OmdbFalso())
@@ -112,59 +92,11 @@ def test_poster_agregado_despues_se_toma_al_escanear(biblioteca, conn):
     assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/poster-alien.jpg"
 
 
-def test_poster_a_mano_reemplaza_al_de_omdb(biblioteca, conn):
-    c = carpeta(biblioteca, "Alien (1979)", "Alien.mp4")
-    escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/posters/poster.jpg"
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/posters/poster.jpg"  # sin cambios, sigue el bajado
-    (c / "alien-poster.png").touch()
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/alien-poster.png"
-    (c / "alien-poster.png").unlink()
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/posters/poster.jpg"  # borrado: vuelve al bajado
-    assert conn.execute("SELECT count(*) FROM posters").fetchone()[0] == 2  # sin filas repetidas
-
-
-def test_actualizar_poster_respeta_el_elegido_a_mano(biblioteca, conn):
-    c = carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "otra.jpg")
-    escanear(conn, biblioteca, OmdbFalso())
-    db.agregar_poster(conn, 1, "Alien (1979)/otra.jpg", "manual")
-    (c / "poster.jpg").touch()
-    assert not actualizar_poster(conn, biblioteca, 1, "Alien (1979)")
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/otra.jpg"
-
-
-def test_carpeta_posters_cuenta_toda_imagen_y_gana_a_las_sueltas(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "poster.jpg", "Posters/zeta.png", "Posters/notas.txt",
-            "Posters/viejos/poster.jpg")
-    escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/Posters/zeta.png"
-    assert sorted(posters_de(biblioteca, "Alien (1979)")) == ["Alien (1979)/Posters/zeta.png", "Alien (1979)/poster.jpg"]
-
-
 def test_bajada_de_omdb_usa_la_carpeta_posters_existente(biblioteca, conn):
     (carpeta(biblioteca, "Alien (1979)", "Alien.mp4") / "Posters").mkdir()
     escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
     assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/Posters/poster.jpg"
     assert not (biblioteca / "Alien (1979)" / "posters").exists()
-
-
-def test_poster_actual_que_ya_no_es_poster_se_reemplaza(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "backdrop.jpg", "folder.jpg")
-    escanear(conn, biblioteca, OmdbFalso())
-    db.usar_poster(conn, 1, "Alien (1979)/backdrop.jpg", "existente")  # lo que dejaba la rotación vieja
-    assert actualizar_poster(conn, biblioteca, 1, "Alien (1979)")
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/folder.jpg"
-
-
-def test_poster_actual_que_ya_no_es_poster_y_no_hay_otro_se_quita(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "backdrop.jpg")
-    escanear(conn, biblioteca, OmdbFalso())
-    db.usar_poster(conn, 1, "Alien (1979)/backdrop.jpg", "existente")
-    assert actualizar_poster(conn, biblioteca, 1, "Alien (1979)")
-    assert db.pelicula(conn, 1)["poster"] is None
 
 
 def test_cascada_usa_imdb_id_primero(biblioteca, conn):
@@ -396,64 +328,3 @@ def test_pelis_json_completo_no_consulta_tmdb(biblioteca, conn, tmp_path):
     escanear(otra, biblioteca, OmdbFalso(), tmdb=tmdb)
     assert tmdb.consultas == []
     otra.close()
-
-
-class AzarFijo:
-    """Elige siempre la primera opción, para que la rotación sea predecible."""
-
-    def choice(self, opciones):
-        return opciones[0]
-
-
-FUTURO = "2999-01-01 00:00:00"
-
-
-def test_rotacion_cambia_a_otro_poster(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "poster.jpg", "fanart.jpg", "posters/b.png")
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/posters/b.png"
-
-    assert rotar_posters(conn, biblioteca, ahora=FUTURO, azar=AzarFijo()) == 1
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/poster.jpg"
-    # Abrir el detalle o escanear no deshace la rotación
-    assert not actualizar_poster(conn, biblioteca, 1, "Alien (1979)")
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/poster.jpg"
-
-
-def test_rotacion_espera_siete_dias(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "poster.jpg", "posters/b.jpg")
-    escanear(conn, biblioteca, OmdbFalso())
-    assert rotar_posters(conn, biblioteca) == 0  # recién asignado
-    assert rotar_posters(conn, biblioteca, ahora=FUTURO, azar=AzarFijo()) == 1
-    assert rotar_posters(conn, biblioteca) == 0  # la rotación reinicia el plazo
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/poster.jpg"
-
-
-def test_rotacion_no_toca_peliculas_con_un_solo_poster(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "poster.jpg", "fanart.jpg", "backdrop.jpg")
-    escanear(conn, biblioteca, OmdbFalso())
-    assert rotar_posters(conn, biblioteca, ahora=FUTURO) == 0
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/poster.jpg"
-
-
-def test_renovacion_manual_no_espera_y_reinicia_el_plazo(biblioteca, conn):
-    carpeta(biblioteca, "Alien (1979)", "Alien.mp4", "poster.jpg", "folder.jpg")
-    carpeta(biblioteca, "Heat (1995)", "Heat.mp4", "poster.jpg")
-    escanear(conn, biblioteca, OmdbFalso())
-    assert rotar_posters(conn, biblioteca, dias=0, azar=AzarFijo()) == 1  # Heat tiene un solo poster
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/folder.jpg"
-    assert db.pelicula(conn, 2)["poster"] == "Heat (1995)/poster.jpg"
-    assert rotar_posters(conn, biblioteca) == 0  # la renovación reinicia los siete días
-
-
-def test_rotacion_incluye_el_poster_de_omdb_sin_que_lo_desplace_otra_imagen(biblioteca, conn):
-    c = carpeta(biblioteca, "Alien (1979)", "Alien.mp4")
-    escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
-    (c / "folder.jpg").touch()
-    escanear(conn, biblioteca, OmdbFalso())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/folder.jpg"  # la imagen nueva desplaza a la de OMDb
-
-    rotar_posters(conn, biblioteca, ahora=FUTURO, azar=AzarFijo())
-    assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/posters/poster.jpg"
-    assert not actualizar_poster(conn, biblioteca, 1, "Alien (1979)")  # folder.jpg ya no es "nueva"

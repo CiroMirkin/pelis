@@ -179,67 +179,6 @@ def marcar_pendiente(conn, pelicula_id):
     conn.execute("UPDATE peliculas SET omdb_estado = 'pendiente' WHERE id = ?", (pelicula_id,))
 
 
-def tiene_poster(conn, pelicula_id):
-    return conn.execute("SELECT poster_actual_id FROM peliculas WHERE id = ?", (pelicula_id,)).fetchone()[0] is not None
-
-
-def agregar_poster(conn, pelicula_id, path, origen):
-    cur = conn.execute("INSERT INTO posters (pelicula_id, path, origen) VALUES (?, ?, ?)", (pelicula_id, path, origen))
-    conn.execute(
-        "UPDATE peliculas SET poster_actual_id = ?, poster_actualizado_en = CURRENT_TIMESTAMP WHERE id = ?",
-        (cur.lastrowid, pelicula_id),
-    )
-
-
-def poster_actual(conn, pelicula_id):
-    """(path, origen) del poster actual, o None."""
-    return conn.execute(
-        """SELECT po.path, po.origen FROM peliculas p JOIN posters po ON po.id = p.poster_actual_id
-           WHERE p.id = ?""",
-        (pelicula_id,),
-    ).fetchone()
-
-
-def posters_registrados(conn, pelicula_id):
-    return {r[0] for r in conn.execute("SELECT path FROM posters WHERE pelicula_id = ?", (pelicula_id,))}
-
-
-def registrar_poster(conn, pelicula_id, path, origen):
-    """Suma `path` al set de la película sin cambiar el actual (no hace nada si ya estaba)."""
-    if path not in posters_registrados(conn, pelicula_id):
-        conn.execute("INSERT INTO posters (pelicula_id, path, origen) VALUES (?, ?, ?)", (pelicula_id, path, origen))
-
-
-def sin_poster(conn, pelicula_id):
-    conn.execute("UPDATE peliculas SET poster_actual_id = NULL WHERE id = ?", (pelicula_id,))
-
-
-def posters_vencidos(conn, ahora, dias):
-    """Películas activas cuyo poster lleva `dias` o más sin cambiar (o nunca tuvieron uno)."""
-    return conn.execute(
-        """SELECT id, folder_path FROM peliculas WHERE estado = 'activa'
-           AND (poster_actualizado_en IS NULL OR poster_actualizado_en <= datetime(?, ?))""",
-        (ahora, f"-{dias} days"),
-    ).fetchall()
-
-
-def posters_bajados(conn, pelicula_id):
-    return {r[0] for r in conn.execute(
-        "SELECT path FROM posters WHERE pelicula_id = ? AND origen = 'omdb'", (pelicula_id,))}
-
-
-def usar_poster(conn, pelicula_id, path, origen):
-    """Pone `path` como poster actual, reusando su fila si ya estaba registrado."""
-    fila = conn.execute("SELECT id FROM posters WHERE pelicula_id = ? AND path = ?", (pelicula_id, path)).fetchone()
-    if fila is None:
-        agregar_poster(conn, pelicula_id, path, origen)
-        return
-    conn.execute(
-        "UPDATE peliculas SET poster_actual_id = ?, poster_actualizado_en = CURRENT_TIMESTAMP WHERE id = ?",
-        (fila[0], pelicula_id),
-    )
-
-
 def cambiar_estado(conn, pelicula_id, estado):
     conn.execute("UPDATE peliculas SET estado = ? WHERE id = ?", (estado, pelicula_id))
 

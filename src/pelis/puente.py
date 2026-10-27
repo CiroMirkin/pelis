@@ -11,12 +11,12 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtMultimedia import QMediaPlayer
 
-from . import db, edicion, metadatos, subtitulos
+from . import db, edicion, metadatos, poster, subtitulos
 from .catalogo import (
     CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta, url_poster,
 )
 from .nombres import idioma_de, normalizar
-from .escaneo import actualizar_poster, escanear, importar_sin_red, rotar_posters
+from .escaneo import escanear, importar_sin_red
 from .omdb import ErrorRed, Omdb
 from .tmdb import Tmdb
 
@@ -148,7 +148,7 @@ class TrabajoEscaneo(QObject):
             try:
                 if self.sin_red:
                     informe = importar_sin_red(conn, self.config.biblioteca)
-                    rotar_posters(conn, self.config.biblioteca)
+                    poster.rotar(conn, self.config.biblioteca)
                     self.terminado.emit({"sumadas": informe.agregadas + len(informe.reactivadas), "error": ""})
                     return
                 omdb = Omdb(self.config.omdb_api_key) if self.config.omdb_api_key else None
@@ -283,8 +283,7 @@ class Puente(QObject):
         if p is None:
             return {}
         # Al abrir el detalle se mira la carpeta: un poster agregado a mano aparece sin re-escanear
-        if actualizar_poster(self.conn, self.config.biblioteca, pelicula_id, p["folder_path"]):
-            self.conn.commit()
+        if poster.revisar(self.conn, self.config.biblioteca, pelicula_id):
             self._recargar_catalogo()
             p = db.pelicula(self.conn, pelicula_id)
         if not p["duracion_ms"] and p["video_path"]:
@@ -326,7 +325,7 @@ class Puente(QObject):
     def renovarPortadas(self):
         if self._hilo is not None:  # el escaneo también escribe posters
             return 0
-        rotadas = rotar_posters(self.conn, self.config.biblioteca, dias=0)
+        rotadas = poster.rotar(self.conn, self.config.biblioteca, dias=0)
         self._recargar_catalogo()
         self._refrescar_poster_recomendada()
         return rotadas

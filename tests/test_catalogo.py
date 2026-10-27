@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pelis import db
+from pelis import db, poster
 from pelis.catalogo import Recomendacion, es_incompleta, filmografia, periodos, tarjeta, url_poster
 from pelis.puente import ModeloCatalogo
 
@@ -65,11 +65,11 @@ def test_filtro_incompletas_sin_datos_o_sin_portada(tmp_path):
         pelicula_id = db.insertar_pelicula(conn, titulo, None, titulo, f"{titulo}/{titulo}.mkv")
         if titulo != "Sin datos":
             db.fijar_metadatos(conn, pelicula_id, titulo, None)
-        if titulo != "Sin poster":
-            db.usar_poster(conn, pelicula_id, f"{titulo}/poster.jpg", "existente")
-    for titulo in ("Completa", "Sin datos"):
         (tmp_path / titulo).mkdir()
-        (tmp_path / titulo / "poster.jpg").write_bytes(b"")
+        if titulo != "Sin poster":
+            (tmp_path / titulo / "poster.jpg").write_bytes(b"")
+            poster.revisar(conn, tmp_path, pelicula_id)
+    (tmp_path / "Poster borrado" / "poster.jpg").unlink()
     modelo = ModeloCatalogo(anio_actual=2026)
     modelo.recargar(db.catalogo(conn), tmp_path)
     assert modelo.cantidadIncompletas == 3
