@@ -1,6 +1,6 @@
 # Filtros como slots del modelo y renombre a ModeloCatalogo
 
-Status: ready-for-agent
+Status: done
 Blocked by: 01
 
 ## Qué

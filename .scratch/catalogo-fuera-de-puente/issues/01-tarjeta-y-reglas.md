@@ -1,6 +1,6 @@
 # catalogo.py con la tarjeta y las reglas del catálogo
 
-Status: ready-for-agent
+Status: done
 
 ## Qué
 - Mover `periodos`, `en_periodo` y `url_poster` (pasado a `pathlib`) a `src/pelis/catalogo.py`; agregar `es_incompleta` y `tarjeta`

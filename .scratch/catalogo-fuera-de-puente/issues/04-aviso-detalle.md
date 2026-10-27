@@ -1,6 +1,6 @@
 # Aviso de datos del Detalle con tabla por estado
 
-Status: ready-for-agent
+Status: done
 
 ## Qué
 - `Detalle.qml`: `avisosDatos` = {pendiente, no_encontrada} → texto; el `Text` es visible si hay aviso. Sin comparar contra "encontrada"
