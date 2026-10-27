@@ -41,11 +41,11 @@ def test_personas_cuentan_solo_otras_peliculas_activas():
     conn = db.conectar(":memory:")
     ids = {t: db.insertar_pelicula(conn, t, y, t, f"{t}/{t}.mkv")
            for t, y in (("Alien", 1979), ("Gladiator", 2000), ("Blade Runner", 1982), ("Legend", 1985))}
-    db.guardar_metadatos(conn, ids["Alien"], "encontrada", directores=["Ridley Scott"], actores=["Sigourney Weaver"])
-    db.guardar_metadatos(conn, ids["Gladiator"], "encontrada", directores=["Ridley Scott"], actores=["Russell Crowe"])
+    db.fijar_metadatos(conn, ids["Alien"], "Alien", 1979, directores=["Ridley Scott"], actores=["Sigourney Weaver"])
+    db.fijar_metadatos(conn, ids["Gladiator"], "Gladiator", 2000, directores=["Ridley Scott"], actores=["Russell Crowe"])
     # Director y actor en la misma película cuenta una vez
-    db.guardar_metadatos(conn, ids["Blade Runner"], "encontrada", directores=["Ridley Scott"], actores=["Ridley Scott"])
-    db.guardar_metadatos(conn, ids["Legend"], "encontrada", directores=["Ridley Scott"])
+    db.fijar_metadatos(conn, ids["Blade Runner"], "Blade Runner", 1982, directores=["Ridley Scott"], actores=["Ridley Scott"])
+    db.fijar_metadatos(conn, ids["Legend"], "Legend", 1985, directores=["Ridley Scott"])
     db.cambiar_estado(conn, ids["Legend"], "faltante")
 
     assert db.personas_de(conn, ids["Alien"], "director") == [("Ridley Scott", 2)]

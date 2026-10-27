@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS peliculas (
     fecha_agregada    DATETIME DEFAULT CURRENT_TIMESTAMP,
     estado            TEXT DEFAULT 'activa',
     fecha_papelera    DATETIME,
-    metadatos_origen  TEXT DEFAULT 'omdb'
+    metadatos_origen  TEXT DEFAULT 'omdb',
+    sinopsis_idioma   TEXT,
+    poster_url        TEXT
 );
 
 CREATE TABLE IF NOT EXISTS posters (
@@ -53,6 +55,11 @@ def conectar(ruta):
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(ESQUEMA)
+    # Bases creadas antes de que existieran estas columnas
+    existentes = {f["name"] for f in conn.execute("PRAGMA table_info(peliculas)")}
+    for columna in ("sinopsis_idioma", "poster_url"):
+        if columna not in existentes:
+            conn.execute(f"ALTER TABLE peliculas ADD COLUMN {columna} TEXT")
     return conn
 
 
@@ -70,14 +77,33 @@ def insertar_pelicula(conn, titulo, year, folder_path, video_path):
     return cur.lastrowid
 
 
-def guardar_metadatos(conn, pelicula_id, omdb_estado, omdb_id=None, year=None, sinopsis=None, pais=None,
-                      genero=None, directores=(), actores=(), origen="omdb", titulo=None):
-    """El título (si no viene) y el año (si ya hay uno) quedan los de la carpeta."""
+def fijar_metadatos(conn, pelicula_id, titulo, year, imdb_id=None, sinopsis=None, sinopsis_idioma=None, pais=None,
+                    genero=None, poster_url=None, origen="omdb", directores=(), actores=()):
+    """Guarda los metadatos tal cual, sin reglas: las decide `metadatos.aplicar`."""
     conn.execute(
-        """UPDATE peliculas SET omdb_estado = ?, omdb_id = ?, year = COALESCE(year, ?), titulo = COALESCE(?, titulo),
-           sinopsis = ?, pais = ?, genero = ?, metadatos_origen = ? WHERE id = ?""",
-        (omdb_estado, omdb_id, year, titulo, sinopsis, pais, genero, origen, pelicula_id),
+        """UPDATE peliculas SET omdb_estado = 'encontrada', titulo = ?, year = ?, omdb_id = ?, sinopsis = ?,
+           sinopsis_idioma = ?, pais = ?, genero = ?, poster_url = ?, metadatos_origen = ? WHERE id = ?""",
+        (titulo, year, imdb_id, sinopsis, sinopsis_idioma, pais, genero, poster_url, origen, pelicula_id),
     )
+    _fijar_personas(conn, pelicula_id, directores, actores)
+
+
+def completar_extras(conn, pelicula_id, sinopsis_idioma, poster_url):
+    """Campos que antes solo vivían en pelis.json; no pisa lo que la base ya tiene."""
+    conn.execute(
+        """UPDATE peliculas SET sinopsis_idioma = COALESCE(sinopsis_idioma, ?), poster_url = COALESCE(poster_url, ?)
+           WHERE id = ?""",
+        (sinopsis_idioma, poster_url, pelicula_id),
+    )
+
+
+def con_metadatos(conn):
+    """Ids de las activas con datos de IMDb: las que tienen un pelis.json que mantener."""
+    return [f[0] for f in conn.execute(
+        "SELECT id FROM peliculas WHERE omdb_estado = 'encontrada' AND estado = 'activa' ORDER BY id")]
+
+
+def _fijar_personas(conn, pelicula_id, directores, actores):
     conn.execute("DELETE FROM pelicula_personas WHERE pelicula_id = ?", (pelicula_id,))
     for rol, nombres in (("director", directores), ("actor", actores)):
         for nombre in nombres:
@@ -87,10 +113,6 @@ def guardar_metadatos(conn, pelicula_id, omdb_estado, omdb_id=None, year=None, s
                 "INSERT OR IGNORE INTO pelicula_personas (pelicula_id, persona_id, rol) VALUES (?, ?, ?)",
                 (pelicula_id, persona_id, rol),
             )
-
-
-def fijar_anio(conn, pelicula_id, year):
-    conn.execute("UPDATE peliculas SET year = ? WHERE id = ?", (year, pelicula_id))
 
 
 def con_omdb_id(conn, omdb_id, fuera_de):
@@ -132,10 +154,10 @@ def fusionar(conn, faltante_id, nueva_id):
         conn.execute("DELETE FROM pelicula_personas WHERE pelicula_id = ?", (faltante_id,))
         conn.execute("UPDATE pelicula_personas SET pelicula_id = ? WHERE pelicula_id = ?", (faltante_id, nueva_id))
         conn.execute(
-            """UPDATE peliculas SET titulo = ?, year = ?, sinopsis = ?, pais = ?, genero = ?, omdb_id = ?,
-               omdb_estado = ?, metadatos_origen = ? WHERE id = ?""",
-            (n["titulo"], n["year"], n["sinopsis"], n["pais"], n["genero"], n["omdb_id"], n["omdb_estado"],
-             n["metadatos_origen"], faltante_id),
+            """UPDATE peliculas SET titulo = ?, year = ?, sinopsis = ?, sinopsis_idioma = ?, pais = ?, genero = ?,
+               poster_url = ?, omdb_id = ?, omdb_estado = ?, metadatos_origen = ? WHERE id = ?""",
+            (n["titulo"], n["year"], n["sinopsis"], n["sinopsis_idioma"], n["pais"], n["genero"], n["poster_url"],
+             n["omdb_id"], n["omdb_estado"], n["metadatos_origen"], faltante_id),
         )
     conn.execute("DELETE FROM pelicula_personas WHERE pelicula_id = ?", (nueva_id,))
     conn.execute("DELETE FROM peliculas WHERE id = ?", (nueva_id,))
@@ -147,6 +169,10 @@ def fusionar(conn, faltante_id, nueva_id):
         (n["folder_path"], n["video_path"], n["poster_actual_id"], n["poster_actualizado_en"], n["duracion_ms"],
          n["progreso_ms"], n["watched"], n["watched_at"], faltante_id),
     )
+
+
+def marcar_no_encontrada(conn, pelicula_id):
+    conn.execute("UPDATE peliculas SET omdb_estado = 'no_encontrada' WHERE id = ?", (pelicula_id,))
 
 
 def marcar_pendiente(conn, pelicula_id):

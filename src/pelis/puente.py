@@ -11,7 +11,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtMultimedia import QMediaPlayer
 
-from . import db, edicion, subtitulos
+from . import db, edicion, metadatos, subtitulos
 from .catalogo import (
     CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta, url_poster,
 )
@@ -125,6 +125,13 @@ class ModeloCatalogo(QAbstractListModel):
         return self.ROLES
 
 
+def _aviso_archivos(sin_escribir):
+    if len(sin_escribir) <= 1:
+        return "".join(aviso for _, aviso in sin_escribir)
+    return (f"No se pudo escribir pelis.json en {len(sin_escribir)} carpetas, entre ellas «{sin_escribir[0][0]}». "
+            "Los datos quedaron guardados y se reintenta en el próximo escaneo.")
+
+
 class TrabajoEscaneo(QObject):
     progreso = Signal(int, int, str)
     terminado = Signal("QVariantMap")
@@ -164,7 +171,8 @@ class TrabajoEscaneo(QObject):
             "problemas": [{"carpeta": c, "motivo": m} for c, m in datos["problemas"]],
             "desdeArchivo": datos["desde_archivo"],
             "archivosInvalidos": [{"carpeta": c, "motivo": m} for c, m in datos["archivos_invalidos"]],
-            "aviso": "\n\n".join(a for a in (datos["aviso_omdb"], datos["aviso_tmdb"]) if a),
+            "aviso": "\n\n".join(a for a in (datos["aviso_omdb"], datos["aviso_tmdb"],
+                                               _aviso_archivos(datos["archivos_sin_escribir"])) if a),
             "error": "",
         })
 
@@ -361,14 +369,11 @@ class Puente(QObject):
     def guardarEdicion(self, pelicula_id, campos):
         """Guarda el formulario. Devuelve un error para mostrar, o ''."""
         try:
-            edicion.guardar_manual(self.conn, self.config.biblioteca, pelicula_id, campos)
+            aviso = edicion.guardar_manual(self.conn, self.config.biblioteca, pelicula_id, campos)
         except edicion.DatoInvalido as e:
             return str(e)
-        except OSError as e:
-            self._recargar_catalogo()
-            return f"Se guardó en la base, pero no se pudo escribir pelis.json: {e}"
         self._recargar_catalogo()
-        return ""
+        return aviso
 
     @Property(bool, notify=consultandoImdbChanged)
     def consultandoImdb(self):
@@ -390,10 +395,12 @@ class Puente(QObject):
         idiomas = self.config.idiomas_sinopsis
 
         def trabajo(omdb, tmdb):
-            metadatos, bajado, aviso = edicion.traer(omdb, tmdb, idiomas, imdb_id, destino)
-            if metadatos is None:
+            datos = omdb.por_id(imdb_id)
+            if datos is None:
                 return {"error": f"IMDb no tiene una película con el ID {imdb_id}."}
-            return {"aplicar": (pelicula_id, metadatos, bajado), "aviso": aviso}
+            encontrados, aviso = metadatos.obtener(datos, tmdb, idiomas)
+            bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+            return {"aplicar": (pelicula_id, encontrados, bajado), "aviso": aviso}
 
         self._consultar(trabajo)
 
@@ -423,11 +430,9 @@ class Puente(QObject):
         self._consultando = False
         self.consultandoImdbChanged.emit()
         if "aplicar" in resultado:
-            pelicula_id, metadatos, bajado = resultado.pop("aplicar")
-            try:
-                edicion.aplicar_omdb(self.conn, self.config.biblioteca, pelicula_id, metadatos, bajado)
-            except OSError as e:
-                resultado["aviso"] = f"Se guardó en la base, pero no se pudo escribir pelis.json: {e}"
+            pelicula_id, encontrados, bajado = resultado.pop("aplicar")
+            aviso = edicion.aplicar_omdb(self.conn, self.config.biblioteca, pelicula_id, encontrados, bajado)
+            resultado["aviso"] = "\n\n".join(a for a in (resultado.get("aviso"), aviso) if a)
             self._recargar_catalogo()
             resultado["aplicado"] = True
         self.imdbRespondio.emit(resultado)
@@ -457,13 +462,9 @@ class Puente(QObject):
     @Slot(int, int, result=str)
     def reasignar(self, faltante_id, nueva_id):
         """El registro faltante toma la carpeta de `nueva_id`. Devuelve un error para mostrar, o ''."""
-        try:
-            edicion.fusionar(self.conn, self.config.biblioteca, faltante_id, nueva_id)
-        except OSError as e:
-            return f"Se reasignó, pero no se pudo escribir pelis.json: {e}"
-        finally:
-            self._recargar_catalogo()
-        return ""
+        aviso = edicion.fusionar(self.conn, self.config.biblioteca, faltante_id, nueva_id)
+        self._recargar_catalogo()
+        return aviso
 
     # --- escaneo ---
 

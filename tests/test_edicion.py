@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pelis import archivo_metadatos, db, edicion
+from pelis import archivo_metadatos, db, edicion, metadatos
 from pelis.escaneo import escanear, importar_sin_red
 
 from test_escaneo import DATOS_ALIEN, OmdbFalso, carpeta
@@ -126,6 +126,19 @@ def test_guardar_manual_conserva_poster_url_y_el_idioma_si_no_cambia_la_sinopsis
     assert leer_json(biblioteca, "Alien (1979)")["sinopsis_idioma"] is None
 
 
+def test_guardar_manual_sin_poder_escribir_pelis_json_queda_en_la_base_y_avisa(biblioteca, conn, monkeypatch):
+    carpeta(biblioteca, "Alien (1979)", "Alien.mp4")
+    escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
+
+    def falla(carpeta, datos):
+        raise PermissionError("solo lectura")
+
+    monkeypatch.setattr(archivo_metadatos, "escribir", falla)
+    aviso = edicion.guardar_manual(conn, biblioteca, 1, {"titulo": "Alien", "anio": "1980"})
+    assert "solo lectura" in aviso
+    assert db.pelicula(conn, 1)["year"] == 1980
+
+
 def test_corregir_match_reemplaza_metadatos_personas_y_poster_de_omdb(biblioteca, conn):
     carpeta(biblioteca, "Aliens (1986)", "Aliens.mp4")
     # El match automático salió mal: quedó Alien
@@ -133,11 +146,12 @@ def test_corregir_match_reemplaza_metadatos_personas_y_poster_de_omdb(biblioteca
     omdb = OmdbConBusqueda({"tt0090605": DATOS_ALIENS})
 
     destino = edicion.destino_poster(conn, biblioteca, 1)
-    metadatos, bajado, aviso = edicion.traer(omdb, None, [], "tt0090605", destino)
-    edicion.aplicar_omdb(conn, biblioteca, 1, metadatos, bajado)
+    encontrados, aviso = metadatos.obtener(omdb.por_id("tt0090605"), None, [])
+    bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+    edicion.aplicar_omdb(conn, biblioteca, 1, encontrados, bajado)
 
     p = db.pelicula(conn, 1)
-    assert (p["omdb_id"], p["year"], p["director"]) == ("tt0090605", 1986, ["James Cameron"])
+    assert (p["titulo"], p["omdb_id"], p["year"], p["director"]) == ("Aliens", "tt0090605", 1986, ["James Cameron"])
     assert p["actor"] == ["Sigourney Weaver", "Michael Biehn"]
     assert p["poster"] == "Aliens (1986)/posters/poster.jpg"
     assert (biblioteca / "Aliens (1986)" / "posters" / "poster.jpg").read_bytes() == b"https://ejemplo/aliens.jpg"
@@ -149,10 +163,6 @@ def test_corregir_match_no_pisa_un_poster_propio(biblioteca, conn):
     carpeta(biblioteca, "Aliens (1986)", "Aliens.mp4", "folder.jpg")
     escanear(conn, biblioteca, OmdbFalso({("Aliens", 1986): DATOS_ALIEN}))
     assert edicion.destino_poster(conn, biblioteca, 1) is None
-
-
-def test_traer_id_inexistente(conn):
-    assert edicion.traer(OmdbConBusqueda(), None, [], "tt0000000") == (None, False, "")
 
 
 def test_candidatos_separa_el_anio(conn):

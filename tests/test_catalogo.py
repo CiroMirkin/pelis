@@ -64,7 +64,7 @@ def test_filtro_incompletas_sin_datos_o_sin_portada(tmp_path):
     for titulo in ("Completa", "Sin datos", "Sin poster", "Poster borrado"):
         pelicula_id = db.insertar_pelicula(conn, titulo, None, titulo, f"{titulo}/{titulo}.mkv")
         if titulo != "Sin datos":
-            db.guardar_metadatos(conn, pelicula_id, "encontrada")
+            db.fijar_metadatos(conn, pelicula_id, titulo, None)
         if titulo != "Sin poster":
             db.usar_poster(conn, pelicula_id, f"{titulo}/poster.jpg", "existente")
     for titulo in ("Completa", "Sin datos"):
@@ -122,7 +122,7 @@ def test_incompleta_sin_datos_sin_poster_o_poster_borrado(tmp_path):
 def test_peliculas_de_persona_comparten_tarjeta_y_suman_roles(tmp_path):
     conn = db.conectar(":memory:")
     pelicula_id = db.insertar_pelicula(conn, "Alien", 1979, "Alien", "Alien/Alien.mkv")
-    db.guardar_metadatos(conn, pelicula_id, "encontrada", directores=["Ridley Scott"], actores=["Ridley Scott"])
+    db.fijar_metadatos(conn, pelicula_id, "Alien", 1979, directores=["Ridley Scott"], actores=["Ridley Scott"])
     assert filmografia(db.peliculas_de_persona(conn, "Ridley Scott"), tmp_path) == [
         {"peliculaId": pelicula_id, "titulo": "Alien", "anio": 1979, "poster": "", "progreso": 0.0,
          "vista": False, "roles": ["actor", "director"]},
