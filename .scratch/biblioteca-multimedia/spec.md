@@ -139,7 +139,7 @@ Cada carpeta de película guarda sus metadatos en `pelis.json`, para que viajen 
    - toda imagen (`.jpg`/`.jpeg`/`.png`, cualquier nombre) directamente dentro de la subcarpeta `posters` (ese nombre exacto, sin importar mayúsculas; sus subcarpetas no se miran);
    - las imágenes sueltas en la carpeta de la película cuyo nombre contenga `poster`, `folder` o `cover`, en cualquier parte y sin importar mayúsculas (`poster.jpg`, `Alien-poster.png`, `folder.jpg`). Así los posters sueltos de antes de la carpeta siguen andando sin mover archivos.
 
-   Para elegir uno, primero va `posters\` y después las sueltas (`poster`, luego `folder`, luego `cover`); en cada grupo gana la que se llama exactamente así y después el orden alfabético. La elegida se importa con `origen = 'existente'`. Si no hay ninguno, se descarga de OMDb y se guarda como `posters\poster.jpg` (creando la carpeta). La carpeta se vuelve a mirar en cada escaneo, en la importación al abrir y al abrir el detalle de la película: una imagen agregada a mano reemplaza a la bajada de OMDb, y si se borra el archivo del poster actual, o ya no entra en el set (p. ej. un `backdrop.jpg` que había dejado la rotación vieja), se busca otro (o se vuelve al de OMDb, o la película queda sin poster). Los posters elegidos en la app (`origen = 'manual'`, fase 5) no se tocan.
+   Para elegir uno, primero va `posters\` y después las sueltas (`poster`, luego `folder`, luego `cover`); en cada grupo gana la que se llama exactamente así y después el orden alfabético. La elegida se importa con `origen = 'existente'`. Si no hay ninguno, se descarga de OMDb y se guarda como `posters\poster.jpg` (creando la carpeta). La carpeta se vuelve a mirar en cada escaneo, en la importación al abrir y al abrir el detalle de la película: una imagen agregada a mano reemplaza a la bajada de OMDb, y si se borra el archivo del poster actual, o ya no entra en el set (p. ej. un `backdrop.jpg` que había dejado la rotación vieja), se busca otro (o se vuelve al de OMDb, o la película queda sin poster).
 5. **Match con OMDb**, en orden, hasta que uno funcione:
    0. Si `pelis.json` está completo, se importa de ahí y no se consulta OMDb
    1. `imdb_id` de `pelis.json` (o `[tt…]` en el nombre de carpeta, por compatibilidad)
@@ -181,7 +181,7 @@ CREATE TABLE posters (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     pelicula_id     INTEGER NOT NULL REFERENCES peliculas(id),
     path            TEXT NOT NULL,                -- relativa a la raíz de la biblioteca
-    origen          TEXT NOT NULL,                -- 'omdb' | 'manual' | 'existente'
+    origen          TEXT NOT NULL,                -- 'omdb' | 'existente'
     fecha_agregado  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

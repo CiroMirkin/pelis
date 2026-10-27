@@ -29,6 +29,9 @@ Decisiones del usuario: el set es **toda imagen de la carpeta** (`.jpg`, `.jpeg`
 ## Cambio (25/10/2026): carpeta `posters`
 El set de la rotación deja de ser «toda imagen de la carpeta»: ahora son los posters de la regla 4 de [biblioteca-multimedia](../biblioteca-multimedia/spec.md) (toda imagen de `posters\` más las sueltas con `poster`/`folder`/`cover`). `backdrop`, `fanart`, etc. ya no rotan. La migración es solo de código: las sueltas viejas siguen contando y la app no mueve archivos. El poster de OMDb se baja a `posters\poster.jpg`.
 
+## Cambio (27/10/2026): política en `poster.py`
+La rotación pasa a `poster.rotar` y la revisión de la carpeta a `poster.revisar`; se saca el origen `manual`, que nada escribía. Ver [poster-un-solo-lugar](../poster-un-solo-lugar/spec.md).
+
 ## Criterio de terminado
 - [ ] Sumar 2 posters a una película, fijar uno, y verlo en el catálogo
 - [x] Simulando el vencimiento de 7 días, el poster rota a otro distinto (`test_rotacion_*`)
