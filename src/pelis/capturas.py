@@ -6,7 +6,7 @@ from pathlib import Path
 
 EXTENSIONES = {".png", ".jpg", ".jpeg", ".webp"}
 # Nombre que pone `ruta_libre`: `HH-MM-SS.ext` o `HH-MM-SS(n).ext`
-CRONOLOGICA = re.compile(r"(\d{2})-(\d{2})-(\d{2})(?:\((\d+)\))?")
+CRONOLOGICA = re.compile(r"(\d{2,})-(\d{2})-(\d{2})(?:\((\d+)\))?")
 
 
 def ruta_libre(carpeta_pelicula, posicion_ms):

@@ -76,3 +76,10 @@ def test_listar_desempata_por_nombre(tmp_path):
     _capturas(tmp_path, "b.png", "B.png", "00-00-01.png", "00-00-01(1).webp", "00-00-01.jpg")
     assert [r.name for r in capturas.listar(tmp_path)] == [
         "00-00-01(1).webp", "00-00-01.jpg", "00-00-01.png", "B.png", "b.png"]
+
+
+def test_listar_entiende_cien_horas_o_mas(tmp_path):
+    nombre = capturas.ruta_libre(tmp_path, 360_000_000).name
+    assert nombre == "100-00-00.png"
+    _capturas(tmp_path, nombre, "99-00-00.png", "0.png")
+    assert [r.name for r in capturas.listar(tmp_path)] == ["99-00-00.png", "100-00-00.png", "0.png"]
