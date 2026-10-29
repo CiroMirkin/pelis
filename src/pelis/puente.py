@@ -12,7 +12,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtMultimedia import QMediaPlayer
 
-from . import capturas, db, edicion, metadatos, poster, subtitulos
+from . import __version__, actualizacion, capturas, db, edicion, metadatos, poster, subtitulos
 from .catalogo import (
     CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta, url_poster,
 )
@@ -196,6 +196,9 @@ class Puente(QObject):
     imdbRespondio = Signal("QVariantMap")
     _imdbListo = Signal(object)  # desde el hilo de la consulta; se procesa en el de la UI
     capturaGuardada = Signal(bool)  # True = escrita; False = falló y el motivo va al log
+    buscandoActualizacionChanged = Signal()
+    actualizacionRespondio = Signal("QVariantMap")
+    _actualizacionLista = Signal(object)  # desde el hilo de la consulta
 
     def __init__(self, config):
         super().__init__()
@@ -213,6 +216,8 @@ class Puente(QObject):
         self._consultando = False
         self._midiendo = set()  # ids con una medición de duración en curso
         self._imdbListo.connect(self._imdb_listo)
+        self._buscando_actualizacion = False
+        self._actualizacionLista.connect(self._actualizacion_lista)
         self._recargar_catalogo()
         self._elegir_recomendada()
         self._iniciar_escaneo(sin_red=True)
@@ -441,6 +446,44 @@ class Puente(QObject):
             self._recargar_catalogo()
             resultado["aplicado"] = True
         self.imdbRespondio.emit(resultado)
+
+    # --- actualización ---
+
+    @Property(str, constant=True)
+    def version(self):
+        return __version__
+
+    @Property(bool, constant=True)
+    def puedeActualizar(self):
+        return actualizacion.en_build()
+
+    @Property(bool, notify=buscandoActualizacionChanged)
+    def buscandoActualizacion(self):
+        return self._buscando_actualizacion
+
+    @Slot()
+    def buscarActualizacion(self):
+        """Consulta la última Release en un hilo aparte y responde por `actualizacionRespondio`."""
+        if self._buscando_actualizacion:
+            return
+        self._buscando_actualizacion = True
+        self.buscandoActualizacionChanged.emit()
+
+        def correr():
+            try:
+                nueva = actualizacion.buscar()
+                resultado = {"nueva": nueva} if nueva else {"alDia": True}
+            except actualizacion.ErrorRed as e:
+                log.warning("No se pudo buscar actualización: %s", e)
+                resultado = {"error": "No se pudo consultar GitHub. Revisá la conexión y probá de nuevo."}
+            self._actualizacionLista.emit(resultado)
+
+        threading.Thread(target=correr, daemon=True).start()
+
+    def _actualizacion_lista(self, resultado):
+        self._buscando_actualizacion = False
+        self.buscandoActualizacionChanged.emit()
+        self.actualizacionRespondio.emit(resultado)
 
     # --- faltantes ---
 

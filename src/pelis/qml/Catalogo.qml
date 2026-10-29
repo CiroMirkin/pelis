@@ -221,6 +221,13 @@ Page {
                     icono: "faltantes"
                     onTriggered: pagina.StackView.view.push("Faltantes.qml")
                 }
+                OpcionMenu {
+                    // Desde el código no hay build que reemplazar
+                    enabled: puente.puedeActualizar && !puente.buscandoActualizacion
+                    text: "Buscar actualización"
+                    icono: "actualizar"
+                    onTriggered: actualizacion.iniciar()
+                }
             }
         }
     }
@@ -401,6 +408,11 @@ Page {
     }
 
     DialogoEscaneo { id: dialogo }
+
+    DialogoActualizacion {
+        id: actualizacion
+        onCerrado: grilla.forceActiveFocus()
+    }
 
     Popup {
         id: confirmarVistas

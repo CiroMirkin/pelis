@@ -6,6 +6,7 @@ MenuItem {
     id: opcion
     property string icono: ""
     implicitHeight: visible ? Tema.px(40) : 0
+    opacity: enabled ? 1 : 0.4
     leftPadding: Tema.px(12)
     rightPadding: Tema.px(16)
     contentItem: Row {
