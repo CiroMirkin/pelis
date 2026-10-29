@@ -10,6 +10,7 @@ on:
 jobs:
   armar:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -40,7 +41,7 @@ jobs:
 
       - name: Paquetes del sistema
         if: matrix.sistema == 'linux'
-        run: sudo apt-get update && sudo apt-get install -y libxcb-cursor0 libegl1
+        run: sudo apt-get update && sudo apt-get install -y $(grep -v "^#" tools/paquetes-linux.txt)
 
       - name: Tests
         run: uv run --locked pytest -q
