@@ -1,9 +1,13 @@
-# Crear el repositorio y cerrar las decisiones abiertas
+# Subir el repositorio y cerrar las decisiones abiertas
 
-Status: ready-for-human
+Status: ready-for-agent
+
+Las decisiones están cerradas (grilling del 29/10/2026, ver la spec). Queda subir el repo.
 
 ## Criterio de terminado
-- [ ] Repositorio git creado y subido a GitHub; definido si es público o privado (privado obliga a un token en `pelis.toml` para leer las Releases)
-- [ ] `.gitignore` revisado: quedan afuera `dev/`, `Peliculas/`, `.venv*/`, `build/`, `dist/`. Decidir si `.scratch/` se versiona
-- [ ] Esquema de versiones (semver) y quién sube el número en `pyproject.toml`
-- [ ] Decidido si se firma el `.exe` o se acepta el aviso de SmartScreen
+- [x] Público o privado: público, las Releases se leen sin token
+- [x] `.gitignore` revisado: `dev/`, `Peliculas/`, `.venv*/`, `build/`, `dist/` quedan afuera; `.scratch/` se versiona
+- [x] Esquema de versiones: semver con `-rcN`, versión única en `src/pelis/__init__.py`, la sube `tools/version.py` (issue 05)
+- [x] Firma del `.exe`: no se firma, se acepta el aviso de SmartScreen
+- [ ] Revisado que el historial no tenga claves de OMDb ni TMDb
+- [ ] `main` pusheada a `origin` (`CiroMirkin/pelis`), con la confirmación del usuario
