@@ -17,7 +17,7 @@ def ruta_libre(carpeta_pelicula, posicion_ms):
     carpeta = Path(carpeta_pelicula) / "capturas"
     ruta = carpeta / f"{base}.png"
     for n in count(2):
-        if not ruta.exists():
+        if not (ruta.exists() or ruta.is_symlink()):  # un symlink roto también ocupa el nombre
             return ruta
         ruta = carpeta / f"{base}({n}).png"
 

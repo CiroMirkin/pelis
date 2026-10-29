@@ -63,3 +63,10 @@ def test_listar_solo_imagenes(tmp_path):
 
 def test_listar_sin_carpeta_es_vacio(tmp_path):
     assert capturas.listar(tmp_path) == []
+
+
+def test_un_symlink_roto_ocupa_el_nombre(tmp_path):
+    carpeta = tmp_path / "capturas"
+    carpeta.mkdir()
+    (carpeta / "00-00-05.png").symlink_to(tmp_path / "no-existe")
+    assert capturas.ruta_libre(tmp_path, 5_000) == carpeta / "00-00-05(2).png"
