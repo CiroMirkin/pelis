@@ -377,7 +377,7 @@ Page {
                         source: modelData
                         fillMode: Image.PreserveAspectFit
                         asynchronous: true
-                        sourceSize.width: 320
+                        sourceSize.width: Tema.px(160) * Screen.devicePixelRatio
                     }
                 }
             }
