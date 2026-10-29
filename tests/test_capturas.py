@@ -70,3 +70,9 @@ def test_un_symlink_roto_ocupa_el_nombre(tmp_path):
     carpeta.mkdir()
     (carpeta / "00-00-05.png").symlink_to(tmp_path / "no-existe")
     assert capturas.ruta_libre(tmp_path, 5_000) == carpeta / "00-00-05(2).png"
+
+
+def test_listar_desempata_por_nombre(tmp_path):
+    _capturas(tmp_path, "b.png", "B.png", "00-00-01.png", "00-00-01(1).webp", "00-00-01.jpg")
+    assert [r.name for r in capturas.listar(tmp_path)] == [
+        "00-00-01(1).webp", "00-00-01.jpg", "00-00-01.png", "B.png", "b.png"]

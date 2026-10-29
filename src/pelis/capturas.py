@@ -44,7 +44,7 @@ def guardar(carpeta_pelicula, posicion_ms, png):
 
 def listar(carpeta_pelicula):
     """Imágenes de `capturas/`: primero las cronológicas por posición y sufijo (sin sufijo = 1),
-    después el resto alfabético. `[]` si la carpeta no existe."""
+    después el resto alfabético; los empates, por nombre. `[]` si la carpeta no existe."""
     carpeta = Path(carpeta_pelicula) / "capturas"
     if not carpeta.is_dir():
         return []
@@ -53,7 +53,7 @@ def listar(carpeta_pelicula):
         m = CRONOLOGICA.fullmatch(ruta.stem)
         if m:
             h, mi, s, n = m.groups()
-            return (0, (int(h), int(mi), int(s), int(n or 1)), "")
-        return (1, (), ruta.name.casefold())
+            return (0, (int(h), int(mi), int(s), int(n or 1)), "", ruta.name)
+        return (1, (), ruta.name.casefold(), ruta.name)
 
     return sorted((r for r in carpeta.iterdir() if r.is_file() and r.suffix.lower() in EXTENSIONES), key=clave)
