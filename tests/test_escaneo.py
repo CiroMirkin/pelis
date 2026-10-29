@@ -96,7 +96,7 @@ def test_bajada_de_omdb_usa_la_carpeta_posters_existente(biblioteca, conn):
     (carpeta(biblioteca, "Alien (1979)", "Alien.mp4") / "Posters").mkdir()
     escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
     assert db.pelicula(conn, 1)["poster"] == "Alien (1979)/Posters/poster.jpg"
-    assert not (biblioteca / "Alien (1979)" / "posters").exists()
+    assert [d.name for d in (biblioteca / "Alien (1979)").iterdir() if d.is_dir()] == ["Posters"]
 
 
 def test_cascada_usa_imdb_id_primero(biblioteca, conn):

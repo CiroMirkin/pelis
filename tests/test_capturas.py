@@ -1,3 +1,7 @@
+import sys
+
+import pytest
+
 from pelis import capturas
 
 
@@ -73,9 +77,15 @@ def test_un_symlink_roto_ocupa_el_nombre(tmp_path):
 
 
 def test_listar_desempata_por_nombre(tmp_path):
-    _capturas(tmp_path, "b.png", "B.png", "00-00-01.png", "00-00-01(1).webp", "00-00-01.jpg")
+    _capturas(tmp_path, "b.png", "00-00-01.png", "00-00-01(1).webp", "00-00-01.jpg")
     assert [r.name for r in capturas.listar(tmp_path)] == [
-        "00-00-01(1).webp", "00-00-01.jpg", "00-00-01.png", "B.png", "b.png"]
+        "00-00-01(1).webp", "00-00-01.jpg", "00-00-01.png", "b.png"]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="en Windows b.png y B.png son el mismo archivo")
+def test_listar_desempata_mayusculas_por_nombre(tmp_path):
+    _capturas(tmp_path, "b.png", "B.png")
+    assert [r.name for r in capturas.listar(tmp_path)] == ["B.png", "b.png"]
 
 
 def test_listar_entiende_cien_horas_o_mas(tmp_path):
