@@ -14,7 +14,12 @@ Ver "Repositorio y versión" y "Comando de versión" en la spec.
 - Skill de proyecto `.claude/skills/version/`: corre el script con el venv del sistema, muestra las notas y las reescribe en lenguaje de usuario si se le pide
 
 ## Criterio de terminado
-- [ ] Tests del cálculo de la versión siguiente (niveles, RC, `final`, negativas) y del armado de notas, sin git real
-- [ ] Las tres negativas (cambios sin commitear, fuera de `main`, divergida) cortan antes de tocar nada
-- [ ] Con `N` no se pushea nada y el commit y el tag quedan locales
+- [x] Tests del cálculo de la versión siguiente (niveles, RC, `final`, negativas) y del armado de notas, sin git real
+- [x] Las tres negativas (cambios sin commitear, fuera de `main`, divergida) cortan antes de tocar nada
+- [x] Con `N` no se pushea nada y el commit y el tag quedan locales
 - [ ] `/version minor` publica `v0.2.0` de punta a punta
+
+## Comments
+
+- 29/10/2026: hecho el script, la skill y `__version__` (`7e24342`). Probado de punta a punta contra un remoto falso: negativas, `--ver`, `N`, publicar, RC, `final` y un push ajeno durante la confirmación. Falta el último criterio, que necesita el workflow (02).
+- `--ver`, `--notas` y `--si` existen para que la skill muestre las notas y publique sin entrada interactiva. El fin de entrada cuenta como «no».
