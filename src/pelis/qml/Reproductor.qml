@@ -582,7 +582,7 @@ Page {
     Shortcut { enabled: pagina.activa; sequence: "Down"; onActivated: pagina.cambiarVolumen(-0.05) }
     Shortcut { enabled: pagina.activa; sequence: "M"; onActivated: { puente.silenciado = !puente.silenciado; pagina.mostrarControles() } }
     Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: pagina.alternarPantallaCompleta() }
-    Shortcut { enabled: pagina.activa; sequence: "."; autoRepeat: false; onActivated: puente.capturar(video.videoSink, player.position) }
+    Shortcut { enabled: pagina.activa && !panel.visible; sequence: "."; autoRepeat: false; onActivated: puente.capturar(video.videoSink, player.position) }
     Shortcut {
         enabled: pagina.activa
         sequence: "Esc"
