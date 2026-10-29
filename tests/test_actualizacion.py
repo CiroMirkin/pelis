@@ -1,3 +1,15 @@
+import hashlib
+import io
+import os
+import shutil
+import subprocess
+import sys
+import tarfile
+import threading
+import time
+import zipfile
+from pathlib import Path
+
 import pytest
 import requests
 
@@ -87,3 +99,224 @@ def test_sin_releases_es_al_dia():
 def test_sin_conexion_o_respuesta_rara(sesion):
     with pytest.raises(actualizacion.ErrorRed):
         actualizacion.buscar(sesion, actual="0.1.0")
+
+
+# --- instalar ---
+
+RAIZ_REPO = Path(__file__).resolve().parent.parent
+
+
+def _paquete(inst, version, ejecutable=b"#!/bin/sh\n"):
+    """Bytes del paquete de `inst.sistema` con el formato del workflow (lo que va en la raíz del disco)."""
+    archivos = {
+        f"pelis-app/app/{inst.sistema}/{inst.ejecutable}": ejecutable,
+        f"pelis-app/app/{inst.sistema}/_internal/version.txt": version.encode(),
+        "pelis-app/app/pelis.toml.ejemplo": b"biblioteca = \"\"\n",
+        inst.lanzador: (RAIZ_REPO / "tools" / inst.lanzador).read_bytes(),
+    }
+    buffer = io.BytesIO()
+    if inst.windows:
+        with zipfile.ZipFile(buffer, "w") as z:
+            for nombre, datos in archivos.items():
+                z.writestr(nombre, datos)
+    else:
+        with tarfile.open(fileobj=buffer, mode="w:gz") as t:
+            for nombre, datos in archivos.items():
+                info = tarfile.TarInfo(nombre)
+                info.size = len(datos)
+                info.mode = 0o755
+                t.addfile(info, io.BytesIO(datos))
+    return buffer.getvalue()
+
+
+class Descarga:
+    def __init__(self, datos, corte=None):
+        self.datos = datos
+        self.corte = corte  # excepción a mitad de la descarga
+        self.headers = {"Content-Length": str(len(datos))}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def raise_for_status(self):
+        pass
+
+    def iter_content(self, tamanio):
+        for i in range(0, len(self.datos), tamanio):
+            if self.corte and i > 0:
+                raise self.corte
+            yield self.datos[i:i + tamanio]
+
+
+class Servidor:
+    """Sesión falsa que sirve los archivos de una Release."""
+
+    def __init__(self, archivos, corte=None):
+        self.archivos = archivos
+        self.corte = corte
+
+    def get(self, url, **_):
+        nombre = url.rsplit("/", 1)[1]
+        return Descarga(self.archivos[nombre], self.corte if nombre != "SHA256SUMS" else None)
+
+
+def _release(inst, version, datos=None, sumas=None):
+    datos = _paquete(inst, version) if datos is None else datos
+    nombre = inst.paquete(version)
+    sumas = sumas or f"{hashlib.sha256(datos).hexdigest()}  {nombre}\n"
+    nueva = {"version": version, "notas": "", "paquetes": {n: f"https://x/{n}" for n in (nombre, "SHA256SUMS")}}
+    return nueva, {nombre: datos, "SHA256SUMS": sumas.encode()}
+
+
+def _instalacion(raiz, sistema="linux", version="0.1.0"):
+    """Disco instalado: raiz/pelis.sh y raiz/pelis-app/app/<sistema>/ con la configuración del usuario."""
+    inst = actualizacion.Instalacion(raiz / "pelis-app" / "app" / sistema)
+    inst.programa.mkdir(parents=True)
+    (inst.programa / "_internal").mkdir()
+    (inst.programa / "_internal" / "version.txt").write_text(version)
+    for nombre in ("pelis.toml", "pelis.db", "preferencias.ini"):
+        (inst.app / nombre).write_text(f"del usuario: {nombre}")
+    return inst
+
+
+@pytest.mark.parametrize("sistema", ["linux", "win"])
+def test_preparar_baja_verifica_y_extrae(tmp_path, sistema):
+    inst = _instalacion(tmp_path, sistema)
+    nueva, archivos = _release(inst, "0.2.0")
+    avance = []
+    nuevo = actualizacion.preparar(inst, nueva, Servidor(archivos), progreso=avance.append)
+    assert (nuevo / "pelis-app" / "app" / sistema / "_internal" / "version.txt").read_text() == "0.2.0"
+    assert (nuevo / inst.lanzador).is_file()
+    assert avance and avance[-1] == 1.0
+    assert (inst.programa / "_internal" / "version.txt").read_text() == "0.1.0"  # no tocó la instalación
+    if sistema == "linux":
+        assert os.access(nuevo / "pelis-app" / "app" / "linux" / "pelis", os.X_OK)
+
+
+def test_hash_distinto_aborta_sin_tocar_nada(tmp_path):
+    inst = _instalacion(tmp_path)
+    nueva, archivos = _release(inst, "0.2.0", sumas=f"{'0' * 64}  Pelis-linux-v0.2.0.tar.gz\n")
+    with pytest.raises(actualizacion.ErrorActualizacion, match="dañada"):
+        actualizacion.preparar(inst, nueva, Servidor(archivos))
+    assert not inst.descarga.exists()
+    assert (inst.programa / "_internal" / "version.txt").read_text() == "0.1.0"
+
+
+def test_corte_de_red_a_mitad_deja_todo_como_estaba(tmp_path):
+    inst = _instalacion(tmp_path)
+    nueva, archivos = _release(inst, "0.2.0", datos=os.urandom(300_000))
+    with pytest.raises(actualizacion.ErrorRed):
+        actualizacion.preparar(inst, nueva, Servidor(archivos, corte=requests.ConnectionError("se cortó")))
+    assert not inst.descarga.exists()
+
+
+def test_cancelar_borra_la_descarga(tmp_path):
+    inst = _instalacion(tmp_path)
+    nueva, archivos = _release(inst, "0.2.0", datos=os.urandom(300_000))
+    with pytest.raises(actualizacion.Cancelado):
+        actualizacion.preparar(inst, nueva, Servidor(archivos), cancelado=lambda: True)
+    assert not inst.descarga.exists()
+
+
+def test_release_sin_paquete_del_sistema(tmp_path):
+    inst = _instalacion(tmp_path, "win")
+    nueva = {"version": "0.2.0", "notas": "", "paquetes": {"Pelis-linux-v0.2.0.tar.gz": "u", "SHA256SUMS": "u"}}
+    with pytest.raises(actualizacion.ErrorActualizacion, match="no trae"):
+        actualizacion.preparar(inst, nueva, Servidor({}))
+
+
+def test_paquete_con_otro_formato(tmp_path):
+    inst = _instalacion(tmp_path)
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as t:
+        info = tarfile.TarInfo("otra-cosa.txt")
+        t.addfile(info, io.BytesIO(b""))
+    nueva, archivos = _release(inst, "0.2.0", datos=buffer.getvalue())
+    with pytest.raises(actualizacion.ErrorActualizacion, match="formato"):
+        actualizacion.preparar(inst, nueva, Servidor(archivos))
+    assert not inst.descarga.exists()
+
+
+def test_leer_sumas():
+    assert actualizacion.leer_sumas("ABC  a.zip\ndef *b.tar.gz\n\nbasura\n") == {"a.zip": "abc", "b.tar.gz": "def"}
+
+
+def test_terminar_borra_anterior_y_testigo(tmp_path):
+    inst = _instalacion(tmp_path)
+    inst.anterior.mkdir()
+    inst.testigo.touch()
+    actualizacion.terminar(inst)
+    assert not inst.anterior.exists() and not inst.testigo.exists()
+
+
+def test_terminar_sin_testigo_no_toca_nada(tmp_path):
+    inst = _instalacion(tmp_path)
+    inst.anterior.mkdir()  # p. ej. de otra cosa: sin testigo no se borra
+    actualizacion.terminar(inst)
+    assert inst.anterior.exists()
+
+
+def _esperar(condicion, segundos=10):
+    limite = time.monotonic() + segundos
+    while time.monotonic() < limite:
+        if condicion():
+            return True
+        time.sleep(0.05)
+    return False
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="corre el script de Linux")
+def test_script_linux_cambia_la_version_y_la_vuelve_a_abrir(tmp_path):
+    inst = _instalacion(tmp_path)
+    # El "programa" nuevo deja constancia de que arrancó y con qué argumentos
+    arranco = tmp_path / "arranco.txt"
+    ejecutable = f'#!/bin/sh\necho "$@" > {arranco}\n'.encode()
+    nueva, archivos = _release(inst, "0.2.0", datos=_paquete(inst, "0.2.0", ejecutable))
+    nuevo = actualizacion.preparar(inst, nueva, Servidor(archivos))
+    viejo = subprocess.Popen(["sleep", "0.5"])  # la app que todavía está cerrándose
+    # Se recoge en paralelo, como hace su padre real: si no, queda zombi y kill -0 la sigue viendo
+    threading.Thread(target=viejo.wait, daemon=True).start()
+    script = actualizacion.escribir_script(inst, nuevo, viejo.pid, ["--prerelease", "con espacio"])
+    subprocess.run(["/bin/sh", str(script)], check=True, timeout=20)
+
+    assert _esperar(arranco.exists)
+    assert arranco.read_text().strip() == "--prerelease con espacio"
+    assert (inst.programa / "_internal" / "version.txt").read_text() == "0.2.0"
+    assert (inst.anterior / "_internal" / "version.txt").read_text() == "0.1.0"
+    assert inst.testigo.exists()
+    assert (inst.raiz / "pelis.sh").is_file() and (inst.app / "pelis.toml.ejemplo").is_file()
+    for nombre in ("pelis.toml", "pelis.db", "preferencias.ini"):
+        assert (inst.app / nombre).read_text() == f"del usuario: {nombre}"
+    assert not inst.descarga.exists() and not script.exists()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="corre el lanzador de Linux")
+def test_lanzador_linux_restaura_si_la_nueva_no_arranco(tmp_path):
+    inst = _instalacion(tmp_path)
+    shutil.copy(RAIZ_REPO / "tools" / "pelis.sh", inst.raiz / "pelis.sh")
+    # Quedó como después del cambio: la nueva en linux/, la vieja en linux.anterior/ y el testigo
+    inst.programa.rename(inst.anterior)
+    inst.programa.mkdir()
+    (inst.programa / "pelis").write_text("#!/bin/sh\nexit 1\n")
+    (inst.anterior / "pelis").write_text("#!/bin/sh\necho vieja\n")
+    (inst.anterior / "pelis").chmod(0o755)
+    inst.testigo.touch()
+
+    r = subprocess.run(["bash", str(inst.raiz / "pelis.sh")], capture_output=True, text=True, timeout=10)
+    assert r.stdout.strip() == "vieja"
+    assert (inst.programa / "_internal" / "version.txt").read_text() == "0.1.0"
+    assert not inst.anterior.exists() and not inst.testigo.exists()
+
+
+def test_script_windows_lleva_rutas_y_argumentos(tmp_path):
+    inst = _instalacion(tmp_path, "win")
+    script = actualizacion.escribir_script(inst, inst.descarga / "nuevo", 4321, ["--prerelease"])
+    texto = script.read_bytes().decode("utf-8")
+    assert script.name == "actualizar-win.bat"
+    assert "\r\n" in texto and "\n" not in texto.replace("\r\n", "")
+    assert 'set "PID=4321"' in texto
+    assert f'set "APP={inst.app}"' in texto
+    assert f'start "" "%APP%\\win\\pelis.exe" "--prerelease"' in texto

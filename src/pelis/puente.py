@@ -1,13 +1,16 @@
 """Puente entre la lógica en Python y la UI en QML."""
 
 import logging
+import os
+import sys
 import threading
 from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 
 from PySide6.QtCore import (
-    Property, QAbstractListModel, QBuffer, QModelIndex, QObject, QSettings, QThread, Qt, QUrl, Signal, Slot,
+    Property, QAbstractListModel, QBuffer, QCoreApplication, QModelIndex, QObject, QSettings, QThread, Qt, QUrl,
+    Signal, Slot,
 )
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtMultimedia import QMediaPlayer
@@ -199,6 +202,10 @@ class Puente(QObject):
     buscandoActualizacionChanged = Signal()
     actualizacionRespondio = Signal("QVariantMap")
     _actualizacionLista = Signal(object)  # desde el hilo de la consulta
+    actualizandoChanged = Signal()
+    descargaProgreso = Signal(float)  # 0 a 1
+    descargaTerminada = Signal(str)  # "" = lista para reiniciar; si no, el motivo para el usuario
+    _descargaLista = Signal(object)  # desde el hilo de la descarga
 
     def __init__(self, config):
         super().__init__()
@@ -218,6 +225,11 @@ class Puente(QObject):
         self._imdbListo.connect(self._imdb_listo)
         self._buscando_actualizacion = False
         self._actualizacionLista.connect(self._actualizacion_lista)
+        self._nueva = None  # la última versión nueva encontrada
+        self._actualizando = False
+        self._cancelar_descarga = threading.Event()
+        self._descargado = None  # carpeta con la versión nueva, lista para el cambio
+        self._descargaLista.connect(self._descarga_lista)
         self._recargar_catalogo()
         self._elegir_recomendada()
         self._iniciar_escaneo(sin_red=True)
@@ -483,7 +495,62 @@ class Puente(QObject):
     def _actualizacion_lista(self, resultado):
         self._buscando_actualizacion = False
         self.buscandoActualizacionChanged.emit()
+        self._nueva = resultado.get("nueva")
         self.actualizacionRespondio.emit(resultado)
+
+    @Property(bool, notify=actualizandoChanged)
+    def actualizando(self):
+        return self._actualizando
+
+    @Slot()
+    def actualizar(self):
+        """Baja y verifica la versión nueva en un hilo aparte; avisa el avance y el final por señales."""
+        if self._actualizando or not self._nueva or not actualizacion.en_build():
+            return
+        self._actualizando = True
+        self.actualizandoChanged.emit()
+        self._cancelar_descarga.clear()
+        inst = actualizacion.instalacion_actual()
+        nueva = self._nueva
+
+        def correr():
+            try:
+                nuevo = actualizacion.preparar(inst, nueva, progreso=self.descargaProgreso.emit,
+                                               cancelado=self._cancelar_descarga.is_set)
+                resultado = {"nuevo": nuevo}
+            except actualizacion.Cancelado:
+                resultado = {"cancelado": True}
+            except actualizacion.ErrorActualizacion as e:
+                resultado = {"error": str(e)}
+            except actualizacion.ErrorRed as e:
+                log.warning("Falló la descarga de la actualización: %s", e)
+                resultado = {"error": "Se cortó la descarga. Revisá la conexión y probá de nuevo."}
+            except Exception as e:
+                log.exception("Falló la actualización")
+                resultado = {"error": f"{type(e).__name__}: {e}"}
+            self._descargaLista.emit(resultado)
+
+        threading.Thread(target=correr, daemon=True).start()
+
+    @Slot()
+    def cancelarActualizacion(self):
+        self._cancelar_descarga.set()
+
+    def _descarga_lista(self, resultado):
+        self._actualizando = False
+        self.actualizandoChanged.emit()
+        self._descargado = resultado.get("nuevo")
+        if not resultado.get("cancelado"):
+            self.descargaTerminada.emit(resultado.get("error", ""))
+
+    @Slot()
+    def reiniciarParaActualizar(self):
+        """Deja corriendo el script que hace el cambio y cierra la app como siempre (guarda lo pendiente)."""
+        if self._descargado is None:
+            return
+        inst = actualizacion.instalacion_actual()
+        actualizacion.lanzar(actualizacion.escribir_script(inst, self._descargado, os.getpid(), sys.argv[1:]))
+        QCoreApplication.quit()
 
     # --- faltantes ---
 

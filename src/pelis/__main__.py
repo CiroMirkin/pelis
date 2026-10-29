@@ -9,7 +9,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
-from . import config as configuracion
+from . import actualizacion, config as configuracion
 from .puente import Puente
 
 
@@ -57,6 +57,9 @@ def main():
     engine.load(Path(__file__).parent / "qml" / "Main.qml")
     if not engine.rootObjects():
         fallar("No se pudo cargar la interfaz:\n" + "\n".join(avisos))
+    if actualizacion.en_build():
+        # Arrancó bien: si venía de actualizar, ya no hace falta la versión anterior
+        actualizacion.terminar(actualizacion.instalacion_actual())
     codigo = app.exec()
     del engine  # antes que el puente, para que QML no lo lea ya destruido al cerrar
     puente.cerrar()
