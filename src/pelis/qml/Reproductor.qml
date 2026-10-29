@@ -193,12 +193,13 @@ Page {
         font.pixelSize: Tema.px(20)
     }
 
-    // Aviso de captura: arriba a la derecha, sin caja, se desvanece solo y no muestra los controles
+    // Aviso de captura: arriba al centro, sin caja, se desvanece solo y no muestra los controles.
+    // «Capturando…» queda fijo desde que se aprieta hasta que el archivo está escrito.
     Text {
         id: avisoCaptura
         anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.margins: Tema.px(24)
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.topMargin: Tema.px(24)
         opacity: 0
         style: Text.Outline
         styleColor: "black"
@@ -212,6 +213,14 @@ Page {
             PauseAnimation { duration: 900 }
             NumberAnimation { target: avisoCaptura; property: "opacity"; to: 0; duration: 600 }
         }
+    }
+
+    function capturar() {
+        fundidoCaptura.stop()
+        avisoCaptura.text = "Capturando…"
+        avisoCaptura.color = Tema.tenue
+        avisoCaptura.opacity = 1
+        puente.capturar(video.videoSink, player.position)
     }
 
     Connections {
@@ -582,7 +591,7 @@ Page {
     Shortcut { enabled: pagina.activa; sequence: "Down"; onActivated: pagina.cambiarVolumen(-0.05) }
     Shortcut { enabled: pagina.activa; sequence: "M"; onActivated: { puente.silenciado = !puente.silenciado; pagina.mostrarControles() } }
     Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: pagina.alternarPantallaCompleta() }
-    Shortcut { enabled: pagina.activa && !panel.visible; sequence: "."; autoRepeat: false; onActivated: puente.capturar(video.videoSink, player.position) }
+    Shortcut { enabled: pagina.activa && !panel.visible; sequence: "."; autoRepeat: false; onActivated: pagina.capturar() }
     Shortcut {
         enabled: pagina.activa
         sequence: "Esc"
