@@ -1,6 +1,6 @@
 [project]
 name = "pelis"
-version = "0.1.0"
+dynamic = ["version"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "PySide6",
@@ -11,6 +11,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest", "pyinstaller"]
 
+[tool.setuptools.dynamic]
+version = {attr = "pelis.__version__"}
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "tools"]
