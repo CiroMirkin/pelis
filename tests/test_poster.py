@@ -71,7 +71,7 @@ def test_carpeta_posters_cuenta_toda_imagen_y_gana_a_las_sueltas(biblioteca, con
 def test_poster_a_mano_reemplaza_al_de_omdb(biblioteca, conn):
     p = pelicula(conn, biblioteca, "Alien (1979)", "Alien.mp4")
     bajado(conn, biblioteca, p, "Alien (1979)")
-    assert not poster.revisar(conn, biblioteca, p)  # sin cambios, sigue el bajado
+    assert not poster.revisar(conn, biblioteca, p)
     assert actual(conn, p) == "Alien (1979)/posters/poster.jpg"
     (biblioteca / "Alien (1979)" / "alien-poster.png").touch()
     assert poster.revisar(conn, biblioteca, p)

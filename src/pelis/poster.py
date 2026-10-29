@@ -1,7 +1,8 @@
 """Política del póster: el set de cada película, cuál es el actual y la rotación (regla 4 de biblioteca-multimedia).
 
-Es el único que escribe en la tabla `posters`. Orígenes: `existente` (una imagen de la carpeta) u `omdb`
-(el bajado a `posters/poster.jpg`).
+Es el único que decide qué póster se muestra.
+`db.reasignar` y la fusión solo mueven filas de `posters` junto con la película.
+Orígenes: `existente` (una imagen de la carpeta) u `omdb` (el bajado a `posters/poster.jpg`).
 """
 
 import random
@@ -15,7 +16,8 @@ DIAS_ROTACION = 7
 
 
 def revisar(conn, biblioteca, pelicula_id):
-    """Revisa la carpeta y cambia el poster si hace falta; devuelve True si cambió.
+    """Revisa la carpeta y cambia el poster si hace falta. Devuelve True si cambió.
+    Hace commit, incluido lo que quien llama tenga sin guardar.
 
     Mientras el archivo del poster actual exista y siga siendo un poster, se respeta (puede venir de la
     rotación). Solo una imagen nueva (no registrada) desplaza al poster bajado de OMDb. Si el archivo
@@ -64,8 +66,9 @@ def _revisar(conn, biblioteca, pelicula_id):
 def rotar(conn, biblioteca, ahora="now", azar=random, dias=DIAS_ROTACION):
     """Cambia el poster de las películas que llevan `dias` días con el mismo (0 = todas, a mano).
 
-    El set son los posters de la película (`_posters_de`); se elige al azar uno distinto del actual. Las
-    películas con un solo poster no cambian. Devuelve cuántas rotaron.
+    El set son los posters de la película (`_posters_de`).
+    Se elige al azar uno distinto del actual. Las películas con un solo poster no cambian.
+    Devuelve cuántas rotaron. Hace commit.
     """
     vencidas = conn.execute(
         """SELECT id, folder_path FROM peliculas WHERE estado = 'activa'
