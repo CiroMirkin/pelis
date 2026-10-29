@@ -2,13 +2,13 @@
 rem Arma dist\Pelis-win\ (listo para copiar a la raiz del disco) con PyInstaller.
 setlocal
 cd /d "%~dp0.."
-if not exist ".venv\Scripts\python.exe" (
-    echo No existe .venv. Crealo con:
-    echo   py -3.12 -m venv .venv
-    echo   .venv\Scripts\python -m pip install -e .[dev]
+where uv >nul 2>nul
+if errorlevel 1 (
+    echo Falta uv: https://docs.astral.sh/uv/getting-started/installation/
     exit /b 1
 )
-".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean --distpath build\dist --workpath build\work tools\pelis.spec
+set "UV_PROJECT_ENVIRONMENT=.venv"
+uv run --locked python -m PyInstaller --noconfirm --clean --distpath build\dist --workpath build\work tools\pelis.spec
 if errorlevel 1 exit /b 1
 
 set "SALIDA=dist\Pelis-win"

@@ -1,13 +1,12 @@
 @echo off
-rem Corre Pelis desde el código, con la carpeta app de desarrollo (dev\).
+rem Corre Pelis desde el código, con la carpeta app de desarrollo (dev\). uv instala lo que falte según uv.lock.
 cd /d "%~dp0"
-if not exist ".venv\Scripts\python.exe" (
-    echo No existe .venv. Crealo con:
-    echo   py -3.12 -m venv .venv
-    echo   .venv\Scripts\python -m pip install -e .[dev]
+where uv >nul 2>nul
+if errorlevel 1 (
+    echo Falta uv: https://docs.astral.sh/uv/getting-started/installation/
     pause
     exit /b 1
 )
-set "PYTHONPATH=%~dp0src"
-".venv\Scripts\python.exe" -m pelis --app-dir "%~dp0dev" %*
+set "UV_PROJECT_ENVIRONMENT=.venv"
+uv run --locked python -m pelis --app-dir "%~dp0dev" %*
 if errorlevel 1 pause

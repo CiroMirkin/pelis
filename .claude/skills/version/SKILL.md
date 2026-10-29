@@ -27,7 +27,7 @@ Con `/version help` o `/version ayuda`, mostrá esto y no corras nada:
 
 ## Pasos
 
-1. **Python**: `.venv-linux/bin/python` en Linux, `.venv\Scripts\python` en Windows. El script solo usa la biblioteca estándar.
+1. **Python**: `python3` en Linux, `py -3` en Windows. El script solo usa la biblioteca estándar, así que no hace falta el entorno de `uv`.
 2. **Vista previa**: `<python> tools/version.py <nivel> [--rc] --ver`. El nivel sale del pedido (`patch`, `minor`, `major` o `final`; `--rc` solo, sin nivel, para la siguiente RC). Si no lo dice, preguntalo. Si el script se niega («No se puede: …»), mostrá el motivo y pará: no arregles el repo por tu cuenta.
 3. **Notas**: mostrá la versión vieja → nueva y las notas tal como salieron. Las lee el usuario final en la app. Si te pide reescribirlas, hacelo en lenguaje de usuario, en español, sin nombres de módulos ni jerga, y conservá los encabezados `## Nuevo` y `## Arreglos`. Guardalas en un archivo del scratchpad.
 4. **Confirmación**: preguntá si publica. Pushear dispara la Release pública, así que no sigas sin un sí explícito para esta versión.

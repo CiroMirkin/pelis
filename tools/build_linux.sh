@@ -2,14 +2,12 @@
 # Arma dist/Pelis-linux/ (listo para copiar a la raiz del disco) con PyInstaller.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PY=".venv-linux/bin/python"
-if [ ! -x "$PY" ]; then
-    echo "No existe .venv-linux. Crealo con:"
-    echo "  python3.12 -m venv .venv-linux"
-    echo "  .venv-linux/bin/python -m pip install -e .[dev]"
+if ! command -v uv >/dev/null; then
+    echo "Falta uv: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
 fi
-"$PY" -m PyInstaller --noconfirm --clean --distpath build/dist --workpath build/work tools/pelis.spec
+export UV_PROJECT_ENVIRONMENT=.venv-linux
+uv run --locked python -m PyInstaller --noconfirm --clean --distpath build/dist --workpath build/work tools/pelis.spec
 
 SALIDA="dist/Pelis-linux"
 rm -rf "$SALIDA"

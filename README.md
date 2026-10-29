@@ -35,32 +35,18 @@ Está pensada para un disco compartido (NTFS) que se monta tanto en Windows como
 
 ### Requisitos
 
-- [Python 3.12](https://www.python.org/downloads/) (exactamente 3.12)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/), que trae Python 3.12 si no lo tenés e instala las dependencias exactas de `uv.lock`
 - Una clave de [OMDb](https://www.omdbapi.com/apikey.aspx) para los datos y pósters (opcional, sin ella no busca nada)
 - Una clave de [TMDb](https://www.themoviedb.org/settings/api) para la sinopsis en español (opcional)
 
 > [!IMPORTANT]
-> En Linux hacen falta `python3.12-venv` y `libxcb-cursor0`; sin el segundo la app no abre ventana. El set-up completo está en [`LINUX.md`](LINUX.md).
+> En Linux hace falta `libxcb-cursor0`: sin él la app no abre ventana. El set-up completo está en [`LINUX.md`](LINUX.md).
 
 ### Correr desde el código
 
-En Windows:
-
-```bat
-py -3.12 -m venv .venv
-.venv\Scripts\python -m pip install -e .[dev]
-```
-
-En Linux:
-
-```bash
-python3.12 -m venv .venv-linux
-.venv-linux/bin/python -m pip install -e .[dev]
-```
-
 Creá `dev/pelis.toml` a partir de [`tools/pelis.toml.ejemplo`](tools/pelis.toml.ejemplo) y apuntá `biblioteca` a tu carpeta de películas. Después corré `dev.bat` (Windows) o `./dev.sh` (Linux).
 
-Los dos son un atajo para `python -m pelis --app-dir dev`. La carpeta de `--app-dir` es donde viven `pelis.toml`, la base `pelis.db` y `preferencias.ini`.
+Los dos son un atajo para `uv run python -m pelis --app-dir dev`: la primera vez arman el entorno (`.venv` en Windows, `.venv-linux` en Linux, así no se pisan en un disco compartido) y después instalan solo lo que cambie en `uv.lock`. La carpeta de `--app-dir` es donde viven `pelis.toml`, la base `pelis.db` y `preferencias.ini`.
 
 ### Armar el ejecutable
 
@@ -190,8 +176,10 @@ src/pelis/
 Los módulos de lógica no importan Qt, así que se testean sin UI:
 
 ```bash
-.venv/Scripts/python -m pytest      # Windows
-.venv-linux/bin/python -m pytest    # Linux
+set UV_PROJECT_ENVIRONMENT=.venv && uv run pytest              # Windows (cmd)
+UV_PROJECT_ENVIRONMENT=.venv-linux uv run pytest              # Linux
 ```
+
+Para sumar o actualizar una dependencia, `uv add <paquete>` o `uv lock --upgrade-package <paquete>`, y commiteá `uv.lock` junto con `pyproject.toml`.
 
 Las reglas del escaneo están en la [spec de la biblioteca](.scratch/biblioteca-multimedia/spec.md), el vocabulario en [`GLOSSARY.md`](GLOSSARY.md), las decisiones en [`docs/adr/`](docs/adr/) y las de producto y diseño visual en [`PRODUCT.md`](PRODUCT.md) y [`DESIGN.md`](DESIGN.md).
