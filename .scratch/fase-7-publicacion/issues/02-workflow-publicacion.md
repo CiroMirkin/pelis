@@ -15,4 +15,10 @@ Ver "Workflow de publicación en GitHub" en la spec.
 ## Criterio de terminado
 - [ ] Subir un tag publica una Release con los dos paquetes y el `SHA256SUMS`, con los tests pasando
 - [ ] Un tag que no coincide con `__version__` falla sin publicar
-- [ ] El disparo manual deja los paquetes como artifacts sin crear Release
+- [x] El disparo manual deja los paquetes como artifacts sin crear Release
+
+## Comments
+
+- 29/10/2026: `.github/workflows/publicar.yml`. El disparo manual pasó en los dos sistemas (run 40905304749 sobre `f89a1e3`): `Pelis-windows-v0.1.0` (58 MB) y `Pelis-linux-v0.1.0` (87 MB) como artifacts.
+- El primer run falló: a `ubuntu-24.04` le faltaba `libpulse0`, y en Windows dos tests daban por hecho un disco que distingue mayúsculas. Los paquetes de Linux viven en `tools/paquetes-linux.txt`, que usan el workflow y `tools/ci_linux.sh`. Ese script corre el job de Linux en local, en un contenedor `ubuntu:24.04` limpio.
+- Quedan sin probar el camino con tag (Release, `SHA256SUMS`, notas, pre-release) y el tag que no coincide. Se prueban con la primera RC (`/version minor --rc`).
