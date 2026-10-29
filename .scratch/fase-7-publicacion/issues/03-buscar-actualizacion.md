@@ -1,6 +1,6 @@
 # «Buscar actualización» en el menú del catálogo
 
-Status: ready-for-agent
+Status: done
 Blocked by: 01, 05
 
 - Opción en el menú «…» del catálogo; nunca se busca sola al abrir
@@ -10,5 +10,11 @@ Blocked by: 01, 05
 - Corriendo desde el código (`dev.sh`, `dev.bat`), la opción aparece deshabilitada
 
 ## Criterio de terminado
-- [ ] Informa bien los tres casos: al día, versión nueva y sin conexión
-- [ ] Test de la comparación de versiones (con RC) y de la respuesta de la API sin UI
+- [x] Informa bien los tres casos: al día, versión nueva y sin conexión
+- [x] Test de la comparación de versiones (con RC) y de la respuesta de la API sin UI
+
+## Comments
+
+- 29/10/2026: `actualizacion.py` (sin Qt), slot `buscarActualizacion` en el puente y `DialogoActualizacion.qml`. Probado con un arnés que simula el build: al día (contra la API real, que da 404 porque todavía no hay Releases), versión nueva con las notas en Markdown, y sin conexión.
+- El botón «Actualizar» del popup lo suma el issue 04, junto con lo que hace.
+- `OpcionMenu` ahora se ve tenue cuando está deshabilitada; también afecta a «Renovar portadas» durante un escaneo.
