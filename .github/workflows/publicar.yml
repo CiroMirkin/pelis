@@ -1,0 +1,93 @@
+# Arma Pelis para Windows y Linux. Con un tag vX.Y.Z publica una Release; a mano, solo deja los
+# paquetes como artifacts del run. Reglas en .scratch/fase-7-publicacion/spec.md.
+name: Publicar
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  armar:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            sistema: windows
+            venv: .venv
+          - os: ubuntu-24.04
+            sistema: linux
+            venv: .venv-linux
+    runs-on: ${{ matrix.os }}
+    env:
+      UV_PROJECT_ENVIRONMENT: ${{ matrix.venv }}
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versión
+        id: version
+        shell: bash
+        run: |
+          v=$(sed -nE 's/^__version__ = "(.*)"\r?$/\1/p' src/pelis/__init__.py)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$v" ]]; then
+            echo "::error::El tag $GITHUB_REF_NAME no coincide con __version__ ($v)"
+            exit 1
+          fi
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Paquetes del sistema
+        if: matrix.sistema == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y libxcb-cursor0 libegl1
+
+      - name: Tests
+        run: uv run --locked pytest -q
+
+      - name: Armar (Windows)
+        if: matrix.sistema == 'windows'
+        shell: cmd
+        run: |
+          call tools\build_win.bat
+          if errorlevel 1 exit /b 1
+          powershell -NoProfile -Command "Compress-Archive -Path dist\Pelis-win\* -DestinationPath Pelis-windows-v${{ steps.version.outputs.version }}.zip"
+
+      - name: Armar (Linux)
+        if: matrix.sistema == 'linux'
+        run: |
+          tools/build_linux.sh
+          tar -czf "Pelis-linux-v${{ steps.version.outputs.version }}.tar.gz" -C dist/Pelis-linux .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pelis-${{ matrix.sistema }}-v${{ steps.version.outputs.version }}
+          path: Pelis-${{ matrix.sistema }}-v*.*
+          if-no-files-found: error
+
+  publicar:
+    if: github.ref_type == 'tag'
+    needs: armar
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: paquetes
+          merge-multiple: true
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # checkout deja el tag como liviano: se vuelve a traer para leer su mensaje
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          git tag -l --format='%(contents)' "$TAG" > notas.md
+          (cd paquetes && sha256sum * > SHA256SUMS)
+          pre=""
+          [[ "$TAG" == *-rc* ]] && pre="--prerelease"
+          gh release create "$TAG" paquetes/* --title "$TAG" --notes-file notas.md $pre
