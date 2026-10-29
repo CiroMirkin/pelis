@@ -1,6 +1,6 @@
 # Capturas de pantalla
 
-Status: ready-for-agent
+Status: done
 
 Anotada el 2026-10-26, acotada en un grilling (2026-10-29).
 
