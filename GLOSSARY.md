@@ -11,3 +11,5 @@
 **Metadatos**: los datos de IMDb/OMDb de una película: título, año, IMDb ID, sinopsis y su idioma, país, género, directores, elenco, URL del póster y origen (`omdb`, `manual`). No incluyen vista, progreso ni duración. Se guardan solo a través de `metadatos.aplicar`.
 
 **pelis.json**: copia portátil de los metadatos dentro de la carpeta de cada película. Se lee solo si la base no tiene datos; si no coincide, gana la base (ADR 0001).
+
+**Captura**: imagen PNG de un cuadro de la película, en resolución original y sin subtítulos, tomada con la tecla `.` en el reproductor. Se guarda en `capturas/` dentro de la carpeta de la película, con la posición como nombre (`01-23-45.png`).
