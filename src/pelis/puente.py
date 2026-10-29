@@ -533,24 +533,26 @@ class Puente(QObject):
     @Slot(QObject, int)
     def capturar(self, sink, posicion_ms):
         """Guarda el cuadro actual de `sink` (el videoSink del reproductor) como Captura."""
-        # El cuadro se lee acá, en el hilo de la UI; codificar un 4K a PNG tarda y va aparte
+        # En el hilo de la UI solo se toma el cuadro; convertirlo y codificar un 4K a PNG tarda
+        # y va aparte
         cuadro = sink.videoFrame()
         if not cuadro.isValid():
             log.warning("Captura fallida: todavía no hay cuadro")
             self.capturaGuardada.emit(False)
             return
-        imagen = cuadro.toImage()
         carpeta = self._video.parent
 
         def correr():
-            buffer = QBuffer()
-            buffer.open(QBuffer.WriteOnly)
             try:
-                if not imagen.save(buffer, "PNG"):
+                imagen = cuadro.toImage()
+                buffer = QBuffer()
+                buffer.open(QBuffer.WriteOnly)
+                if imagen.isNull() or not imagen.save(buffer, "PNG"):
                     raise OSError("no se pudo codificar el PNG")
                 ruta = capturas.guardar(carpeta, posicion_ms, bytes(buffer.data()))
-            except OSError as e:
-                log.warning("Captura fallida en %s: %s", carpeta, e)
+            except Exception:
+                # Cualquier falla tiene que llegar al aviso, no morir en silencio con el hilo
+                log.exception("Captura fallida en %s", carpeta)
                 self.capturaGuardada.emit(False)
                 return
             log.info("Captura guardada: %s", ruta)
