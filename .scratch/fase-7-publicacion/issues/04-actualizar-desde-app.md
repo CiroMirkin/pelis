@@ -14,6 +14,12 @@ Ver "Actualizar" en la spec.
 
 ## Criterio de terminado
 - [ ] En Windows y en Linux queda la versión nueva funcionando, con base, configuración y progreso intactos
-- [ ] Cortar la actualización a la mitad (ej. sin red en la descarga) deja la versión anterior funcionando
-- [ ] Un hash que no coincide aborta sin reemplazar nada
+- [x] Cortar la actualización a la mitad (ej. sin red en la descarga) deja la versión anterior funcionando
+- [x] Un hash que no coincide aborta sin reemplazar nada
 - [ ] Una versión nueva que no arranca se restaura sola al volver a abrir con el lanzador
+
+## Comments
+
+- 29/10/2026: descarga, verificación, script y vuelta atrás en `actualizacion.py`; botón, progreso y «Cancelar» en `DialogoActualizacion.qml`; limpieza al arrancar en `__main__.py`; restauración en `Pelis.bat` y `pelis.sh`. Testigo y carpeta de descarga llevan el nombre del sistema (`actualizando-linux`, `actualizacion-win`) porque `app/` es compartida.
+- Linux probado de punta a punta con el build real, contra una Release falsa servida en local: bajó y verificó el `.tar.gz`, cerró, el script cambió `linux/`, abrió el binario nuevo y este borró `linux.anterior` y el testigo; `pelis.toml` y `pelis.db` intactos. Los tests corren el script y el lanzador de Linux de verdad (cambio, argumentos, vuelta atrás).
+- Windows: el `.bat` solo está probado como texto. Falta correrlo de verdad: se prueba con la primera RC (issue 06). Queda abierto el primer criterio para Windows.
