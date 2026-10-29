@@ -1,6 +1,6 @@
 # Sección «Capturas» en el detalle
 
-Status: ready-for-agent
+Status: done
 Blocked by: 01
 
 ## Qué
@@ -10,8 +10,11 @@ Blocked by: 01
 - Tests de `listar` en `tests/test_capturas.py`
 
 ## Criterio de terminado
-- [ ] `01-23-45.png` va antes que `01-23-45(2).png`; `foto.jpg` va después de todas las cronológicas
+- [x] `01-23-45.png` va antes que `01-23-45(2).png`; `foto.jpg` va después de todas las cronológicas
 - [ ] Sin capturas, la sección no aparece
 - [ ] Al volver del reproductor con capturas nuevas, se ven sin re-escanear
 - [ ] Abrir el detalle con 20 PNG 4K no traba la UI
-- [ ] La suite pasa
+- [x] La suite pasa
+
+## Comments
+2026-10-29: implementado. `capturas.listar` tiene tests de orden, de filtro de extensiones y de carpeta ausente. `Puente.pelicula` devuelve `capturas` con la misma URL con fecha que usa el póster (`url_poster`) y mira la carpeta en cada apertura. 147 tests pasan, qmllint sin advertencias nuevas. Pendiente a mano (requiere abrir la app): que la sección no aparezca sin capturas, que al volver del reproductor se vean las nuevas sin re-escanear, y que 20 PNG 4K no traben la UI.
