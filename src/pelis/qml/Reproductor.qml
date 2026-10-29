@@ -193,6 +193,36 @@ Page {
         font.pixelSize: Tema.px(20)
     }
 
+    // Aviso de captura: arriba a la derecha, sin caja, se desvanece solo y no muestra los controles
+    Text {
+        id: avisoCaptura
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: Tema.px(24)
+        opacity: 0
+        style: Text.Outline
+        styleColor: "black"
+        font.family: Tema.rotulo
+        font.pixelSize: Tema.px(15)
+        font.capitalization: Font.AllUppercase
+        font.letterSpacing: 0.6
+        SequentialAnimation {
+            id: fundidoCaptura
+            PropertyAction { target: avisoCaptura; property: "opacity"; value: 1 }
+            PauseAnimation { duration: 900 }
+            NumberAnimation { target: avisoCaptura; property: "opacity"; to: 0; duration: 600 }
+        }
+    }
+
+    Connections {
+        target: puente
+        function onCapturaGuardada(ok) {
+            avisoCaptura.text = ok ? "Captura" : "Captura fallida"
+            avisoCaptura.color = ok ? Tema.tenue : Tema.alerta
+            fundidoCaptura.restart()
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
@@ -552,6 +582,7 @@ Page {
     Shortcut { enabled: pagina.activa; sequence: "Down"; onActivated: pagina.cambiarVolumen(-0.05) }
     Shortcut { enabled: pagina.activa; sequence: "M"; onActivated: { puente.silenciado = !puente.silenciado; pagina.mostrarControles() } }
     Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: pagina.alternarPantallaCompleta() }
+    Shortcut { enabled: pagina.activa; sequence: "."; autoRepeat: false; onActivated: puente.capturar(video.videoSink, player.position) }
     Shortcut {
         enabled: pagina.activa
         sequence: "Esc"

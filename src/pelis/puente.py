@@ -1,17 +1,18 @@
 """Puente entre la lógica en Python y la UI en QML."""
 
+import logging
 import threading
 from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 
 from PySide6.QtCore import (
-    Property, QAbstractListModel, QModelIndex, QObject, QSettings, QThread, Qt, QUrl, Signal, Slot,
+    Property, QAbstractListModel, QBuffer, QModelIndex, QObject, QSettings, QThread, Qt, QUrl, Signal, Slot,
 )
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtMultimedia import QMediaPlayer
 
-from . import db, edicion, metadatos, poster, subtitulos
+from . import capturas, db, edicion, metadatos, poster, subtitulos
 from .catalogo import (
     CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta, url_poster,
 )
@@ -19,6 +20,8 @@ from .nombres import idioma_de, normalizar
 from .escaneo import escanear, importar_sin_red
 from .omdb import ErrorRed, Omdb
 from .tmdb import Tmdb
+
+log = logging.getLogger(__name__)
 
 
 class ModeloCatalogo(QAbstractListModel):
@@ -192,6 +195,7 @@ class Puente(QObject):
     # Resultado de una consulta a IMDb: {error} | {candidatos} | {aplicado, aviso}
     imdbRespondio = Signal("QVariantMap")
     _imdbListo = Signal(object)  # desde el hilo de la consulta; se procesa en el de la UI
+    capturaGuardada = Signal(bool)  # True = escrita; False = falló y el motivo va al log
 
     def __init__(self, config):
         super().__init__()
@@ -523,6 +527,34 @@ class Puente(QObject):
             "progreso": p["progreso_ms"] or 0,
             "externos": [x.name for x in self._externos],
         }
+
+    @Slot(QObject, int)
+    def capturar(self, sink, posicion_ms):
+        """Guarda el cuadro actual de `sink` (el videoSink del reproductor) como Captura."""
+        # El cuadro se lee acá, en el hilo de la UI; codificar un 4K a PNG tarda y va aparte
+        cuadro = sink.videoFrame()
+        if not cuadro.isValid():
+            log.warning("Captura fallida: todavía no hay cuadro")
+            self.capturaGuardada.emit(False)
+            return
+        imagen = cuadro.toImage()
+        carpeta = self._video.parent
+
+        def correr():
+            buffer = QBuffer()
+            buffer.open(QBuffer.WriteOnly)
+            try:
+                if not imagen.save(buffer, "PNG"):
+                    raise OSError("no se pudo codificar el PNG")
+                ruta = capturas.guardar(carpeta, posicion_ms, bytes(buffer.data()))
+            except OSError as e:
+                log.warning("Captura fallida en %s: %s", carpeta, e)
+                self.capturaGuardada.emit(False)
+                return
+            log.info("Captura guardada: %s", ruta)
+            self.capturaGuardada.emit(True)
+
+        threading.Thread(target=correr, daemon=True).start()
 
     @Slot("QVariantList", "QVariantList", result="QVariantMap")
     def eleccionInicial(self, pistas_audio, pistas_subs):

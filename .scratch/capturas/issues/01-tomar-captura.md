@@ -1,6 +1,6 @@
 # Tomar la captura con `.`
 
-Status: ready-for-agent
+Status: done
 
 ## Qué
 - `src/pelis/capturas.py` con `ruta_libre(carpeta_pelicula, posicion_ms) → Path`: `capturas/HH-MM-SS.png`, o `HH-MM-SS(n).png` con el primer `n ≥ 2` libre (ver spec)
@@ -10,8 +10,13 @@ Status: ready-for-agent
 
 ## Criterio de terminado
 - [ ] `.` guarda un PNG en resolución original, sin subtítulos externos ni embebidos, en pausa y reproduciendo
-- [ ] Varias capturas en el mismo segundo dan `(2)`, `(3)`… sin pisar ninguna
+- [x] Varias capturas en el mismo segundo dan `(2)`, `(3)`… sin pisar ninguna
 - [ ] Mantener `.` apretada saca una sola captura
 - [ ] La película no se traba al capturar un video 4K
 - [ ] Sin permisos de escritura aparece «Captura fallida» y el motivo queda en el log
-- [ ] La suite pasa
+- [x] La suite pasa
+
+## Comments
+- Verificado sin abrir la app: `tests/test_capturas.py` (nombres, sufijos, horas en dos dígitos, `guardar` no pisa) y un smoke test offscreen de `Puente.capturar` con un `QVideoSink` y un cuadro 4K sintético: PNG de 3840×2160, `(2)` en el mismo segundo, sin cuadro → señal de error, carpeta sin permisos → señal de error con el `Permiso denegado` en el log. La lectura del cuadro en el hilo de la UI tardó ~50 ms por captura (CPU, sin RHI).
+- Sin tildar porque hay que abrir la app con una película real: que el PNG salga sin subtítulos (externos y embebidos) en pausa y reproduciendo, que `autoRepeat: false` dé una sola captura al mantener `.`, que un 4K real no se trabe (con decodificación por hardware `toImage()` baja el cuadro de la GPU), y que el aviso «Captura fallida» se vea en la UI.
+- El motivo va al log con `logging` (`pelis.puente`); sin configuración, los `warning` salen por stderr.
