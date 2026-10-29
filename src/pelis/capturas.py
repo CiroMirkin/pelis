@@ -1,6 +1,8 @@
 """Capturas: cuadros de la película guardados en `capturas/` dentro de su carpeta."""
 
+import os
 import re
+import tempfile
 from itertools import count
 from pathlib import Path
 
@@ -24,22 +26,42 @@ def ruta_libre(carpeta_pelicula, posicion_ms):
 
 def guardar(carpeta_pelicula, posicion_ms, png):
     """Escribe los bytes `png` como captura en `posicion_ms` y devuelve la ruta. Crea `capturas/`
-    si falta. Si otra captura ocupa el nombre entre medio, prueba el siguiente. Lanza OSError."""
-    while True:
-        ruta = ruta_libre(carpeta_pelicula, posicion_ms)
-        ruta.parent.mkdir(exist_ok=True)
-        try:
-            f = open(ruta, "xb")
-        except FileExistsError:
-            continue
-        try:
-            with f:
-                f.write(png)
-        except OSError:
-            # Disco lleno a mitad de camino: no dejar un PNG roto
-            ruta.unlink(missing_ok=True)
-            raise
-        return ruta
+    si falta. Escribe a un temporal oculto y lo pasa al nombre final recién completo, así `listar`
+    nunca ve un PNG a medias. Nunca pisa: si otra captura ocupa el nombre entre medio, prueba el
+    siguiente. Lanza OSError."""
+    carpeta = Path(carpeta_pelicula) / "capturas"
+    carpeta.mkdir(exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=".captura-", suffix=".tmp", dir=carpeta)
+    try:
+        with open(fd, "wb") as f:
+            f.write(png)
+        while True:
+            ruta = ruta_libre(carpeta_pelicula, posicion_ms)
+            try:
+                _mover_sin_pisar(tmp, ruta)
+            except FileExistsError:
+                continue
+            return ruta
+    finally:
+        # Disco lleno a mitad de camino, o ya movido: no dejar el temporal
+        Path(tmp).unlink(missing_ok=True)
+
+
+def _mover_sin_pisar(origen, destino):
+    """Lleva `origen` a `destino` de una vez. FileExistsError si `destino` ya existe."""
+    if os.name == "nt":
+        os.rename(origen, destino)  # en Windows rename nunca pisa
+        return
+    try:
+        os.link(origen, destino)  # falla si existe; el temporal lo borra quien llama
+    except FileExistsError:
+        raise
+    except OSError:
+        # Sistemas de archivos sin hard links (FAT, exFAT): rename sí pisa, así que se mira
+        # antes. Solo queda la ventana entre mirar y renombrar.
+        if destino.exists() or destino.is_symlink():
+            raise FileExistsError(destino) from None
+        os.rename(origen, destino)
 
 
 def listar(carpeta_pelicula):

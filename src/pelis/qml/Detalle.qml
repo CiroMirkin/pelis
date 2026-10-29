@@ -13,6 +13,8 @@ Page {
     Connections {
         target: puente
         function onDuracionMedida(id, ms) { if (id === pagina.peliculaId) pagina.recargar() }
+        // Una captura que termina de escribirse después de volver del reproductor
+        function onCapturaGuardada(ok) { if (ok && pagina.StackView.status === StackView.Active) pagina.recargar() }
     }
     readonly property var directores: p.directores || []
     readonly property var actores: p.actores || []

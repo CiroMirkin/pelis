@@ -83,3 +83,11 @@ def test_listar_entiende_cien_horas_o_mas(tmp_path):
     assert nombre == "100-00-00.png"
     _capturas(tmp_path, nombre, "99-00-00.png", "0.png")
     assert [r.name for r in capturas.listar(tmp_path)] == ["99-00-00.png", "100-00-00.png", "0.png"]
+
+
+def test_guardar_no_deja_temporales_y_listar_los_ignora(tmp_path):
+    capturas.guardar(tmp_path, 1_000, b"uno")
+    carpeta = tmp_path / "capturas"
+    assert [r.name for r in carpeta.iterdir()] == ["00-00-01.png"]
+    (carpeta / ".captura-a1b2.tmp").touch()  # una escritura en curso
+    assert [r.name for r in capturas.listar(tmp_path)] == ["00-00-01.png"]
