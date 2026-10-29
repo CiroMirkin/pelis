@@ -157,6 +157,9 @@ def main():
 
     chequear_repo()
     actual = leer_version()
+    if git("tag", "-l", f"v{actual}").stdout.strip() and not git("ls-remote", "--tags", "origin", f"v{actual}").stdout.strip():
+        raise Negativa(f"v{actual} quedó sin publicar (¿falló el push?). Publicala con: "
+                       f"git push --atomic origin main v{actual}")
     nueva = siguiente(actual, args.nivel, args.rc)
     tag = f"v{nueva}"
     if git("tag", "-l", tag).stdout.strip():
@@ -191,7 +194,14 @@ def main():
         print("origin/main cambió mientras confirmabas: no se pusheó nada y las notas quedarían incompletas.")
         print(deshacer + " y volvé a correr el comando.")
         sys.exit(1)
-    git("push", "-q", "--atomic", "origin", "main", tag)
+    try:
+        git("push", "-q", "--atomic", "origin", "main", tag)
+    except Negativa as e:
+        # No volver a correr el comando: subiría otra vez la versión
+        print(f"{e}\nEl commit y el tag {tag} quedaron locales.")
+        print(f"Para publicarlos: git push --atomic origin main {tag}")
+        print(deshacer)
+        sys.exit(1)
     print(f"Publicado {tag}: el workflow arma la Release.")
 
 
