@@ -33,3 +33,33 @@ def test_guardar_crea_la_carpeta_y_no_pisa(tmp_path):
     segunda = capturas.guardar(tmp_path, 61_200, b"dos")
     assert (primera.name, primera.read_bytes()) == ("00-01-01.png", b"uno")
     assert (segunda.name, segunda.read_bytes()) == ("00-01-01(2).png", b"dos")
+
+
+def _capturas(tmp_path, *nombres):
+    carpeta = tmp_path / "capturas"
+    carpeta.mkdir()
+    for nombre in nombres:
+        (carpeta / nombre).touch()
+    return carpeta
+
+
+def test_listar_ordena_por_posicion_y_sufijo(tmp_path):
+    _capturas(tmp_path, "01-23-45(2).png", "00-00-10(10).png", "01-23-45.png", "00-00-10(3).png")
+    assert [r.name for r in capturas.listar(tmp_path)] == [
+        "00-00-10(3).png", "00-00-10(10).png", "01-23-45.png", "01-23-45(2).png"]
+
+
+def test_listar_deja_las_demas_al_final_alfabeticas(tmp_path):
+    _capturas(tmp_path, "foto.jpg", "Bosque.webp", "23-59-59.png", "afiche.JPEG", "1-2-3.png")
+    assert [r.name for r in capturas.listar(tmp_path)] == [
+        "23-59-59.png", "1-2-3.png", "afiche.JPEG", "Bosque.webp", "foto.jpg"]
+
+
+def test_listar_solo_imagenes(tmp_path):
+    carpeta = _capturas(tmp_path, "00-00-01.PNG", "notas.txt", "00-00-02.gif")
+    (carpeta / "sub.png").mkdir()
+    assert [r.name for r in capturas.listar(tmp_path)] == ["00-00-01.PNG"]
+
+
+def test_listar_sin_carpeta_es_vacio(tmp_path):
+    assert capturas.listar(tmp_path) == []

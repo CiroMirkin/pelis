@@ -16,6 +16,7 @@ Page {
     }
     readonly property var directores: p.directores || []
     readonly property var actores: p.actores || []
+    readonly property var capturas: p.capturas || []
 
     component Meta: Text {
         font.family: Tema.rotulo
@@ -138,7 +139,8 @@ Page {
 
     Flickable {
         anchors.fill: parent
-        contentHeight: fila.implicitHeight + Tema.px(80)
+        contentHeight: (seccionCapturas.visible ? seccionCapturas.y + seccionCapturas.height : fila.y + fila.height)
+                       + Tema.px(40)
         clip: true
         ScrollBar.vertical: ScrollBar {}
 
@@ -346,6 +348,35 @@ Page {
                     Personas { visible: pagina.directores.length > 0; personas: pagina.directores }
                     Rotulo { visible: pagina.actores.length > 0; text: "Elenco" }
                     Personas { visible: pagina.actores.length > 0; personas: pagina.actores }
+                }
+            }
+        }
+
+        // Cuadros guardados con «.» en el reproductor; solo para mirar
+        Column {
+            id: seccionCapturas
+            visible: pagina.capturas.length > 0
+            x: fila.x
+            y: fila.y + fila.height + Tema.px(48)
+            width: fila.width
+            spacing: Tema.px(14)
+
+            Rotulo { text: "Capturas" }
+            Flow {
+                width: parent.width
+                spacing: Tema.px(12)
+                Repeater {
+                    model: pagina.capturas
+                    // Ancho fijo y alto según la proporción del cuadro; 16:9 mientras carga
+                    delegate: Image {
+                        required property string modelData
+                        width: Tema.px(160)
+                        height: status === Image.Ready ? width * implicitHeight / implicitWidth : width * 9 / 16
+                        source: modelData
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                        sourceSize.width: 320
+                    }
                 }
             }
         }
