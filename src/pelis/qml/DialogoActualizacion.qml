@@ -69,21 +69,21 @@ Popup {
             width: dialogo.availableWidth
             spacing: Tema.px(16)
 
+            // En mayúsculas a mano: con Font.AllUppercase la «v» de la versión saldría «V»
             Text {
                 text: {
                     const r = dialogo.respuesta
-                    if (!r) return "Buscando actualización…"
-                    if (r.error) return "Sin conexión"
-                    if (r.alDia) return "Estás al día"
-                    if (dialogo.fase === "descargando") return "Descargando v" + r.nueva.version + "…"
-                    if (dialogo.fase === "listo") return "Listo para actualizar"
-                    if (dialogo.fase === "fallo") return "No se pudo actualizar"
-                    return "Hay una versión nueva"
+                    if (!r) return "BUSCANDO ACTUALIZACIÓN…"
+                    if (r.error) return "SIN CONEXIÓN"
+                    if (r.alDia) return "ESTÁS AL DÍA"
+                    if (dialogo.fase === "descargando") return "DESCARGANDO v" + r.nueva.version + "…"
+                    if (dialogo.fase === "listo") return "LISTO PARA ACTUALIZAR"
+                    if (dialogo.fase === "fallo") return "NO SE PUDO ACTUALIZAR"
+                    return "HAY UNA VERSIÓN NUEVA"
                 }
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(22)
                 font.weight: Font.Bold
-                font.capitalization: Font.AllUppercase
                 color: Tema.crema
             }
 

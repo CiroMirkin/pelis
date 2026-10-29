@@ -320,3 +320,27 @@ def test_script_windows_lleva_rutas_y_argumentos(tmp_path):
     assert 'set "PID=4321"' in texto
     assert f'set "APP={inst.app}"' in texto
     assert f'start "" "%APP%\\win\\pelis.exe" "--prerelease"' in texto
+
+
+TODAS = [
+    {"tag_name": "v0.2.0", "draft": False, "body": "final", "assets": []},
+    {"tag_name": "v0.3.0-rc2", "draft": False, "body": "rc2", "assets": []},
+    {"tag_name": "v0.3.0-rc1", "draft": False, "body": "rc1", "assets": []},
+    {"tag_name": "v0.4.0", "draft": True, "body": "borrador", "assets": []},
+]
+
+
+def test_con_prerelease_toma_la_mas_nueva_rc_incluidas():
+    sesion = Sesion(Respuesta(datos=TODAS))
+    assert actualizacion.buscar(sesion, actual="0.2.0", prerelease=True)["version"] == "0.3.0-rc2"
+    assert sesion.urls == [actualizacion.API_TODAS]
+
+
+def test_con_prerelease_al_dia_y_sin_releases():
+    assert actualizacion.buscar(Sesion(Respuesta(datos=TODAS)), actual="0.3.0-rc2", prerelease=True) is None
+    assert actualizacion.buscar(Sesion(Respuesta(datos=[])), actual="0.1.0", prerelease=True) is None
+
+
+def test_desde_una_rc_se_actualiza_a_su_final():
+    final = {"tag_name": "v0.3.0", "body": "", "assets": []}
+    assert actualizacion.buscar(Sesion(Respuesta(datos=final)), actual="0.3.0-rc2")["version"] == "0.3.0"

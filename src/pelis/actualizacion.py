@@ -16,7 +16,8 @@ import requests
 
 from . import __version__
 
-API = "https://api.github.com/repos/CiroMirkin/pelis/releases/latest"
+API = "https://api.github.com/repos/CiroMirkin/pelis/releases/latest"  # ignora las pre-releases
+API_TODAS = "https://api.github.com/repos/CiroMirkin/pelis/releases"
 TIMEOUT = 15
 RE_VERSION = re.compile(r"v?(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?")
 
@@ -44,14 +45,24 @@ def en_build():
     return getattr(sys, "frozen", False)
 
 
-def buscar(sesion=requests, actual=__version__):
-    """Consulta la última Release. Devuelve {'version', 'notas', 'paquetes'} si es más nueva, o None."""
+def buscar(sesion=requests, actual=__version__, prerelease=False):
+    """Consulta la última Release. Devuelve {'version', 'notas', 'paquetes'} si es más nueva, o None.
+
+    Con `prerelease` (la app abierta con --prerelease) mira todas y toma la más nueva, RC incluidas.
+    """
     try:
-        r = sesion.get(API, headers={"Accept": "application/vnd.github+json"}, timeout=TIMEOUT)
+        r = sesion.get(API_TODAS if prerelease else API, headers={"Accept": "application/vnd.github+json"},
+                       timeout=TIMEOUT)
         if r.status_code == 404:  # todavía no hay ninguna Release
             return None
         r.raise_for_status()
-        release = r.json()
+        if prerelease:
+            candidatas = [x for x in r.json() if not x.get("draft") and clave(x["tag_name"])]
+            if not candidatas:
+                return None
+            release = max(candidatas, key=lambda x: clave(x["tag_name"]))
+        else:
+            release = r.json()
         tag = release["tag_name"]
     except (requests.RequestException, ValueError, KeyError, TypeError) as e:
         raise ErrorRed(str(e)) from e

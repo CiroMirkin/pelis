@@ -30,6 +30,7 @@ def fallar(mensaje):
 def main():
     parser = argparse.ArgumentParser(prog="pelis")
     parser.add_argument("--app-dir", help="carpeta con pelis.toml y pelis.db")
+    parser.add_argument("--prerelease", action="store_true", help="ofrecer también versiones de prueba (RC)")
     args = parser.parse_args()
 
     try:
@@ -49,7 +50,7 @@ def main():
     app = QGuiApplication(sys.argv)
     app.setApplicationName("Pelis")
 
-    puente = Puente(config)
+    puente = Puente(config, prerelease=args.prerelease)
     engine = QQmlApplicationEngine()
     avisos = []
     engine.warnings.connect(lambda ws: avisos.extend(w.toString() for w in ws))

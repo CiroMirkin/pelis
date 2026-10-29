@@ -207,9 +207,10 @@ class Puente(QObject):
     descargaTerminada = Signal(str)  # "" = lista para reiniciar; si no, el motivo para el usuario
     _descargaLista = Signal(object)  # desde el hilo de la descarga
 
-    def __init__(self, config):
+    def __init__(self, config, prerelease=False):
         super().__init__()
         self.config = config
+        self._prerelease = prerelease  # --prerelease: también ofrece las RC
         self.conn = db.conectar(config.db_path)
         self._catalogo = ModeloCatalogo(self)
         # Preferencias de la app (no de la biblioteca): quedan junto a pelis.toml
@@ -483,7 +484,7 @@ class Puente(QObject):
 
         def correr():
             try:
-                nueva = actualizacion.buscar()
+                nueva = actualizacion.buscar(prerelease=self._prerelease)
                 resultado = {"nueva": nueva} if nueva else {"alDia": True}
             except actualizacion.ErrorRed as e:
                 log.warning("No se pudo buscar actualización: %s", e)

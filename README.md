@@ -29,6 +29,7 @@ Está pensada para un disco compartido (NTFS) que se monta tanto en Windows como
 - **Editar datos**: traer los de IMDb buscando por título o pegando el ID o el link (corrige un match equivocado o completa una "no encontrada"), volver a traerlos, o cargarlos a mano.
 - **Pósters propios con rotación**: la app usa las imágenes de la carpeta y, cada 7 días, cambia al azar entre ellas. También se renuevan a mano desde el catálogo.
 - **Faltantes**: una carpeta renombrada se reconoce sola por su IMDb ID y conserva progreso y vista; si no tiene ID, se le asigna su carpeta nueva a mano.
+- **Actualizaciones**: «…» › «Buscar actualización» baja la versión nueva desde GitHub, la verifica y reinicia la app; si la nueva no arranca, el lanzador vuelve a la anterior. Abriendo con `--prerelease` también ofrece las versiones de prueba.
 - **Metadatos portables**: cada película guarda un `pelis.json` en su carpeta, así una base nueva se reconstruye sin volver a consultar OMDb.
 
 ## Instalación
