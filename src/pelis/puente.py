@@ -687,6 +687,12 @@ class Puente(QObject):
             self._avisar_recomendada(self._recomendacion.empezo(pelicula_id))
         self._recargar_catalogo()
 
+    @Slot(int)
+    def terminar(self, pelicula_id):
+        """Llegó al final: queda vista y la próxima vez arranca del principio."""
+        db.guardar_progreso(self.conn, pelicula_id, 0)
+        self.marcarVista(pelicula_id, True)
+
     def _volumen(self):
         return float(self._preferencias.value("reproductor/volumen", 1.0))
 

@@ -14,6 +14,8 @@ Page {
     property bool controlesVisibles: true
     // QtMultimedia vuelve a emitir LoadedMedia al cambiar de pista; la carga inicial va una sola vez
     property bool inicializado: false
+    // Al terminar ya se guardó progreso 0; salir no debe guardar la posición del final
+    property bool terminada: false
     readonly property bool reproduciendo: player.playbackState === MediaPlayer.PlayingState
     readonly property bool pantallaCompleta: Window.window && Window.window.visibility === Window.FullScreen
 
@@ -57,7 +59,7 @@ Page {
         ? Qt.formatTime(new Date(ahora.getTime() + Math.max(0, player.duration - player.position)), "HH:mm") : ""
 
     function guardarProgreso() {
-        if (inicializado)
+        if (inicializado && !terminada)
             puente.guardarProgreso(peliculaId, player.position)
     }
 
@@ -150,8 +152,14 @@ Page {
         onMediaStatusChanged: {
             if (mediaStatus === MediaPlayer.LoadedMedia && !pagina.inicializado)
                 pagina.cargaInicial()
+            else if (mediaStatus === MediaPlayer.EndOfMedia && pagina.inicializado && !pagina.terminada) {
+                pagina.terminada = true
+                puente.terminar(pagina.peliculaId)
+            }
         }
         onPlaybackStateChanged: {
+            if (playbackState === MediaPlayer.PlayingState)
+                pagina.terminada = false
             if (playbackState === MediaPlayer.PausedState) {
                 pagina.guardarProgreso()
                 pagina.mostrarControles()

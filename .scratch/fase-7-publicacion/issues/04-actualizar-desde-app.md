@@ -24,3 +24,4 @@ Ver "Actualizar" en la spec.
 - Linux probado de punta a punta con el build real, contra una Release falsa servida en local: bajó y verificó el `.tar.gz`, cerró, el script cambió `linux/`, abrió el binario nuevo y este borró `linux.anterior` y el testigo; `pelis.toml` y `pelis.db` intactos. Los tests corren el script y el lanzador de Linux de verdad (cambio, argumentos, vuelta atrás).
 - Windows: el `.bat` solo está probado como texto. Falta correrlo de verdad: se prueba con la primera RC (issue 06). Queda abierto el primer criterio para Windows.
 - 29/10/2026: Linux probado por el usuario en `~/Vídeos` con la Release real `v0.3.0-rc1`: actualizó, reabrió y quedó al día; la app nueva borró `linux.anterior` y el testigo. Sigue pendiente Windows.
+- 29/10/2026: Windows probado por el usuario hasta la mitad: instaló a mano el zip de `v0.3.0-rc1` y la app muestra el botón «Actualizar». Falta apretarlo para que corra el `.bat` y probar la vuelta atrás de `Pelis.bat`.
