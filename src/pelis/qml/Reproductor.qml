@@ -140,8 +140,9 @@ Page {
         player.source = info.url
     }
 
-    // Sin esto el sistema bloquea la pantalla por inactividad en medio de la película
+    // QtMultimedia no pide que la pantalla siga encendida mientras reproduce
     onReproduciendoChanged: puente.mantenerPantalla(reproduciendo)
+    // Por si la página se cierra sin pasar por salir(): ahí no llega el cambio de reproduciendo
     Component.onDestruction: puente.mantenerPantalla(false)
 
     MediaPlayer {

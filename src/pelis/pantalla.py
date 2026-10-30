@@ -1,5 +1,5 @@
-"""Mantener la pantalla encendida mientras se reproduce: sin esto el sistema la bloquea por
-inactividad en medio de la película."""
+"""QtMultimedia no le avisa al sistema que hay un video andando, así que sin esto la pantalla
+se bloquea por inactividad en medio de la película."""
 
 import logging
 import sys
@@ -22,6 +22,8 @@ class Pantalla:
             elif sys.platform.startswith("linux"):
                 _linux(activa)
         except Exception:
+            # Que no se pueda evitar el bloqueo no es motivo para cortar la película.
+            # Sin cambiar _activa, el próximo play lo vuelve a intentar.
             log.exception("No se pudo %s el bloqueo de pantalla", "evitar" if activa else "devolver")
             return
         self._activa = activa
