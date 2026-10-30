@@ -17,7 +17,8 @@ from PySide6.QtMultimedia import QMediaPlayer
 
 from . import __version__, actualizacion, capturas, db, edicion, metadatos, poster, subtitulos
 from .catalogo import (
-    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta, url_poster,
+    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, progreso_a_guardar, tarjeta,
+    url_poster,
 )
 from .nombres import idioma_de, normalizar
 from .escaneo import escanear, importar_sin_red
@@ -682,6 +683,7 @@ class Puente(QObject):
 
     @Slot(int, int)
     def guardarProgreso(self, pelicula_id, ms):
+        ms = progreso_a_guardar(ms)
         db.guardar_progreso(self.conn, pelicula_id, ms)
         if ms > 0:
             self._avisar_recomendada(self._recomendacion.empezo(pelicula_id))

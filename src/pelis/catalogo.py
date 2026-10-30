@@ -2,6 +2,13 @@
 
 ANIOS_SUELTOS = 4  # los últimos años, incluido el actual, se filtran de a uno
 
+PROGRESO_MINIMO_MS = 3 * 60 * 1000  # antes de esto, salir no la deja empezada
+
+
+def progreso_a_guardar(ms):
+    return ms if ms >= PROGRESO_MINIMO_MS else 0
+
+
 CLAVES_TARJETA = ("peliculaId", "titulo", "anio", "poster", "progreso", "vista")
 
 
