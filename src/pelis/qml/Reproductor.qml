@@ -140,6 +140,10 @@ Page {
         player.source = info.url
     }
 
+    // Sin esto el sistema bloquea la pantalla por inactividad en medio de la película
+    onReproduciendoChanged: puente.mantenerPantalla(reproduciendo)
+    Component.onDestruction: puente.mantenerPantalla(false)
+
     MediaPlayer {
         id: player
         videoOutput: video

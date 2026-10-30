@@ -15,7 +15,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtMultimedia import QMediaPlayer
 
-from . import __version__, actualizacion, capturas, db, edicion, metadatos, poster, subtitulos
+from . import __version__, actualizacion, capturas, db, edicion, metadatos, pantalla, poster, subtitulos
 from .catalogo import (
     CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, progreso_a_guardar, tarjeta,
     url_poster,
@@ -232,6 +232,7 @@ class Puente(QObject):
         self._cancelar_descarga = threading.Event()
         self._descargado = None  # carpeta con la versión nueva, lista para el cambio
         self._descargaLista.connect(self._descarga_lista)
+        self._pantalla = pantalla.Pantalla()
         self._recargar_catalogo()
         self._elegir_recomendada()
         self._iniciar_escaneo(sin_red=True)
@@ -328,6 +329,10 @@ class Puente(QObject):
             "progreso": p["progreso_ms"] or 0,
             "duracion": p["duracion_ms"] or 0,
         }
+
+    @Slot(bool)
+    def mantenerPantalla(self, activa):
+        self._pantalla.mantener(activa)
 
     @Slot(int, bool)
     def marcarVista(self, pelicula_id, vista):
