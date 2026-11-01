@@ -101,3 +101,20 @@ def test_guardar_no_deja_temporales_y_listar_los_ignora(tmp_path):
     assert [r.name for r in carpeta.iterdir()] == ["00-00-01.png"]
     (carpeta / ".captura-a1b2.tmp").touch()  # una escritura en curso
     assert [r.name for r in capturas.listar(tmp_path)] == ["00-00-01.png"]
+
+
+def test_momento_sale_del_nombre(tmp_path):
+    assert capturas.momento_ms(tmp_path / "01-23-45.png") == 5_025_000
+
+
+def test_momento_ignora_el_sufijo(tmp_path):
+    assert capturas.momento_ms(tmp_path / "00-00-10(3).jpg") == 10_000
+
+
+def test_momento_de_cien_horas_o_mas(tmp_path):
+    assert capturas.momento_ms(tmp_path / "100-00-01.png") == 360_001_000
+
+
+def test_momento_es_none_si_no_es_cronologica(tmp_path):
+    for nombre in ("foto.png", "1-2-3.png", "01-23-45 copia.png", "01-23-45().png"):
+        assert capturas.momento_ms(tmp_path / nombre) is None

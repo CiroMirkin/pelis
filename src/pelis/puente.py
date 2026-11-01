@@ -323,8 +323,10 @@ class Puente(QObject):
             "actores": [{"nombre": n, "otras": o} for n, o in db.personas_de(self.conn, pelicula_id, "actor")],
             "omdbEstado": p["omdb_estado"],
             "poster": url_poster(self.config.biblioteca, p["poster"]),
-            # Se mira la carpeta en cada apertura: las tomadas en el reproductor aparecen al volver
-            "capturas": [url_poster(self.config.biblioteca, r) for r in capturas.listar(self._ruta(p["folder_path"]))],
+            # Se mira la carpeta en cada apertura: las tomadas en el reproductor aparecen al volver.
+            # `momento`: ms que dice el nombre, o None si no es cronológica (el visor no ofrece «Ir a»)
+            "capturas": [{"url": url_poster(self.config.biblioteca, r), "momento": capturas.momento_ms(r)}
+                         for r in capturas.listar(self._ruta(p["folder_path"]))],
             "vista": bool(p["watched"]),
             "progreso": p["progreso_ms"] or 0,
             "duracion": p["duracion_ms"] or 0,

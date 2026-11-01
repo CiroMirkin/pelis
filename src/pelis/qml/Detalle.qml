@@ -371,10 +371,10 @@ Page {
                     model: pagina.capturas
                     // Ancho fijo y alto según la proporción del cuadro; 16:9 mientras carga
                     delegate: Image {
-                        required property string modelData
+                        required property var modelData
                         width: Tema.px(160)
                         height: status === Image.Ready ? width * implicitHeight / implicitWidth : width * 9 / 16
-                        source: modelData
+                        source: modelData.url
                         fillMode: Image.PreserveAspectFit
                         asynchronous: true
                         sourceSize.width: Tema.px(160) * Screen.devicePixelRatio
