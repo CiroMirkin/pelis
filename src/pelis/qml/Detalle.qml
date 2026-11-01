@@ -95,8 +95,41 @@ Page {
     readonly property string horaFin: p.duracion > 0
         ? Qt.formatTime(new Date(ahora.getTime() + Math.max(0, p.duracion - p.progreso)), "HH:mm") : ""
 
+    // Índice de la última captura vista en el visor; al volver, el foco va ahí y no a Reproducir
+    property int volverACaptura: -1
+
     Component.onCompleted: { recargar(); reproducir.forceActiveFocus() }
-    StackView.onActivated: { ahora = new Date(); recargar(); reproducir.forceActiveFocus() }
+    StackView.onActivated: {
+        ahora = new Date()
+        recargar()
+        if (volverACaptura >= 0 && capturas.length > 0)
+            enfocarCaptura(Math.min(volverACaptura, capturas.length - 1))
+        else
+            reproducir.forceActiveFocus()
+        volverACaptura = -1
+    }
+
+    function abrirVisor(i) {
+        const visor = pagina.StackView.view.push("Visor.qml",
+            { capturas: pagina.capturas, indice: i, peliculaId: pagina.peliculaId })
+        visor.cerrado.connect(ultima => pagina.volverACaptura = ultima)
+    }
+
+    function enfocarCaptura(i) {
+        const item = miniaturas.itemAt(i)
+        if (item) item.forceActiveFocus()
+    }
+
+    // Lleva el desplazamiento lo justo para que `item` quede a la vista
+    function mostrarEnPantalla(item) {
+        const margen = Tema.px(24)
+        const y = item.mapToItem(desplazable.contentItem, 0, 0).y
+        if (y - margen < desplazable.contentY)
+            desplazable.contentY = Math.max(0, y - margen)
+        else if (y + item.height + margen > desplazable.contentY + desplazable.height)
+            desplazable.contentY = Math.min(desplazable.contentHeight - desplazable.height,
+                                            y + item.height + margen - desplazable.height)
+    }
 
     background: Rectangle { color: Tema.noche }
 
@@ -140,6 +173,7 @@ Page {
     }
 
     Flickable {
+        id: desplazable
         anchors.fill: parent
         contentHeight: (seccionCapturas.visible ? seccionCapturas.y + seccionCapturas.height : fila.y + fila.height)
                        + Tema.px(40)
@@ -285,6 +319,7 @@ Page {
                         icono: "play"
                         text: pagina.p.progreso > 0 ? "Continuar desde " + pagina.formatear(pagina.p.progreso) : "Reproducir"
                         KeyNavigation.right: marcar
+                        Keys.onDownPressed: pagina.enfocarCaptura(0)
                         onClicked: pagina.reproducirPelicula()
                     }
                     Boton {
@@ -293,6 +328,7 @@ Page {
                         text: pagina.p.vista ? "Vista" : "Marcar como vista"
                         KeyNavigation.left: reproducir
                         KeyNavigation.right: mas
+                        Keys.onDownPressed: pagina.enfocarCaptura(0)
                         onClicked: { puente.marcarVista(pagina.peliculaId, !pagina.p.vista); pagina.recargar() }
                     }
                     BotonMas {
@@ -354,7 +390,7 @@ Page {
             }
         }
 
-        // Cuadros guardados con «.» en el reproductor; solo para mirar
+        // Cuadros guardados con «.» en el reproductor; abren el visor con click, Enter o Espacio
         Column {
             id: seccionCapturas
             visible: pagina.capturas.length > 0
@@ -365,19 +401,71 @@ Page {
 
             Rotulo { text: "Capturas" }
             Flow {
+                id: grillaCapturas
+                readonly property int celda: Tema.px(160)
+                // Miniaturas por fila, como las acomoda el Flow: para ↑/↓
+                readonly property int columnas: Math.max(1, Math.floor((width + spacing) / (celda + spacing)))
                 width: parent.width
                 spacing: Tema.px(12)
                 Repeater {
+                    id: miniaturas
                     model: pagina.capturas
                     // Ancho fijo y alto según la proporción del cuadro; 16:9 mientras carga
-                    delegate: Image {
+                    delegate: Item {
+                        id: miniatura
                         required property var modelData
-                        width: Tema.px(160)
-                        height: status === Image.Ready ? width * implicitHeight / implicitWidth : width * 9 / 16
-                        source: modelData.url
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
-                        sourceSize.width: Tema.px(160) * Screen.devicePixelRatio
+                        required property int index
+                        width: grillaCapturas.celda
+                        height: imagen.status === Image.Ready ? width * imagen.implicitHeight / imagen.implicitWidth : width * 9 / 16
+                        Accessible.role: Accessible.Button
+                        Accessible.name: "Captura " + (index + 1)
+
+                        function moverA(i) { if (i !== index) pagina.enfocarCaptura(i) }
+                        onActiveFocusChanged: if (activeFocus) pagina.mostrarEnPantalla(miniatura)
+                        Keys.onLeftPressed: moverA(Math.max(0, index - 1))
+                        Keys.onRightPressed: moverA(Math.min(miniaturas.count - 1, index + 1))
+                        Keys.onUpPressed: {
+                            if (index >= grillaCapturas.columnas)
+                                moverA(index - grillaCapturas.columnas)
+                            else {
+                                reproducir.forceActiveFocus()
+                                desplazable.contentY = 0
+                            }
+                        }
+                        Keys.onDownPressed: {
+                            const cols = grillaCapturas.columnas, ultima = miniaturas.count - 1
+                            // Desde la anteúltima fila, si abajo no hay, va a la última captura
+                            if (Math.floor(index / cols) < Math.floor(ultima / cols))
+                                moverA(Math.min(ultima, index + cols))
+                        }
+                        Keys.onReturnPressed: pagina.abrirVisor(index)
+                        Keys.onEnterPressed: pagina.abrirVisor(index)
+                        Keys.onSpacePressed: pagina.abrirVisor(index)
+
+                        // Halo del tubo fluorescente, como en las tarjetas del catálogo
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: -Tema.px(6)
+                            radius: Tema.px(6)
+                            color: "transparent"
+                            border.width: Tema.px(3)
+                            border.color: Tema.tubo
+                            opacity: miniatura.activeFocus ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                        }
+                        Image {
+                            id: imagen
+                            anchors.fill: parent
+                            source: miniatura.modelData.url
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                            sourceSize.width: grillaCapturas.celda * Screen.devicePixelRatio
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: pagina.abrirVisor(miniatura.index)
+                        }
                     }
                 }
             }
