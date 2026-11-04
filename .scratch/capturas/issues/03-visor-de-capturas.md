@@ -1,6 +1,6 @@
 # Visor de capturas
 
-Status: ready-for-agent
+Status: done
 Blocked by: 02
 
 Pedido el 2026-10-29, acotado en un grilling (2026-11-01). Decisiones en la spec: secciones «Sección Capturas» (interacción y foco), «Visor», «Ir al momento» y «Grilla de tercios».
@@ -42,3 +42,5 @@ Queda para probar a mano abriendo la app:
 - La sensación del arrastre con un mouse o touchpad real (umbral de 1/4 y velocidad de 800 px/s) y que no parpadee al asentar con PNG 4K.
 - Que el cursor se oculte junto con los controles y que el reproductor con «Ir a» desde pantalla completa se vea bien.
 - `↓` desde «…» abre su menú (como antes), así que a la grilla se entra desde Reproducir o «Marcar como vista».
+
+2026-11-03: publicado en `v0.3.0-rc3`; las pruebas manuales dieron OK. El code review del merge dejó arreglos en `fix/visor-review`: «Ir a» arranca como máximo 5 s antes del final, `inicio` pasa a `real`, al volver de «Ir a» el foco queda en la última captura vista, `salir` e `irAlMomento` terminan la animación antes de actuar, el foco de las miniaturas sobrevive a un cambio de la lista, una velocidad vieja ya no cuenta como gesto rápido, `Esc` en pantalla completa muestra los controles y las imágenes del visor se limitan a la resolución de la pantalla. `↓` desde «…» sigue abriendo su menú, y la spec ya lo dice.

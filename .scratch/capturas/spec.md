@@ -1,6 +1,6 @@
 # Capturas de pantalla
 
-Status: ready-for-agent
+Status: done
 
 Anotada el 2026-10-26, acotada en un grilling (2026-10-29). El visor se sumó en otro grilling (2026-11-01).
 
@@ -27,7 +27,7 @@ En el reproductor, la tecla `.` guarda una **Captura** del cuadro actual. El det
 - **Orden**: primero las cronológicas (nombre exactamente `HH-MM-SS.ext` o `HH-MM-SS(n).ext`), por posición y después por número de sufijo (sin sufijo = 1). Ojo: por nombre, `01-23-45(2).png` queda antes que `01-23-45.png`. Al final, las demás, alfabéticas sin distinguir mayúsculas.
 - **Grilla**: miniaturas de ~160 px de ancho con la proporción original del cuadro, celdas de ancho fijo que se acomodan en filas. Se decodifican achicadas (`sourceSize`) y asíncronas.
 - **Interacción**: click en una miniatura abre el visor en esa captura. Sin tooltip.
-- **Foco de teclado**: `↓` desde la fila de botones del detalle (Reproducir / …) entra a la primera miniatura. Dentro de la grilla, `←`/`→` pasan a la anterior/siguiente y `↑`/`↓` cambian de fila; `↑` desde la primera fila vuelve a los botones. `Enter` y `Espacio` abren el visor. El foco se marca como en los otros botones de la app y la página se desplaza para que la miniatura enfocada quede a la vista.
+- **Foco de teclado**: `↓` desde Reproducir o «Marcar como vista» entra a la primera miniatura; desde «…» abre su menú. Dentro de la grilla, `←`/`→` pasan a la anterior/siguiente y `↑`/`↓` cambian de fila; `↑` desde la primera fila vuelve a los botones. `Enter` y `Espacio` abren el visor. El foco se marca como en los otros botones de la app y la página se desplaza para que la miniatura enfocada quede a la vista.
 - **Refresco**: la carpeta se vuelve a mirar al mostrar el detalle, así que al volver del reproductor aparecen las nuevas sin re-escanear.
 
 ### Visor
