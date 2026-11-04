@@ -7,7 +7,8 @@ import QtMultimedia
 Page {
     id: pagina
     required property int peliculaId
-    // Posición de arranque en ms (ej. «Ir a» del visor); si es -1, sigue desde el progreso guardado
+    // Posición de arranque en ms (ej. «Ir a» del visor); si es -1, sigue desde el progreso guardado.
+    // Con posición es una visita: no toca el progreso ni marca vista.
     property real inicio: -1
     property var info: ({})
     // 0 = ninguno, 1 = externo, 2 = embebido
@@ -61,7 +62,7 @@ Page {
         ? Qt.formatTime(new Date(ahora.getTime() + Math.max(0, player.duration - player.position)), "HH:mm") : ""
 
     function guardarProgreso() {
-        if (inicializado && !terminada)
+        if (inicializado && !terminada && inicio < 0)
             puente.guardarProgreso(peliculaId, player.position)
     }
 
@@ -132,7 +133,7 @@ Page {
             elegirSubs(1 + info.externos.length + e.subIndice)
         else
             elegirSubs(0)
-        // Acotado antes del final: saltar justo al final marcaría la película como vista
+        // Acotado antes del final, para que se llegue a ver algo
         const desde = inicio < 0 ? info.progreso : player.duration > 0 ? Math.min(inicio, Math.max(0, player.duration - 5000)) : inicio
         if (desde > 0)
             player.position = desde
@@ -163,7 +164,8 @@ Page {
                 pagina.cargaInicial()
             else if (mediaStatus === MediaPlayer.EndOfMedia && pagina.inicializado && !pagina.terminada) {
                 pagina.terminada = true
-                puente.terminar(pagina.peliculaId)
+                if (pagina.inicio < 0)
+                    puente.terminar(pagina.peliculaId)
             }
         }
         onPlaybackStateChanged: {
