@@ -37,6 +37,11 @@ Page {
             focusPolicy: Qt.TabFocus
             onClicked: pagina.StackView.view.pop()
         }
+        BotonPantallaCompleta {
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            anchors.rightMargin: Tema.px(40)
+        }
     }
 
     Column {

@@ -161,12 +161,18 @@ Page {
             focusPolicy: Qt.TabFocus
             onClicked: pagina.StackView.view.pop()
         }
+        BotonPantallaCompleta {
+            id: botonPantalla
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            anchors.rightMargin: Tema.px(40)
+        }
         Text {
             id: aviso
             visible: false
             anchors.verticalCenter: parent.verticalCenter
-            anchors.right: parent.right
-            anchors.rightMargin: Tema.px(40)
+            anchors.right: botonPantalla.left
+            anchors.rightMargin: Tema.px(20)
             color: Tema.crema
             font.family: Tema.texto
             font.pixelSize: Tema.px(14)

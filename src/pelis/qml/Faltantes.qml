@@ -66,6 +66,7 @@ Page {
                 color: Tema.crema
             }
             Item { Layout.fillWidth: true }
+            BotonPantallaCompleta {}
         }
     }
 

@@ -19,7 +19,6 @@ Page {
     // Al terminar ya se guardó progreso 0; salir no debe guardar la posición del final
     property bool terminada: false
     readonly property bool reproduciendo: player.playbackState === MediaPlayer.PlayingState
-    readonly property bool pantallaCompleta: Window.window && Window.window.visibility === Window.FullScreen
 
     background: Rectangle { color: "black" }
 
@@ -69,14 +68,9 @@ Page {
         reproduciendo ? player.pause() : player.play()
     }
 
-    function alternarPantallaCompleta() {
-        Window.window.visibility = pantallaCompleta ? Window.Windowed : Window.FullScreen
-    }
-
     function salir() {
         guardarProgreso()
         player.stop()
-        if (pantallaCompleta) alternarPantallaCompleta()
         pagina.StackView.view.pop()
     }
 
@@ -255,7 +249,7 @@ Page {
         cursorShape: pagina.controlesVisibles ? Qt.ArrowCursor : Qt.BlankCursor
         onPositionChanged: pagina.mostrarControles()
         onClicked: pagina.alternarPausa()
-        onDoubleClicked: pagina.alternarPantallaCompleta()
+        onDoubleClicked: botonPantalla.alternar()
     }
 
     Timer {
@@ -300,13 +294,7 @@ Page {
                 font.capitalization: Font.AllUppercase
                 color: Tema.crema
             }
-            Boton {
-                soloIcono: true
-                icono: pagina.pantallaCompleta ? "ventana" : "pantalla"
-                text: pagina.pantallaCompleta ? "Salir de pantalla completa" : "Pantalla completa"
-                focusPolicy: Qt.NoFocus
-                onClicked: pagina.alternarPantallaCompleta()
-            }
+            BotonPantallaCompleta { id: botonPantalla }
         }
     }
 
@@ -607,11 +595,11 @@ Page {
     Shortcut { enabled: pagina.activa; sequence: "Up"; onActivated: pagina.cambiarVolumen(0.05) }
     Shortcut { enabled: pagina.activa; sequence: "Down"; onActivated: pagina.cambiarVolumen(-0.05) }
     Shortcut { enabled: pagina.activa; sequence: "M"; onActivated: { puente.silenciado = !puente.silenciado; pagina.mostrarControles() } }
-    Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: pagina.alternarPantallaCompleta() }
+    Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: botonPantalla.alternar() }
     Shortcut { enabled: pagina.activa && !panel.visible; sequence: "."; autoRepeat: false; onActivated: pagina.capturar() }
     Shortcut {
         enabled: pagina.activa
         sequence: "Esc"
-        onActivated: panel.visible ? panel.close() : pagina.pantallaCompleta ? pagina.alternarPantallaCompleta() : pagina.salir()
+        onActivated: panel.visible ? panel.close() : botonPantalla.completa ? botonPantalla.alternar() : pagina.salir()
     }
 }

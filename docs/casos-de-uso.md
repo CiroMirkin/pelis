@@ -131,7 +131,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 
 * Como espectador, miro la película en el reproductor de la app, en la misma ventana.
   * Puedo pausar, adelantar o atrasar (de a 10 segundos o de a 1 minuto) e ir a cualquier momento de la película.
-  * Puedo verla en pantalla completa.
+  * Puedo verla en pantalla completa. Al volver, la ventana sigue como estaba; el catálogo, el detalle, la persona y faltantes también tienen el botón.
   * Los controles se ocultan solos a los 3 segundos sin mover el mouse.
   * Muestra a qué hora termina si sigo mirando.
   * Si el video no se puede reproducir, se informa el motivo.
