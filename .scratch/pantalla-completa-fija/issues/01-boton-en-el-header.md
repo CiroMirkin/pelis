@@ -10,7 +10,7 @@ Decisiones (2026-11-03):
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] El botón se ve en el header del catálogo, el detalle, la persona y faltantes, en el extremo derecho. En el catálogo queda a la derecha del botón «…».
 - [x] «Editar datos» no muestra el botón.
@@ -28,3 +28,5 @@ Decisiones (2026-11-03):
 Smoke test offscreen con eventos de mouse y teclado simulados, sin avisos de QML: los criterios pasan, incluida la posición en catálogo y faltantes y que el aviso del detalle termine antes del botón. La plataforma offscreen no tiene gestor de ventanas, así que falta probar a mano:
 - Cómo se ve el botón en cada header y el cambio real a pantalla completa.
 - Salir de pantalla completa con la ventana maximizada: va a `Windowed`, como antes, y puede que no vuelva a quedar maximizada.
+
+2026-11-03: el usuario lo probó en la app y dio el OK.
