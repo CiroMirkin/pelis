@@ -229,6 +229,7 @@ Page {
                     onTriggered: actualizacion.iniciar()
                 }
             }
+            BotonPantallaCompleta {}
         }
     }
 
