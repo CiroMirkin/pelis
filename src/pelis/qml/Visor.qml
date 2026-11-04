@@ -22,7 +22,7 @@ Page {
     readonly property bool activa: pagina.StackView.status === StackView.Active
     readonly property bool pantallaCompleta: Window.window && Window.window.visibility === Window.FullScreen
 
-    // Al cerrar (no al ir al reproductor): el detalle deja el foco en la última captura vista
+    // Al cerrar o ir al reproductor: al volver, el detalle deja el foco en la última captura vista
     signal cerrado(int indice)
 
     background: Rectangle { color: "black" }
@@ -45,12 +45,17 @@ Page {
     }
 
     function salir() {
+        terminarAnimacion()
         cerrado(indice)
         if (pantallaCompleta) alternarPantallaCompleta()
         pagina.StackView.view.pop()
     }
 
     function irAlMomento() {
+        terminarAnimacion()
+        if (!conMomento)
+            return
+        cerrado(indice)
         // El visor se reemplaza: Esc en el reproductor vuelve al detalle. Arranca 5 s antes;
         // el reproductor lo acota a la duración.
         pagina.StackView.view.replace("Reproductor.qml",
@@ -65,6 +70,13 @@ Page {
         desplazamiento = 0
     }
 
+    function terminarAnimacion() {
+        if (deslizar.running) {
+            deslizar.stop()
+            asentar()
+        }
+    }
+
     // Anima el carril hacia la vecina (+1 siguiente, -1 anterior) o de vuelta a su lugar (0)
     function animarHacia(dir) {
         deslizar.stop()
@@ -77,10 +89,7 @@ Page {
         mostrarControles()
         if (total < 2)
             return
-        if (deslizar.running) {
-            deslizar.stop()
-            asentar()
-        }
+        terminarAnimacion()
         animarHacia(dir)
     }
 
@@ -121,6 +130,9 @@ Page {
                     source: lugar.visible && pagina.total > 0 ? pagina.capturas[lugar.captura].url : ""
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
+                    // Sin zoom, más resolución que la pantalla no se ve. Fijo para no recargar al redimensionar.
+                    sourceSize.width: Screen.width * Screen.devicePixelRatio
+                    sourceSize.height: Screen.height * Screen.devicePixelRatio
                 }
 
                 // Grilla de tercios: solo sobre lo visible de la imagen, no sobre las bandas negras
@@ -161,19 +173,24 @@ Page {
             enabled: pagina.total > 1
             yAxis.enabled: false
             property real velocidad: 0
+            property real ultimoMovimiento: 0
             onActiveChanged: {
                 if (active) {
-                    if (deslizar.running) {
-                        deslizar.stop()
-                        pagina.asentar()
-                    }
+                    pagina.terminarAnimacion()
                     return
                 }
                 const dx = pagina.desplazamiento
-                const rapido = Math.abs(velocidad) > 800 && Math.sign(velocidad) === Math.sign(dx)
+                // Si se quedó quieto antes de soltar, la última velocidad ya no cuenta
+                const rapido = Date.now() - ultimoMovimiento < 100
+                    && Math.abs(velocidad) > 800 && Math.sign(velocidad) === Math.sign(dx)
                 pagina.animarHacia(Math.abs(dx) > carril.width / 4 || rapido ? (dx < 0 ? 1 : -1) : 0)
             }
-            onTranslationChanged: if (active) pagina.desplazamiento = translation.x
+            onTranslationChanged: {
+                if (active) {
+                    pagina.desplazamiento = translation.x
+                    ultimoMovimiento = Date.now()
+                }
+            }
             onCentroidChanged: if (active) velocidad = centroid.velocity.x
         }
     }
@@ -321,6 +338,13 @@ Page {
     Shortcut {
         enabled: pagina.activa
         sequence: "Esc"
-        onActivated: pagina.pantallaCompleta ? pagina.alternarPantallaCompleta() : pagina.salir()
+        onActivated: {
+            if (pagina.pantallaCompleta) {
+                pagina.alternarPantallaCompleta()
+                pagina.mostrarControles()
+            } else {
+                pagina.salir()
+            }
+        }
     }
 }

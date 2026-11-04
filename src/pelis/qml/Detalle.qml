@@ -9,7 +9,20 @@ Page {
     required property int peliculaId
     property var p: ({})
 
-    function recargar() { p = puente.pelicula(peliculaId) }
+    function recargar() {
+        // Cambiar el modelo recrea las miniaturas, y la enfocada perdería el foco
+        let enfocada = -1
+        for (let i = 0; i < miniaturas.count; i++)
+            if (miniaturas.itemAt(i).activeFocus)
+                enfocada = i
+        p = puente.pelicula(peliculaId)
+        if (enfocada >= 0) {
+            if (capturas.length > 0)
+                enfocarCaptura(Math.min(enfocada, capturas.length - 1))
+            else
+                reproducir.forceActiveFocus()
+        }
+    }
     Connections {
         target: puente
         function onDuracionMedida(id, ms) { if (id === pagina.peliculaId) pagina.recargar() }
@@ -116,6 +129,8 @@ Page {
     }
 
     function enfocarCaptura(i) {
+        // El Flow acomoda recién antes de pintar; mostrarEnPantalla necesita la posición ya
+        grillaCapturas.forceLayout()
         const item = miniaturas.itemAt(i)
         if (item) item.forceActiveFocus()
     }
