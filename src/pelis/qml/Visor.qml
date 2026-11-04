@@ -20,7 +20,6 @@ Page {
     readonly property var actual: capturas[indice] || ({})
     readonly property bool conMomento: actual.momento !== undefined && actual.momento !== null
     readonly property bool activa: pagina.StackView.status === StackView.Active
-    readonly property bool pantallaCompleta: Window.window && Window.window.visibility === Window.FullScreen
 
     // Al cerrar o ir al reproductor: al volver, el detalle deja el foco en la última captura vista
     signal cerrado(int indice)
@@ -40,14 +39,9 @@ Page {
         ocultar.restart()
     }
 
-    function alternarPantallaCompleta() {
-        Window.window.visibility = pantallaCompleta ? Window.Windowed : Window.FullScreen
-    }
-
     function salir() {
         terminarAnimacion()
         cerrado(indice)
-        if (pantallaCompleta) alternarPantallaCompleta()
         pagina.StackView.view.pop()
     }
 
@@ -236,13 +230,7 @@ Page {
             anchors.rightMargin: Tema.px(32)
             Boton { text: "Volver"; icono: "volver"; focusPolicy: Qt.NoFocus; onClicked: pagina.salir() }
             Item { Layout.fillWidth: true }
-            Boton {
-                soloIcono: true
-                icono: pagina.pantallaCompleta ? "ventana" : "pantalla"
-                text: pagina.pantallaCompleta ? "Salir de pantalla completa" : "Pantalla completa"
-                focusPolicy: Qt.NoFocus
-                onClicked: pagina.alternarPantallaCompleta()
-            }
+            BotonPantallaCompleta { id: botonPantalla }
         }
     }
 
@@ -334,13 +322,13 @@ Page {
 
     Shortcut { enabled: pagina.activa; sequence: "Left"; onActivated: pagina.pasar(-1) }
     Shortcut { enabled: pagina.activa; sequence: "Right"; onActivated: pagina.pasar(1) }
-    Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: { pagina.alternarPantallaCompleta(); pagina.mostrarControles() } }
+    Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: { botonPantalla.alternar(); pagina.mostrarControles() } }
     Shortcut {
         enabled: pagina.activa
         sequence: "Esc"
         onActivated: {
-            if (pagina.pantallaCompleta) {
-                pagina.alternarPantallaCompleta()
+            if (botonPantalla.completa) {
+                botonPantalla.alternar()
                 pagina.mostrarControles()
             } else {
                 pagina.salir()
