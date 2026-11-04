@@ -7,6 +7,8 @@ import QtMultimedia
 Page {
     id: pagina
     required property int peliculaId
+    // Posición de arranque en ms (ej. «Ir a» del visor); si es -1, sigue desde el progreso guardado
+    property int inicio: -1
     property var info: ({})
     // 0 = ninguno, 1 = externo, 2 = embebido
     property int modoSubs: 0
@@ -130,8 +132,9 @@ Page {
             elegirSubs(1 + info.externos.length + e.subIndice)
         else
             elegirSubs(0)
-        if (info.progreso > 0)
-            player.position = info.progreso
+        const desde = inicio < 0 ? info.progreso : player.duration > 0 ? Math.min(inicio, player.duration) : inicio
+        if (desde > 0)
+            player.position = desde
         player.play()
     }
 

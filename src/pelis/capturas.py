@@ -64,6 +64,15 @@ def _mover_sin_pisar(origen, destino):
         os.rename(origen, destino)
 
 
+def momento_ms(ruta):
+    """Posición en ms que dice el nombre de la captura, o None si no es cronológica."""
+    m = CRONOLOGICA.fullmatch(Path(ruta).stem)
+    if not m:
+        return None
+    h, mi, s, _ = m.groups()
+    return (int(h) * 3600 + int(mi) * 60 + int(s)) * 1000
+
+
 def listar(carpeta_pelicula):
     """Imágenes de `capturas/`: primero las cronológicas por posición y sufijo (sin sufijo = 1),
     después el resto alfabético; los empates, por nombre. `[]` si la carpeta no existe."""
