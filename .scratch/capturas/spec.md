@@ -46,7 +46,7 @@ En el reproductor, la tecla `.` guarda una **Captura** del cuadro actual. El det
 - **Texto**: muestra el momento de la captura, no el del salto.
 - **Posición**: el reproductor arranca en `max(0, momento − 5 s)`, acotado a la duración del video.
 - **Pila**: el visor se *reemplaza* por el reproductor, así que `Esc` en el reproductor vuelve al detalle.
-- **Progreso**: sin cambios; se guarda al salir del reproductor, como siempre.
+- **Progreso**: «Ir a» es una visita: no cambia el progreso guardado ni marca la película como vista, aunque llegue al final.
 
 ### Grilla de tercios
 - **Toggle**: un botón en la barra de abajo la prende y la apaga. Sin atajo de teclado.
