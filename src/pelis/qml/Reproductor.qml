@@ -485,13 +485,12 @@ Page {
         }
 
         // Estilo de subtítulos: global, se guarda en preferencias.ini
-        readonly property real tamanoMinimo: 0.5
-        readonly property real tamanoMaximo: 2
+        readonly property int porcentaje: Math.round(puente.subsTamano * 100)
+        readonly property int porcentajeMinimo: 50
+        readonly property int porcentajeMaximo: 200
         readonly property var colores: ["#ffffff", "#ffe14d", "#66e0ff", "#7dff8a", "#ff9ad5"]
         function cambiarTamano(paso) {
-            // Redondeado para que la suma de decimales no acumule error
-            const nuevo = Math.round((puente.subsTamano + paso * 0.02) * 100) / 100
-            puente.subsTamano = Math.max(tamanoMinimo, Math.min(tamanoMaximo, nuevo))
+            puente.subsTamano = Math.max(porcentajeMinimo, Math.min(porcentajeMaximo, porcentaje + paso)) / 100
         }
 
         component Rotulo: Text {
@@ -537,14 +536,14 @@ Page {
                 Rotulo { text: "Tamaño" }
                 Boton {
                     text: "−"
-                    enabled: puente.subsTamano > panel.tamanoMinimo + 0.001
+                    enabled: panel.porcentaje > panel.porcentajeMinimo
                     focusPolicy: Qt.NoFocus
-                    onClicked: panel.cambiarTamano(-1)
+                    onClicked: panel.cambiarTamano(-2)
                 }
                 Text {
                     Layout.preferredWidth: Tema.px(52)
                     horizontalAlignment: Text.AlignHCenter
-                    text: Math.round(puente.subsTamano * 100) + "%"
+                    text: panel.porcentaje + "%"
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(16)
                     font.features: { "tnum": 1 }
@@ -552,9 +551,9 @@ Page {
                 }
                 Boton {
                     text: "+"
-                    enabled: puente.subsTamano < panel.tamanoMaximo - 0.001
+                    enabled: panel.porcentaje < panel.porcentajeMaximo
                     focusPolicy: Qt.NoFocus
-                    onClicked: panel.cambiarTamano(1)
+                    onClicked: panel.cambiarTamano(2)
                 }
                 Item { Layout.fillWidth: true }
                 Rotulo { text: "Color" }
