@@ -207,3 +207,17 @@ def test_siguiente_reinicia_el_plazo_de_la_rotacion(biblioteca, conn):
     poster.siguiente(conn, biblioteca, p)
     assert poster.rotar(conn, biblioteca) == 0
     assert poster.rotar(conn, biblioteca, ahora=FUTURO, azar=AzarFijo()) == 1
+
+
+@pytest.mark.parametrize("cambiar", [
+    lambda conn, biblioteca, p: poster.siguiente(conn, biblioteca, p),
+    lambda conn, biblioteca, p: poster.rotar(conn, biblioteca, ahora=FUTURO, azar=AzarFijo()),
+])
+def test_cambiar_de_poster_conserva_el_origen_del_de_omdb(biblioteca, conn, cambiar):
+    p = pelicula(conn, biblioteca, "Alien (1979)", "Alien.mp4", "folder.jpg")
+    bajado(conn, biblioteca, p, "Alien (1979)")
+    cambiar(conn, biblioteca, p)
+    filas = conn.execute("SELECT path, origen FROM posters WHERE pelicula_id = ? ORDER BY path", (p,)).fetchall()
+    assert [tuple(f) for f in filas] == [
+        ("Alien (1979)/folder.jpg", "existente"), ("Alien (1979)/posters/poster.jpg", "omdb"),
+    ]
