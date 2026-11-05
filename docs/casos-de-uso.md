@@ -81,8 +81,9 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 * Como espectador, puedo filtrar por Todas, Sin ver o Vistas.
 
 * Como espectador, puedo filtrar por época.
-  * Las décadas anteriores a la actual van agrupadas ("Los 60s", "Los 2000").
+  * Las décadas hasta los 2000 van agrupadas ("Los 60s", "Los 2000").
   * Cada uno de los últimos 4 años, incluido el actual, va aparte.
+  * Los años intermedios, como 2015, no tienen opción propia: esas películas solo se ven en "Todos".
   * Solo aparecen las épocas que tienen películas en la biblioteca, y el filtro solo se muestra si hay más de una.
 
 * Como dueño de la biblioteca, puedo ver solo las películas a las que les faltan datos o póster.

@@ -22,17 +22,17 @@ def titulos(modelo):
     return [f["titulo"] for f in modelo._filas]
 
 
-def test_periodos_decadas_agrupadas_y_ultimos_cuatro_anios_sueltos():
+def test_periodos_decadas_hasta_los_2000_y_ultimos_cuatro_anios_sueltos():
     anios = [1942, 1964, 1968, 2004, 2015, 2021, 2023, 2025, 2026, None]
     assert periodos(anios, 2026) == [
-        ("1940s", "Los 40s"), ("1960s", "Los 60s"), ("2000s", "Los 2000"), ("2010s", "Los 2010"),
+        ("1940s", "Los 40s"), ("1960s", "Los 60s"), ("2000s", "Los 2000"),
         ("2023", "2023"), ("2025", "2025"), ("2026", "2026"),
     ]
 
 
 def test_periodos_al_cambiar_de_decada():
-    # En 2031 la de 2020 ya es una década anterior; sueltos: 2028 a 2031
-    assert periodos([2021, 2029, 2031], 2031) == [("2020s", "Los 2020"), ("2029", "2029"), ("2031", "2031")]
+    # En 2031 la de 2020 no se agrupa; sueltos: 2028 a 2031
+    assert periodos([2021, 2029, 2031], 2031) == [("2029", "2029"), ("2031", "2031")]
 
 
 def test_filtros_de_vistas_periodo_y_busqueda_se_combinan():
