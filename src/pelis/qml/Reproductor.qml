@@ -485,11 +485,13 @@ Page {
         }
 
         // Estilo de subtítulos: global, se guarda en preferencias.ini
-        readonly property var tamanos: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+        readonly property real tamanoMinimo: 0.5
+        readonly property real tamanoMaximo: 2
         readonly property var colores: ["#ffffff", "#ffe14d", "#66e0ff", "#7dff8a", "#ff9ad5"]
         function cambiarTamano(paso) {
-            const i = tamanos.findIndex(t => Math.abs(t - puente.subsTamano) < 0.01)
-            puente.subsTamano = tamanos[Math.max(0, Math.min(tamanos.length - 1, (i < 0 ? 2 : i) + paso))]
+            // Redondeado para que la suma de decimales no acumule error
+            const nuevo = Math.round((puente.subsTamano + paso * 0.02) * 100) / 100
+            puente.subsTamano = Math.max(tamanoMinimo, Math.min(tamanoMaximo, nuevo))
         }
 
         component Rotulo: Text {
@@ -535,7 +537,7 @@ Page {
                 Rotulo { text: "Tamaño" }
                 Boton {
                     text: "−"
-                    enabled: puente.subsTamano > panel.tamanos[0] + 0.01
+                    enabled: puente.subsTamano > panel.tamanoMinimo + 0.001
                     focusPolicy: Qt.NoFocus
                     onClicked: panel.cambiarTamano(-1)
                 }
@@ -550,7 +552,7 @@ Page {
                 }
                 Boton {
                     text: "+"
-                    enabled: puente.subsTamano < panel.tamanos[panel.tamanos.length - 1] - 0.01
+                    enabled: puente.subsTamano < panel.tamanoMaximo - 0.001
                     focusPolicy: Qt.NoFocus
                     onClicked: panel.cambiarTamano(1)
                 }

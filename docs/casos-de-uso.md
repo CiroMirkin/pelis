@@ -152,7 +152,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
   * Si un archivo de subtítulos no se puede leer, se avisa y la película sigue sin subtítulos.
 
 * Como espectador, cambio el tamaño y el color de los subtítulos.
-  * Tamaño en 7 pasos, de la mitad al doble del normal; 5 colores (blanco, amarillo, celeste, verde, rosa).
+  * Tamaño de a 2 %, de la mitad al doble del normal; 5 colores (blanco, amarillo, celeste, verde, rosa).
   * Se recuerdan para todas las películas.
   * Solo se aplican a los subtítulos sueltos en la carpeta; los que vienen dentro del video usan su propio estilo.
 
