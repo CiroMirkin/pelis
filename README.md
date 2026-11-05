@@ -20,7 +20,7 @@ Está pensada para un disco compartido (NTFS) que se monta tanto en Windows como
 
 - **Catálogo** en grilla de pósters: las que están a medias primero, con su barra de progreso, y las vistas al final. Filtros Todas / Sin ver / Vistas, por época (décadas y los últimos 4 años) y por datos o póster faltantes.
 - **Buscador** por título, director y reparto, sin distinguir mayúsculas ni acentos.
-- **Recomendación del día**: al abrir, una película al azar que no viste ni empezaste.
+- **Recomendación a pedido**: con un botón, una película al azar que no viste ni empezaste.
 - **Detalle** con sinopsis, año, género, país, dirección y elenco, y a qué hora termina si la empezás ahora. Reproducir, continuar, marcar como vista, abrir la carpeta o abrir con el reproductor del sistema.
 - **Personas**: un director o actor que está en otra película de la biblioteca se puede tocar y muestra todas sus películas.
 - **Reproductor propio** sobre QtMultimedia: seek, pista de audio, subtítulos externos (`.srt`/`.ass`/`.vtt`, UTF-8 o Windows-1252) y embebidos, pantalla completa y controles que se ocultan solos. Audio y subtítulos se eligen solos según el idioma preferido; el tamaño y el color de los subtítulos externos se recuerdan para todas las películas.

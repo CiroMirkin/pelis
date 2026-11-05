@@ -5,12 +5,12 @@ import os
 import sys
 from pathlib import Path
 
+from PySide6.QtCore import QObject, Qt, QTimer, Slot
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
-from . import actualizacion, config as configuracion
-from .puente import Puente
+from . import config as configuracion
 
 
 def fallar(mensaje):
@@ -25,6 +25,54 @@ def fallar(mensaje):
             import ctypes
             ctypes.windll.user32.MessageBoxW(None, mensaje, "Pelis", 0x10)
     sys.exit(mensaje)
+
+
+class Arranque(QObject):
+    """Abre la ventana con el spinner y, ya pintada, carga el resto."""
+
+    def __init__(self, config, prerelease):
+        super().__init__()
+        self.config = config
+        self.prerelease = prerelease
+        self.puente = None
+        self._empezado = False
+        self.avisos = []
+        self.engine = QQmlApplicationEngine()
+        self.engine.warnings.connect(lambda ws: self.avisos.extend(w.toString() for w in ws))
+        self.engine.load(Path(__file__).parent / "qml" / "Main.qml")
+        if not self.engine.rootObjects():
+            fallar("No se pudo cargar la interfaz:\n" + "\n".join(self.avisos))
+        self.ventana = self.engine.rootObjects()[0]
+        # frameSwapped viene del hilo de render. Una ventana minimizada no lo emite: de ahí el timer.
+        self.ventana.frameSwapped.connect(self.seguir, Qt.QueuedConnection)
+        QTimer.singleShot(1000, self.seguir)
+
+    @Slot()
+    def seguir(self):
+        if self._empezado:
+            return
+        self._empezado = True
+        self.ventana.frameSwapped.disconnect(self.seguir)
+        try:
+            # Importan QtMultimedia y requests, que son gran parte de la espera: van después de la ventana
+            from . import actualizacion
+            from .puente import Puente
+
+            self.puente = Puente(self.config, prerelease=self.prerelease)
+            self.engine.rootContext().setContextProperty("puente", self.puente)
+            self.ventana.setProperty("listo", True)
+            if not self.ventana.findChild(QObject, "pila").property("depth"):
+                fallar("No se pudo cargar la interfaz:\n" + "\n".join(self.avisos))
+            if actualizacion.en_build():
+                # Arrancó bien: si venía de actualizar, ya no hace falta la versión anterior
+                actualizacion.terminar(actualizacion.instalacion_actual())
+        except Exception as e:
+            fallar(f"No se pudo iniciar Pelis:\n{e}")
+
+    def cerrar(self):
+        del self.ventana, self.engine  # antes que el puente, para que QML no lo lea ya destruido al cerrar
+        if self.puente:
+            self.puente.cerrar()
 
 
 def main():
@@ -50,20 +98,9 @@ def main():
     app = QGuiApplication(sys.argv)
     app.setApplicationName("Pelis")
 
-    puente = Puente(config, prerelease=args.prerelease)
-    engine = QQmlApplicationEngine()
-    avisos = []
-    engine.warnings.connect(lambda ws: avisos.extend(w.toString() for w in ws))
-    engine.rootContext().setContextProperty("puente", puente)
-    engine.load(Path(__file__).parent / "qml" / "Main.qml")
-    if not engine.rootObjects():
-        fallar("No se pudo cargar la interfaz:\n" + "\n".join(avisos))
-    if actualizacion.en_build():
-        # Arrancó bien: si venía de actualizar, ya no hace falta la versión anterior
-        actualizacion.terminar(actualizacion.instalacion_actual())
+    arranque = Arranque(config, args.prerelease)
     codigo = app.exec()
-    del engine  # antes que el puente, para que QML no lo lea ya destruido al cerrar
-    puente.cerrar()
+    arranque.cerrar()
     sys.exit(codigo)
 
 

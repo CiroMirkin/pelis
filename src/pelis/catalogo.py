@@ -70,16 +70,17 @@ def filmografia(filas, biblioteca):
 
 
 class Recomendacion:
-    """La película que se ofrece al abrir. Cada método devuelve si `datos` cambió."""
+    """La película que se ofrece a pedido, una por apertura. Cada método devuelve si `datos` cambió."""
 
     def __init__(self):
         self.datos = {}
-        self._cerrada = False
+        self.usada = False  # ya se pidió en esta apertura; cerrar la franja no la devuelve
 
     def elegir(self, fila, biblioteca):
-        """Se elige una vez por apertura; sin `fila` (biblioteca vacía) se reintenta en la próxima llamada."""
-        if self.datos or self._cerrada or fila is None:
+        """Se elige una vez por apertura; sin `fila` (sin candidatas) no se gasta."""
+        if self.usada or fila is None:
             return False
+        self.usada = True
         self.datos = {
             "id": fila["id"],
             "titulo": fila["titulo"],
@@ -91,7 +92,6 @@ class Recomendacion:
         return True
 
     def cerrar(self):
-        self._cerrada = True
         if not self.datos:
             return False
         self.datos = {}

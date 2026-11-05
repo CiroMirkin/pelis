@@ -1,6 +1,6 @@
 # Workflow de GitHub Actions que publica los builds
 
-Status: ready-for-agent
+Status: ready-for-human
 Blocked by: 01, 05
 
 Ver "Workflow de publicación en GitHub" en la spec.
@@ -23,3 +23,4 @@ Ver "Workflow de publicación en GitHub" en la spec.
 - El primer run falló: a `ubuntu-24.04` le faltaba `libpulse0`, y en Windows dos tests daban por hecho un disco que distingue mayúsculas. Los paquetes de Linux viven en `tools/paquetes-linux.txt`, que usan el workflow y `tools/ci_linux.sh`. Ese script corre el job de Linux en local, en un contenedor `ubuntu:24.04` limpio.
 - Quedan sin probar el camino con tag (Release, `SHA256SUMS`, notas, pre-release) y el tag que no coincide. Se prueban con la primera RC (`/version minor --rc`).
 - 29/10/2026: el tag `v0.3.0-rc1` publicó la pre-release con los dos paquetes, `SHA256SUMS` y las notas del tag (run 40920401654). Falta probar un tag que no coincide.
+- 05/11/2026: el código está. Solo falta probar a mano un tag que no coincide con `__version__`.

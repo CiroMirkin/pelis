@@ -18,11 +18,23 @@ ApplicationWindow {
     Material.background: Tema.estante
     Material.foreground: Tema.crema
 
+    // Lo prende __main__.py cuando el puente está listo: antes de eso `puente` no existe
+    property bool listo: false
+    onListoChanged: pila.push("Catalogo.qml", {}, StackView.Immediate)
+
+    // Corre en el hilo de render, así sigue girando mientras se carga lo pesado
+    BusyIndicator {
+        anchors.centerIn: parent
+        implicitWidth: Tema.px(56)
+        implicitHeight: Tema.px(56)
+        running: !ventana.listo
+        visible: running
+    }
+
     StackView {
         id: pila
         objectName: "pila"
         anchors.fill: parent
-        initialItem: "Catalogo.qml"
     }
 
     // Cerrar la app con el reproductor abierto también guarda el progreso

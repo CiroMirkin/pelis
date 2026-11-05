@@ -234,7 +234,6 @@ class Puente(QObject):
         self._descargaLista.connect(self._descarga_lista)
         self._pantalla = pantalla.Pantalla()
         self._recargar_catalogo()
-        self._elegir_recomendada()
         self._iniciar_escaneo(sin_red=True)
 
     def _recargar_catalogo(self):
@@ -250,7 +249,7 @@ class Puente(QObject):
     def catalogo(self):
         return self._catalogo
 
-    # --- recomendación al abrir ---
+    # --- recomendación a pedido ---
 
     @Property("QVariantMap", notify=recomendadaChanged)
     def recomendada(self):
@@ -260,13 +259,16 @@ class Puente(QObject):
         if cambio:
             self.recomendadaChanged.emit()
 
-    def _elegir_recomendada(self):
-        """Se elige una vez por apertura; si la biblioteca estaba vacía, se reintenta tras importar."""
-        if self._recomendacion.datos:
-            return
+    @Property(bool, notify=contadoresChanged)
+    def puedeRecomendar(self):
+        return not self._recomendacion.usada and db.recomendada(self.conn) is not None
+
+    @Slot()
+    def recomendar(self):
         p = db.recomendada(self.conn)
         if self._recomendacion.elegir(p, self.config.biblioteca):
             self.recomendadaChanged.emit()
+            self.contadoresChanged.emit()
             if not p["duracion_ms"]:
                 self._medir_duracion(p["id"], p["video_path"])
 
@@ -620,7 +622,6 @@ class Puente(QObject):
         self._hilo.wait()
         self._hilo = self._trabajo = None
         self._recargar_catalogo()
-        self._elegir_recomendada()
         self._refrescar_poster_recomendada()
         self.escaneandoChanged.emit()
         if not sin_red:
