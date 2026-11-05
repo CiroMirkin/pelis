@@ -1,6 +1,6 @@
 # Recomendar a pedido
 
-Status: ready-for-agent
+Status: done
 
 Acotada en un grilling (2026-11-03).
 
@@ -44,3 +44,8 @@ La **Recomendada** deja de aparecer sola al abrir la app. El catálogo ofrece un
 
 ### Docs
 - `GLOSSARY.md`, `docs/casos-de-uso.md`, `README.md` y `DESIGN.md` describen hoy el comportamiento automático y el nombre «Recomendación del día».
+
+## Comments
+
+- 05/11/2026: implementada, sin commitear, en `feat/recomendar-y-arranque`. Pasan los tests y una recorrida de la interfaz real sin pantalla: botón, filtros, foco en la grilla, ✕, marcar todas sin usarlo y reaparición tras un escaneo. Con una copia de la base sobre la biblioteca real, midió la duración al elegir. Instalada en `~/Vídeos` para probar a mano. Además, mientras se ve el aviso «Se sumaron N películas» el buscador cede ancho, para que «…» y pantalla completa no queden fuera de la ventana.
+- 05/11/2026: probada a mano en el build de `~/Vídeos`: todo bien.

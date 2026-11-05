@@ -12,6 +12,9 @@ Page {
     property string filtro: ""
     // "todas", "vistas" o "noVistas"
     property string vistas: "todas"
+    // La recomendación (botón y franja) solo se ofrece con el catálogo sin buscar ni filtrar
+    readonly property bool sinFiltros: filtro === "" && vistas !== "vistas" && puente.catalogo.periodo === ""
+                                       && !puente.catalogo.soloIncompletas
 
     function filtrarVistas(cuales) {
         vistas = cuales
@@ -111,7 +114,11 @@ Page {
             }
             Basic.TextField {
                 id: buscador
+                // Cede ancho para que un aviso no empuje los botones fuera de la ventana
+                Layout.fillWidth: true
+                Layout.minimumWidth: Tema.px(200)
                 Layout.preferredWidth: Tema.px(360)
+                Layout.maximumWidth: Tema.px(360)
                 Layout.leftMargin: Tema.px(20)
                 placeholderText: "Buscar título, director o reparto"
                 placeholderTextColor: Tema.tenue
@@ -148,6 +155,13 @@ Page {
                 periodos: puente.catalogo.periodos
                 periodo: puente.catalogo.periodo
                 onElegido: (clave) => puente.catalogo.filtrarPeriodo(clave)
+            }
+            Boton {
+                visible: puente.puedeRecomendar && pagina.sinFiltros
+                text: "Recomendar"
+                focusPolicy: Qt.TabFocus
+                // A la grilla y no a la ✕: un Enter de más gastaría la recomendación de esta apertura
+                onClicked: { puente.recomendar(); grilla.forceActiveFocus() }
             }
             // Filtro de incompletas activo: se quita desde acá o desde el menú
             Boton {
@@ -233,12 +247,11 @@ Page {
         }
     }
 
-    // Recomendación al abrir: una película sin ver, elegida al azar
+    // Recomendación a pedido: una película sin ver, elegida al azar
     Rectangle {
         id: recomendacion
         readonly property var r: puente.recomendada
-        visible: !!r.id && pagina.filtro === "" && pagina.vistas !== "vistas" && puente.catalogo.periodo === ""
-                 && !puente.catalogo.soloIncompletas
+        visible: !!r.id && pagina.sinFiltros
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -284,7 +297,7 @@ Page {
                 Layout.alignment: Qt.AlignTop
                 spacing: Tema.px(4)
                 Text {
-                    text: "Recomendación del día"
+                    text: "Recomendación"
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(13)
                     font.weight: Font.DemiBold
