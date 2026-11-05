@@ -80,18 +80,42 @@ def rotar(conn, biblioteca, ahora="now", azar=random, dias=DIAS_ROTACION):
         imagenes = sorted(_posters_de(biblioteca, fila["folder_path"]))
         if len(imagenes) < 2:
             continue
-        bajados = _bajados(conn, fila["id"])
-        # Registrarlas todas evita que revisar tome una como "nueva" y deshaga la rotación
-        registrados = _registrados(conn, fila["id"])
-        for ruta in imagenes:
-            if ruta not in registrados:
-                _insertar(conn, fila["id"], ruta, "omdb" if ruta in bajados else "existente")
+        bajados = _registrar_set(conn, fila["id"], imagenes)
         actual = _actual(conn, fila["id"])
         elegida = azar.choice([r for r in imagenes if not actual or r != actual["path"]])
         _usar(conn, fila["id"], elegida, "omdb" if elegida in bajados else "existente")
         rotadas += 1
     conn.commit()
     return rotadas
+
+
+def siguiente(conn, biblioteca, pelicula_id):
+    """Pasa al poster que sigue en el orden de `_posters_de`; después del último vuelve al primero.
+
+    Con menos de dos posters no cambia nada. Devuelve True si cambió. Hace commit.
+    """
+    folder_path = conn.execute("SELECT folder_path FROM peliculas WHERE id = ?", (pelicula_id,)).fetchone()[0]
+    imagenes = _posters_de(biblioteca, folder_path)
+    if len(imagenes) < 2:
+        return False
+    bajados = _registrar_set(conn, pelicula_id, imagenes)
+    actual = _actual(conn, pelicula_id)
+    indice = imagenes.index(actual["path"]) + 1 if actual and actual["path"] in imagenes else 0
+    elegida = imagenes[indice % len(imagenes)]
+    _usar(conn, pelicula_id, elegida, "omdb" if elegida in bajados else "existente")
+    conn.commit()
+    return True
+
+
+def _registrar_set(conn, pelicula_id, imagenes):
+    """Registra todas las imágenes, para que revisar no tome una como "nueva" y deshaga el cambio.
+    Devuelve las bajadas de OMDb."""
+    bajados = _bajados(conn, pelicula_id)
+    registrados = _registrados(conn, pelicula_id)
+    for ruta in imagenes:
+        if ruta not in registrados:
+            _insertar(conn, pelicula_id, ruta, "omdb" if ruta in bajados else "existente")
+    return bajados
 
 
 def _carpeta_posters(carpeta):

@@ -114,6 +114,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 
 * Como espectador, desde el detalle reproduzco la película.
   * Si la había empezado, se ofrece continuar desde donde quedó (por ejemplo, desde 1:12:30).
+  * Hacer click en el póster hace lo mismo que el botón principal.
 
 * Como espectador, veo a qué hora termina la película si la empiezo o la sigo ahora ("Si seguís ahora, termina a las 23:40").
   * Se calcula con lo que falta ver y se actualiza solo con el paso del tiempo.
@@ -193,6 +194,11 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 * Como espectador, cada 7 días, al abrir la app, las películas con más de un póster cambian a otro al azar.
   * Siempre se elige uno distinto del actual.
   * Para sacar una imagen de la rotación, se borra de la carpeta.
+
+* Como espectador, con click derecho en el póster del detalle paso al siguiente de esa película.
+  * Sigue siempre el mismo orden y, después del último, vuelve al primero.
+  * El elegido queda hasta la próxima rotación, 7 días después.
+  * Si la película tiene un solo póster, no pasa nada.
 
 ## Faltantes
 

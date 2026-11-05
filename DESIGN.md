@@ -110,7 +110,7 @@ Paleta restringida: neutros azulados de local a la noche, crema de etiqueta para
 - **Alerta** (#ff9a7a): avisos y errores en texto.
 
 ### Named Rules
-**La Regla de la Etiqueta Única.** El rojo marca una sola cosa por pantalla para hacer (el botón principal) y los estados de las películas. Ni la marca «PELIS», ni los títulos, ni los fondos van en rojo. Única excepción, pedida por el usuario: en el detalle, un botón redondo rojo de 52px con el play oscuro en la esquina inferior derecha del poster, que hace lo mismo que el botón principal.
+**La Regla de la Etiqueta Única.** El rojo marca una sola cosa por pantalla para hacer (el botón principal) y los estados de las películas. Ni la marca «PELIS», ni los títulos, ni los fondos van en rojo. Única excepción, pedida por el usuario: en el detalle, un botón redondo rojo de 52px con el play oscuro en la esquina inferior derecha del poster, que invita a hacer click en todo el poster: es un adorno, y es el poster el que hace lo mismo que el botón principal.
 
 ## Typography
 

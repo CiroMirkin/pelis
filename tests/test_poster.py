@@ -163,3 +163,47 @@ def test_rotacion_incluye_el_poster_de_omdb_sin_que_lo_desplace_otra_imagen(bibl
     poster.rotar(conn, biblioteca, ahora=FUTURO, azar=AzarFijo())
     assert actual(conn, p) == "Alien (1979)/posters/poster.jpg"
     assert not poster.revisar(conn, biblioteca, p)  # folder.jpg ya no es "nueva"
+
+
+def test_siguiente_recorre_en_orden_y_vuelve_al_primero(biblioteca, conn):
+    p = pelicula(conn, biblioteca, "Alien (1979)", "Alien.mp4", "cover.jpg", "posters/b.png", "posters/poster.jpg")
+    poster.revisar(conn, biblioteca, p)
+    assert actual(conn, p) == "Alien (1979)/posters/poster.jpg"
+    for esperado in ["posters/b.png", "cover.jpg", "posters/poster.jpg", "posters/b.png"]:
+        assert poster.siguiente(conn, biblioteca, p)
+        assert actual(conn, p) == f"Alien (1979)/{esperado}"
+
+
+@pytest.mark.parametrize("archivos", [(), ("poster.jpg",)])
+def test_siguiente_sin_otro_poster_no_cambia_nada(biblioteca, conn, archivos):
+    p = pelicula(conn, biblioteca, "Alien (1979)", "Alien.mp4", *archivos)
+    poster.revisar(conn, biblioteca, p)
+    antes = actual(conn, p)
+    assert not poster.siguiente(conn, biblioteca, p)
+    assert actual(conn, p) == antes
+
+
+def test_siguiente_sin_actual_en_el_set_arranca_por_el_primero(biblioteca, conn):
+    p = pelicula(conn, biblioteca, "Alien (1979)", "Alien.mp4", "poster.jpg", "folder.jpg")
+    assert poster.siguiente(conn, biblioteca, p)  # todavía no tiene actual
+    assert actual(conn, p) == "Alien (1979)/poster.jpg"
+
+
+def test_siguiente_no_lo_deshace_revisar_aunque_sea_el_de_omdb(biblioteca, conn):
+    p = pelicula(conn, biblioteca, "Alien (1979)", "Alien.mp4")
+    bajado(conn, biblioteca, p, "Alien (1979)")
+    (biblioteca / "Alien (1979)" / "folder.jpg").touch()
+    poster.revisar(conn, biblioteca, p)
+    assert actual(conn, p) == "Alien (1979)/folder.jpg"
+
+    assert poster.siguiente(conn, biblioteca, p)
+    assert actual(conn, p) == "Alien (1979)/posters/poster.jpg"
+    assert not poster.revisar(conn, biblioteca, p)
+    assert actual(conn, p) == "Alien (1979)/posters/poster.jpg"
+
+
+def test_siguiente_reinicia_el_plazo_de_la_rotacion(biblioteca, conn):
+    p = pelicula(conn, biblioteca, "Alien (1979)", "Alien.mp4", "poster.jpg", "folder.jpg")
+    poster.siguiente(conn, biblioteca, p)
+    assert poster.rotar(conn, biblioteca) == 0
+    assert poster.rotar(conn, biblioteca, ahora=FUTURO, azar=AzarFijo()) == 1

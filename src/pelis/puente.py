@@ -364,6 +364,16 @@ class Puente(QObject):
         self._refrescar_poster_recomendada()
         return rotadas
 
+    @Slot(int, result=bool)
+    def siguientePortada(self, pelicula_id):
+        if self._hilo is not None:  # el escaneo también escribe posters
+            return False
+        cambio = poster.siguiente(self.conn, self.config.biblioteca, pelicula_id)
+        if cambio:
+            self._recargar_catalogo()
+            self._refrescar_poster_recomendada()
+        return cambio
+
     @Slot(str, result="QVariantList")
     def peliculasDe(self, nombre):
         """Películas de una persona, con los mismos datos que una tarjeta del catálogo."""
