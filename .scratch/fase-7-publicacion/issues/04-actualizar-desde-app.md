@@ -1,6 +1,6 @@
 # Actualizar la app al presionar «Actualizar»
 
-Status: ready-for-agent
+Status: ready-for-human
 Blocked by: 02, 03
 
 Ver "Actualizar" en la spec.
@@ -25,3 +25,4 @@ Ver "Actualizar" en la spec.
 - Windows: el `.bat` solo está probado como texto. Falta correrlo de verdad: se prueba con la primera RC (issue 06). Queda abierto el primer criterio para Windows.
 - 29/10/2026: Linux probado por el usuario en `~/Vídeos` con la Release real `v0.3.0-rc1`: actualizó, reabrió y quedó al día; la app nueva borró `linux.anterior` y el testigo. Sigue pendiente Windows.
 - 29/10/2026: Windows probado por el usuario hasta la mitad: instaló a mano el zip de `v0.3.0-rc1` y la app muestra el botón «Actualizar». Falta apretarlo para que corra el `.bat` y probar la vuelta atrás de `Pelis.bat`.
+- 05/11/2026: el código está. Faltan a mano: correr la actualización en Windows y comprobar que una versión nueva que no arranca se restaura sola con el lanzador.

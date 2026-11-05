@@ -138,10 +138,12 @@ def test_recomendada_se_elige_una_sola_vez():
     assert r.datos["titulo"] == "Alien"
 
 
-def test_recomendada_con_biblioteca_vacia_se_reintenta():
+def test_recomendada_sin_candidatas_no_gasta_el_boton():
     r = Recomendacion()
     assert not r.elegir(None, Path("."))
+    assert not r.usada
     assert r.elegir(fila(), Path("."))
+    assert r.usada
 
 
 def test_recomendada_cerrada_no_se_vuelve_a_elegir():
@@ -149,8 +151,17 @@ def test_recomendada_cerrada_no_se_vuelve_a_elegir():
     r.elegir(fila(), Path("."))
     assert r.cerrar()
     assert r.datos == {}
+    assert r.usada
     assert not r.elegir(fila(id=2), Path("."))
     assert not r.cerrar()
+
+
+def test_recomendada_cerrar_sin_usarla_no_gasta_el_boton():
+    # «Marcar todas como vistas» cierra sin haber pedido nada; un escaneo puede traer candidatas después
+    r = Recomendacion()
+    assert not r.cerrar()
+    assert not r.usada
+    assert r.elegir(fila(), Path("."))
 
 
 def test_recomendada_empezo_solo_cierra_la_suya():

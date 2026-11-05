@@ -13,7 +13,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 * **[Películas nuevas al abrir](#películas-nuevas-al-abrir)**: la app suma sola, sin internet, lo que se copió desde la última vez.
 * **[Escanear biblioteca](#escanear-biblioteca)**: busca en internet los datos y pósters de las películas que no los tienen, y muestra un informe.
 * **[Catálogo](#catálogo)**: grilla de pósters con búsqueda y filtros por vistas, época y datos incompletos.
-* **[Recomendación del día](#recomendación-del-día)**: al abrir, sugiere al azar una película que no se vio ni se empezó.
+* **[Recomendación a pedido](#recomendación-a-pedido)**: con un botón, sugiere al azar una película que no se vio ni se empezó.
 * **[Detalle](#detalle)**: sinopsis, datos, dirección y elenco, a qué hora termina, y acceso a reproducir.
 * **[Personas](#personas)**: ver todas las películas de la biblioteca de un director o actor.
 * **[Reproductor](#reproductor)**: reproducción con audio y subtítulos elegidos solos y pantalla completa.
@@ -96,13 +96,15 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
   * Avisa cuántas se renovaron, o que no había ninguna para renovar.
   * No está disponible mientras se escanea.
 
-## Recomendación del día
+## Recomendación a pedido
 
-* Como espectador, al abrir la app veo arriba del catálogo una película recomendada, con su póster, título, año, género y duración.
-  * Se elige al azar entre las que no vi ni empecé, una vez por cada vez que abro la app.
+* Como espectador, al tocar «Recomendar» en la barra del catálogo veo arriba una película recomendada, con su póster, título, año, género y duración.
+  * Se elige al azar entre las que no vi ni empecé, en el momento de tocar el botón.
+  * Puedo pedirla una vez por cada vez que abro la app: después el botón no vuelve hasta la próxima apertura.
+  * El botón no aparece si no hay ninguna película sin ver y sin empezar, y aparece si un escaneo trae alguna. Marcar todas como vistas no gasta un botón que no usé.
   * Tocándola abro su detalle.
-  * Desaparece si la descarto, si la empiezo a ver o si la marco como vista (sola o junto con todas las demás), y no vuelve hasta la próxima vez que abra la app.
-  * Se oculta mientras busco o filtro por vistas, por época o por datos incompletos.
+  * Desaparece si la descarto, si la empiezo a ver o si la marco como vista (sola o junto con todas las demás).
+  * El botón y la franja se ocultan mientras busco o filtro por vistas, por época o por datos incompletos.
 
 ## Detalle
 

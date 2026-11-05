@@ -1,6 +1,6 @@
 # Comando y skill para publicar una versión
 
-Status: ready-for-agent
+Status: ready-for-human
 Blocked by: 01
 
 Ver "Repositorio y versión" y "Comando de versión" en la spec.
@@ -23,3 +23,4 @@ Ver "Repositorio y versión" y "Comando de versión" en la spec.
 
 - 29/10/2026: hecho el script, la skill y `__version__` (`7e24342`). Probado de punta a punta contra un remoto falso: negativas, `--ver`, `N`, publicar, RC, `final` y un push ajeno durante la confirmación. Falta el último criterio, que necesita el workflow (02).
 - `--ver`, `--notas` y `--si` existen para que la skill muestre las notas y publique sin entrada interactiva. El fin de entrada cuenta como «no».
+- 05/11/2026: el comando ya publicó de `v0.3.0-rc1` a `rc5` (el criterio de `v0.2.0` quedó viejo). Falta publicar una final con `/version final`.
