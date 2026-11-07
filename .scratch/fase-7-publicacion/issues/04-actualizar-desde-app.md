@@ -13,7 +13,7 @@ Ver "Actualizar" en la spec.
 - La app nueva borra `*.anterior` y el testigo cuando cargó la interfaz bien; `Pelis.bat` y `pelis.sh` restauran `*.anterior` si encuentran el testigo al abrir
 
 ## Criterio de terminado
-- [ ] En Windows y en Linux queda la versión nueva funcionando, con base, configuración y progreso intactos
+- [x] En Windows y en Linux queda la versión nueva funcionando, con base, configuración y progreso intactos
 - [x] Cortar la actualización a la mitad (ej. sin red en la descarga) deja la versión anterior funcionando
 - [x] Un hash que no coincide aborta sin reemplazar nada
 - [ ] Una versión nueva que no arranca se restaura sola al volver a abrir con el lanzador
@@ -26,3 +26,5 @@ Ver "Actualizar" en la spec.
 - 29/10/2026: Linux probado por el usuario en `~/Vídeos` con la Release real `v0.3.0-rc1`: actualizó, reabrió y quedó al día; la app nueva borró `linux.anterior` y el testigo. Sigue pendiente Windows.
 - 29/10/2026: Windows probado por el usuario hasta la mitad: instaló a mano el zip de `v0.3.0-rc1` y la app muestra el botón «Actualizar». Falta apretarlo para que corra el `.bat` y probar la vuelta atrás de `Pelis.bat`.
 - 05/11/2026: el código está. Faltan a mano: correr la actualización en Windows y comprobar que una versión nueva que no arranca se restaura sola con el lanzador.
+
+- 07/11/2026: el usuario confirma que la actualización desde la app funciona en Windows. Solo falta comprobar que una versión nueva que no arranca se restaura sola.

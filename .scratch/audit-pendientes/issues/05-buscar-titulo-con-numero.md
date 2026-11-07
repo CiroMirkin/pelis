@@ -10,3 +10,9 @@
 - [ ] «Aliens 1986» sigue buscando «Aliens» con año 1986 y no hace una segunda consulta si esa trae resultados.
 - [ ] Un texto sin año al final hace una sola consulta, como hoy.
 - [ ] Tests con un OMDb falso, sin red, que cubren los tres casos.
+
+## Dónde
+
+- `edicion.candidatos` (`src/pelis/edicion.py:33`) separa con `separar_anio` y llama una sola vez a `omdb.buscar(titulo, anio)`.
+- Arreglo: si `anio` no es `None` y la búsqueda vino vacía, llamar `omdb.buscar(texto.strip())` sin año. Si la primera consulta lanza `ErrorRed` (por ejemplo "demasiados resultados"), no reintentar: el error sube como hoy.
+- Tests en `tests/test_edicion.py`, con un OMDb falso que registre las llamadas, para verificar cuántas consultas se hicieron y con qué parámetros.
