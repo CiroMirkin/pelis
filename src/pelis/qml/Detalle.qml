@@ -234,34 +234,40 @@ Page {
                     source: pagina.p.poster || ""
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
+                    retainWhileLoading: true  // al cambiar de portada no parpadea el título de respaldo
                     sourceSize.width: 640
                 }
-                // Play sobre el poster: excepción a la Regla de la Etiqueta Única pedida por el usuario
-                AbstractButton {
-                    id: playPoster
+                // Play sobre el poster: adorno, el click lo atiende zonaPoster.
+                // Excepción a la Regla de la Etiqueta Única pedida por el usuario
+                Rectangle {
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     anchors.margins: Tema.px(14)
                     width: Tema.px(52)
                     height: width
-                    focusPolicy: Qt.NoFocus
+                    radius: width / 2
+                    color: zonaPoster.pressedButtons & Qt.LeftButton ? Qt.darker(Tema.etiqueta, 1.15)
+                           : zonaPoster.containsMouse ? Qt.lighter(Tema.etiqueta, 1.08) : Tema.etiqueta
+                    Image {
+                        anchors.centerIn: parent
+                        anchors.horizontalCenterOffset: Tema.px(2)  // el triángulo se ve centrado corrido un poco a la derecha
+                        source: "iconos/play-oscuro.svg"
+                        sourceSize: Qt.size(Tema.px(24), Tema.px(24))
+                    }
+                }
+                // Izquierdo reproduce; derecho pasa a la portada siguiente
+                MouseArea {
+                    id: zonaPoster
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
                     hoverEnabled: true
-                    Accessible.name: reproducir.text
-                    onClicked: pagina.reproducirPelicula()
-                    background: Rectangle {
-                        radius: width / 2
-                        color: playPoster.down ? Qt.darker(Tema.etiqueta, 1.15)
-                               : playPoster.hovered ? Qt.lighter(Tema.etiqueta, 1.08) : Tema.etiqueta
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: mouse => {
+                        if (mouse.button === Qt.LeftButton)
+                            pagina.reproducirPelicula()
+                        else if (puente.siguientePortada(pagina.peliculaId))
+                            pagina.recargar()
                     }
-                    contentItem: Item {
-                        Image {
-                            anchors.centerIn: parent
-                            anchors.horizontalCenterOffset: Tema.px(2)  // el triángulo se ve centrado corrido un poco a la derecha
-                            source: "iconos/play-oscuro.svg"
-                            sourceSize: Qt.size(Tema.px(24), Tema.px(24))
-                        }
-                    }
-                    HoverHandler { cursorShape: Qt.PointingHandCursor }
                 }
             }
 

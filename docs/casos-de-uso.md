@@ -81,8 +81,9 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 * Como espectador, puedo filtrar por Todas, Sin ver o Vistas.
 
 * Como espectador, puedo filtrar por época.
-  * Las décadas anteriores a la actual van agrupadas ("Los 60s", "Los 2000").
+  * Las décadas hasta los 2000 van agrupadas ("Los 60s", "Los 2000").
   * Cada uno de los últimos 4 años, incluido el actual, va aparte.
+  * Los años intermedios, como 2015, no tienen opción propia: esas películas solo se ven en "Todos".
   * Solo aparecen las épocas que tienen películas en la biblioteca, y el filtro solo se muestra si hay más de una.
 
 * Como dueño de la biblioteca, puedo ver solo las películas a las que les faltan datos o póster.
@@ -114,6 +115,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 
 * Como espectador, desde el detalle reproduzco la película.
   * Si la había empezado, se ofrece continuar desde donde quedó (por ejemplo, desde 1:12:30).
+  * Hacer click en el póster hace lo mismo que el botón principal.
 
 * Como espectador, veo a qué hora termina la película si la empiezo o la sigo ahora ("Si seguís ahora, termina a las 23:40").
   * Se calcula con lo que falta ver y se actualiza solo con el paso del tiempo.
@@ -150,7 +152,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
   * Si un archivo de subtítulos no se puede leer, se avisa y la película sigue sin subtítulos.
 
 * Como espectador, cambio el tamaño y el color de los subtítulos.
-  * Tamaño en 7 pasos, de la mitad al doble del normal; 5 colores (blanco, amarillo, celeste, verde, rosa).
+  * Tamaño de a 2 %, de la mitad al doble del normal; 5 colores (blanco, amarillo, celeste, verde, rosa).
   * Se recuerdan para todas las películas.
   * Solo se aplican a los subtítulos sueltos en la carpeta; los que vienen dentro del video usan su propio estilo.
 
@@ -193,6 +195,11 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 * Como espectador, cada 7 días, al abrir la app, las películas con más de un póster cambian a otro al azar.
   * Siempre se elige uno distinto del actual.
   * Para sacar una imagen de la rotación, se borra de la carpeta.
+
+* Como espectador, con click derecho en el póster del detalle paso al siguiente de esa película.
+  * Sigue siempre el mismo orden y, después del último, vuelve al primero.
+  * El elegido queda hasta la próxima rotación, 7 días después.
+  * Si la película tiene un solo póster, no pasa nada.
 
 ## Faltantes
 

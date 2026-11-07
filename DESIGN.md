@@ -110,7 +110,7 @@ Paleta restringida: neutros azulados de local a la noche, crema de etiqueta para
 - **Alerta** (#ff9a7a): avisos y errores en texto.
 
 ### Named Rules
-**La Regla de la Etiqueta Única.** El rojo marca una sola cosa por pantalla para hacer (el botón principal) y los estados de las películas. Ni la marca «PELIS», ni los títulos, ni los fondos van en rojo. Única excepción, pedida por el usuario: en el detalle, un botón redondo rojo de 52px con el play oscuro en la esquina inferior derecha del poster, que hace lo mismo que el botón principal.
+**La Regla de la Etiqueta Única.** El rojo marca una sola cosa por pantalla para hacer (el botón principal) y los estados de las películas. Ni la marca «PELIS», ni los títulos, ni los fondos van en rojo. Única excepción, pedida por el usuario: en el detalle, un botón redondo rojo de 52px con el play oscuro en la esquina inferior derecha del poster, que invita a hacer click en todo el poster: es un adorno, y es el poster el que hace lo mismo que el botón principal.
 
 ## Typography
 
@@ -161,7 +161,7 @@ Formas de caja de video: esquinas casi rectas (2px en posters, 3px en botones, 4
 - **Tarjeta de película:** poster 2:3 sobre fondo caja, sin borde ni sombra; si no hay imagen, el título en rótulo mayúscula tenue abajo a la izquierda. Debajo, solo título y año (compromiso fijo del producto). Progreso: tira roja de 6px al pie, con el largo exacto de lo visto. Vista: etiqueta redonda roja.
 - **Panel de audio y subtítulos:** superficie estante con borde línea, dos columnas («AUDIO» | «SUBTÍTULOS») separadas por una línea; cada opción es una fila con el idioma en español y un detalle debajo; la elegida lleva un cuadrado rojo de 8px a la izquierda y el nombre en negrita.
 - **Recomendación:** se pide con un botón secundario «RECOMENDAR» en la barra del catálogo. Franja estante con borde línea entre la barra y la grilla: poster chico, rótulo «RECOMENDACIÓN» tenue, título en rótulo crema y año; toda la franja abre la ficha y una ✕ sin borde en la esquina superior derecha la descarta. Sin rojo: no compite con la acción principal.
-- **Selector de época:** botón secundario con el valor elegido («ÉPOCA», «LOS 80S» o «2025») y una flecha; opciones «Todos», décadas («Los 60s», «Los 2000») y los últimos 4 años sueltos; despliega una lista estante con borde línea, filas de 36px en rótulo y la elegida marcada con el cuadrado rojo de 8px, como el panel de pistas. Se maneja con flechas, Enter y Esc.
+- **Selector de época:** botón secundario con el valor elegido («ÉPOCA», «LOS 80S» o «2025») y una flecha; opciones «Todos», décadas hasta los 2000 («Los 60s», «Los 2000») y los últimos 4 años sueltos; despliega una lista estante con borde línea, filas de 36px en rótulo y la elegida marcada con el cuadrado rojo de 8px, como el panel de pistas. Se maneja con flechas, Enter y Esc.
 - **Arranque:** mientras carga, la ventana noche vacía con un spinner naranja centrado, sin texto.
 - **Diálogo de escaneo:** misma superficie estante, título en rótulo, fondo atenuado en noche al 80%.
 

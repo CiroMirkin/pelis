@@ -485,11 +485,12 @@ Page {
         }
 
         // Estilo de subtítulos: global, se guarda en preferencias.ini
-        readonly property var tamanos: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+        readonly property int porcentaje: Math.round(puente.subsTamano * 100)
+        readonly property int porcentajeMinimo: 50
+        readonly property int porcentajeMaximo: 200
         readonly property var colores: ["#ffffff", "#ffe14d", "#66e0ff", "#7dff8a", "#ff9ad5"]
         function cambiarTamano(paso) {
-            const i = tamanos.findIndex(t => Math.abs(t - puente.subsTamano) < 0.01)
-            puente.subsTamano = tamanos[Math.max(0, Math.min(tamanos.length - 1, (i < 0 ? 2 : i) + paso))]
+            puente.subsTamano = Math.max(porcentajeMinimo, Math.min(porcentajeMaximo, porcentaje + paso)) / 100
         }
 
         component Rotulo: Text {
@@ -535,14 +536,14 @@ Page {
                 Rotulo { text: "Tamaño" }
                 Boton {
                     text: "−"
-                    enabled: puente.subsTamano > panel.tamanos[0] + 0.01
+                    enabled: panel.porcentaje > panel.porcentajeMinimo
                     focusPolicy: Qt.NoFocus
-                    onClicked: panel.cambiarTamano(-1)
+                    onClicked: panel.cambiarTamano(-2)
                 }
                 Text {
                     Layout.preferredWidth: Tema.px(52)
                     horizontalAlignment: Text.AlignHCenter
-                    text: Math.round(puente.subsTamano * 100) + "%"
+                    text: panel.porcentaje + "%"
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(16)
                     font.features: { "tnum": 1 }
@@ -550,9 +551,9 @@ Page {
                 }
                 Boton {
                     text: "+"
-                    enabled: puente.subsTamano < panel.tamanos[panel.tamanos.length - 1] - 0.01
+                    enabled: panel.porcentaje < panel.porcentajeMaximo
                     focusPolicy: Qt.NoFocus
-                    onClicked: panel.cambiarTamano(1)
+                    onClicked: panel.cambiarTamano(2)
                 }
                 Item { Layout.fillWidth: true }
                 Rotulo { text: "Color" }

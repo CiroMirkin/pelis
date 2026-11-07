@@ -292,12 +292,12 @@ class Puente(QObject):
         medidor.mediaStatusChanged.connect(estado)
         medidor.setSource(QUrl.fromLocalFile(str(self._ruta(video_path))))
 
-    def _refrescar_poster_recomendada(self):
-        """El poster pudo cambiar (rotación, escaneo) después de elegir la recomendada."""
-        if not self._recomendacion.datos:
-            return
-        p = db.pelicula(self.conn, self._recomendacion.datos["id"])
-        self._avisar_recomendada(self._recomendacion.poster(url_poster(self.config.biblioteca, p["poster"]) if p else ""))
+    def _posters_cambiaron(self):
+        """Tras cambiar algún poster: lo refleja en el catálogo y en la recomendada, si es la suya."""
+        self._recargar_catalogo()
+        if self._recomendacion.datos:
+            p = db.pelicula(self.conn, self._recomendacion.datos["id"])
+            self._avisar_recomendada(self._recomendacion.poster(url_poster(self.config.biblioteca, p["poster"]) if p else ""))
 
     @Slot()
     def cerrarRecomendacion(self):
@@ -310,7 +310,7 @@ class Puente(QObject):
             return {}
         # Al abrir el detalle se mira la carpeta: un poster agregado a mano aparece sin re-escanear
         if poster.revisar(self.conn, self.config.biblioteca, pelicula_id):
-            self._recargar_catalogo()
+            self._posters_cambiaron()
             p = db.pelicula(self.conn, pelicula_id)
         if not p["duracion_ms"] and p["video_path"]:
             self._medir_duracion(pelicula_id, p["video_path"])
@@ -360,9 +360,17 @@ class Puente(QObject):
         if self._hilo is not None:  # el escaneo también escribe posters
             return 0
         rotadas = poster.rotar(self.conn, self.config.biblioteca, dias=0)
-        self._recargar_catalogo()
-        self._refrescar_poster_recomendada()
+        self._posters_cambiaron()
         return rotadas
+
+    @Slot(int, result=bool)
+    def siguientePortada(self, pelicula_id):
+        if self._hilo is not None:  # el escaneo también escribe posters
+            return False
+        cambio = poster.siguiente(self.conn, self.config.biblioteca, pelicula_id)
+        if cambio:
+            self._posters_cambiaron()
+        return cambio
 
     @Slot(str, result="QVariantList")
     def peliculasDe(self, nombre):
@@ -466,7 +474,7 @@ class Puente(QObject):
             pelicula_id, encontrados, bajado = resultado.pop("aplicar")
             aviso = edicion.aplicar_omdb(self.conn, self.config.biblioteca, pelicula_id, encontrados, bajado)
             resultado["aviso"] = "\n\n".join(a for a in (resultado.get("aviso"), aviso) if a)
-            self._recargar_catalogo()
+            self._posters_cambiaron()
             resultado["aplicado"] = True
         self.imdbRespondio.emit(resultado)
 
@@ -621,8 +629,7 @@ class Puente(QObject):
         self._hilo.quit()
         self._hilo.wait()
         self._hilo = self._trabajo = None
-        self._recargar_catalogo()
-        self._refrescar_poster_recomendada()
+        self._posters_cambiaron()
         self.escaneandoChanged.emit()
         if not sin_red:
             self.escaneoTerminado.emit(informe)

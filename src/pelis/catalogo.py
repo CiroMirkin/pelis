@@ -1,5 +1,6 @@
 """Reglas del catálogo, sin Qt: épocas, tarjetas, incompletas y la recomendada."""
 
+ULTIMA_DECADA = 2000  # las posteriores no se agrupan
 ANIOS_SUELTOS = 4  # los últimos años, incluido el actual, se filtran de a uno
 
 PROGRESO_MINIMO_MS = 3 * 60 * 1000  # antes de esto, salir no la deja empezada
@@ -15,11 +16,10 @@ CLAVES_TARJETA = ("peliculaId", "titulo", "anio", "poster", "progreso", "vista")
 def periodos(anios, anio_actual):
     """Opciones del filtro de época para los años presentes: [(clave, etiqueta)].
 
-    Las décadas anteriores a la actual van agrupadas ("Los 60s", "Los 2000"); de los últimos
-    ANIOS_SUELTOS años, cada uno va aparte. El resto de la década actual no tiene opción propia.
+    Las décadas hasta ULTIMA_DECADA van agrupadas ("Los 60s", "Los 2000"); de los últimos
+    ANIOS_SUELTOS años, cada uno va aparte. Los años intermedios no tienen opción propia.
     """
-    decada_actual = anio_actual // 10 * 10
-    decadas = sorted({a // 10 * 10 for a in anios if a and a < decada_actual})
+    decadas = sorted({a // 10 * 10 for a in anios if a and a // 10 * 10 <= ULTIMA_DECADA})
     sueltos = sorted({a for a in anios if a and anio_actual - ANIOS_SUELTOS < a <= anio_actual})
     return ([(f"{d}s", f"Los {d % 100}s" if 1910 <= d < 2000 else f"Los {d}") for d in decadas]
             + [(str(a), str(a)) for a in sueltos])

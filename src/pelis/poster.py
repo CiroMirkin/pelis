@@ -78,20 +78,43 @@ def rotar(conn, biblioteca, ahora="now", azar=random, dias=DIAS_ROTACION):
     rotadas = 0
     for fila in vencidas:
         imagenes = sorted(_posters_de(biblioteca, fila["folder_path"]))
-        if len(imagenes) < 2:
-            continue
-        bajados = _bajados(conn, fila["id"])
-        # Registrarlas todas evita que revisar tome una como "nueva" y deshaga la rotación
-        registrados = _registrados(conn, fila["id"])
-        for ruta in imagenes:
-            if ruta not in registrados:
-                _insertar(conn, fila["id"], ruta, "omdb" if ruta in bajados else "existente")
-        actual = _actual(conn, fila["id"])
-        elegida = azar.choice([r for r in imagenes if not actual or r != actual["path"]])
-        _usar(conn, fila["id"], elegida, "omdb" if elegida in bajados else "existente")
-        rotadas += 1
+        if _cambiar(conn, fila["id"], imagenes, lambda actual: azar.choice([r for r in imagenes if r != actual])):
+            rotadas += 1
     conn.commit()
     return rotadas
+
+
+def siguiente(conn, biblioteca, pelicula_id):
+    """Pasa al poster que sigue en el orden de `_posters_de`; después del último vuelve al primero.
+
+    Con menos de dos posters no cambia nada. Devuelve True si cambió. Hace commit.
+    """
+    folder_path = conn.execute("SELECT folder_path FROM peliculas WHERE id = ?", (pelicula_id,)).fetchone()[0]
+    imagenes = _posters_de(biblioteca, folder_path)
+
+    def despues(actual):
+        return imagenes[(imagenes.index(actual) + 1) % len(imagenes)] if actual in imagenes else imagenes[0]
+
+    cambio = _cambiar(conn, pelicula_id, imagenes, despues)
+    conn.commit()
+    return cambio
+
+
+def _cambiar(conn, pelicula_id, imagenes, elegir):
+    """Pasa a la imagen que devuelva `elegir(path_actual)`. Con menos de dos no hace nada. Devuelve si cambió.
+
+    Registra todas, para que revisar no tome una como "nueva" y deshaga el cambio. Las sin registrar
+    son siempre propias: el poster de OMDb se registra al bajarlo.
+    """
+    if len(imagenes) < 2:
+        return False
+    registrados = _registrados(conn, pelicula_id)
+    for ruta in imagenes:
+        if ruta not in registrados:
+            _insertar(conn, pelicula_id, ruta, "existente")
+    actual = _actual(conn, pelicula_id)
+    _usar(conn, pelicula_id, elegir(actual["path"] if actual else None), "existente")  # ya registrada: conserva su origen
+    return True
 
 
 def _carpeta_posters(carpeta):
