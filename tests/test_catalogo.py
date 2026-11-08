@@ -19,7 +19,8 @@ def catalogo(*peliculas, anio_actual=2026):
 
 
 def titulos(modelo):
-    return [f["titulo"] for f in modelo._filas]
+    rol = next(r for r, nombre in modelo.roleNames().items() if nombre == b"titulo")
+    return [modelo.data(modelo.index(i), rol) for i in range(modelo.rowCount())]
 
 
 def test_periodos_decadas_hasta_los_2000_y_ultimos_cuatro_anios_sueltos():
@@ -55,7 +56,8 @@ def test_elegir_epoca_pasa_el_filtro_de_vistas_a_todas():
 
 def test_borrar_la_busqueda_o_la_epoca_no_cambia_el_filtro_de_vistas():
     modelo, _ = catalogo(("Alien", 1979, True), ("Aliens", 1986, False), ("Brazil", 1985, True))
-    modelo.filtrar("alien")  # restablece a «todas»
+    modelo.filtrar("alien")
+    modelo.filtrarPeriodo("1970s")
     modelo.filtrarVistas("vistas")
     assert titulos(modelo) == ["Alien"]
     modelo.filtrar("")
@@ -66,13 +68,22 @@ def test_borrar_la_busqueda_o_la_epoca_no_cambia_el_filtro_de_vistas():
 
 def test_repetir_la_misma_busqueda_o_epoca_no_cambia_el_filtro_de_vistas():
     modelo, _ = catalogo(("Alien", 1979, True), ("Aliens", 1986, False), ("Brazil", 1985, True))
-    modelo.filtrar("alien")
+    modelo.filtrar("Alien")
     modelo.filtrarPeriodo("1980s")
     modelo.filtrarVistas("noVistas")
-    modelo.filtrar("alien")  # Enter o ↓ en el buscador con el mismo texto
-    modelo.filtrarPeriodo("1980s")  # la misma época otra vez
+    modelo.filtrar("Alien")  # Enter o ↓ en el buscador con el mismo texto
+    modelo.filtrarPeriodo("1980s")
     assert modelo.vistas == "noVistas"
     assert titulos(modelo) == ["Aliens"]
+
+
+def test_la_barra_se_entera_cuando_el_filtro_de_vistas_vuelve_solo_a_todas():
+    modelo, _ = catalogo(("Alien", 1979, True), ("Aliens", 1986, False))
+    modelo.filtrarVistas("noVistas")
+    avisos = []
+    modelo.vistasChanged.connect(lambda: avisos.append(modelo.vistas))
+    modelo.filtrar("alien")
+    assert avisos == ["todas"]
 
 
 def test_filtros_de_vistas_periodo_y_busqueda_se_combinan():
