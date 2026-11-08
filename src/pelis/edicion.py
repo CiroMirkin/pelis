@@ -62,10 +62,14 @@ def bajar_poster(omdb, url, destino):
 
 
 def destino_poster(conn, biblioteca, pelicula_id):
-    """Dónde bajar el poster de OMDb, o None si la película tiene uno propio que no hay que pisar."""
+    """Dónde bajar el poster de OMDb, o None si la película solo tiene imágenes propias.
+
+    Si ya hay un póster bajado de OMDb, se reemplaza aunque el actual sea una imagen propia:
+    era el de un match equivocado y, si no, seguiría en la rotación. Si no hay ninguna imagen,
+    también se baja.
+    """
     p = db.pelicula(conn, pelicula_id)
-    actual = poster._actual(conn, pelicula_id)
-    if actual is not None and actual["origen"] != "omdb":
+    if not poster._bajados(conn, pelicula_id) and poster._posters_de(biblioteca, p["folder_path"]):
         return None
     return poster._carpeta_posters(Path(biblioteca) / p["folder_path"]) / "poster.jpg"
 
@@ -74,13 +78,20 @@ def aplicar_omdb(conn, biblioteca, pelicula_id, datos, poster_bajado):
     """Reemplaza los metadatos (y personas) por los traídos de OMDb. Devuelve un aviso o "".
 
     El título queda el actual; el año pasa a ser el de la película elegida (o el actual si OMDb no trae).
+    El póster bajado pasa a ser el actual solo si el actual era de OMDb o no había ninguno: una
+    imagen propia que es la actual se respeta (pero el archivo de OMDb se reemplaza igual).
     """
     p = db.pelicula(conn, pelicula_id)
     aviso = metadatos.aplicar(conn, biblioteca, pelicula_id,
                               {**datos, "titulo": p["titulo"], "year": datos.get("year") or p["year"]}, explicita=True)
     if poster_bajado:
         destino = poster._carpeta_posters(Path(biblioteca) / p["folder_path"]) / "poster.jpg"
-        poster._usar(conn, pelicula_id, destino.relative_to(biblioteca).as_posix(), "omdb")
+        relativa = destino.relative_to(biblioteca).as_posix()
+        actual = poster._actual(conn, pelicula_id)
+        if actual is None or actual["origen"] == "omdb":
+            poster._usar(conn, pelicula_id, relativa, "omdb")
+        else:
+            poster.registrar(conn, pelicula_id, relativa, "omdb")
         conn.commit()
     return aviso
 

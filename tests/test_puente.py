@@ -75,7 +75,7 @@ def test_abrir_el_detalle_sin_el_poster_no_deja_una_imagen_rota_en_la_recomendad
 
 
 def test_aplicar_datos_de_imdb_con_poster_bajado_actualiza_la_recomendada(puente):
-    p = pelicula(puente, "Alien", "folder.jpg")
+    p = pelicula(puente, "Alien")
     puente.recomendar()
     destino = puente.config.biblioteca / "Alien" / "posters" / "poster.jpg"
     destino.parent.mkdir()

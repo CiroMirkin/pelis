@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pelis import archivo_metadatos, db, edicion, metadatos
+from pelis import archivo_metadatos, db, edicion, metadatos, poster
 from pelis.escaneo import escanear, importar_sin_red
 
 from test_escaneo import DATOS_ALIEN, OmdbFalso, carpeta
@@ -163,6 +163,62 @@ def test_corregir_match_no_pisa_un_poster_propio(biblioteca, conn):
     carpeta(biblioteca, "Aliens (1986)", "Aliens.mp4", "folder.jpg")
     escanear(conn, biblioteca, OmdbFalso({("Aliens", 1986): DATOS_ALIEN}))
     assert edicion.destino_poster(conn, biblioteca, 1) is None
+
+
+def test_corregir_match_reemplaza_el_poster_bajado_aunque_el_actual_sea_propio(biblioteca, conn):
+    carpeta(biblioteca, "Aliens (1986)", "Aliens.mp4")
+    # El match automático salió mal y bajó posters/poster.jpg de otra película
+    escanear(conn, biblioteca, OmdbFalso({("Aliens", 1986): DATOS_ALIEN}))
+    # Después el usuario agrega una imagen propia, que pasa a ser la actual
+    (biblioteca / "Aliens (1986)" / "folder.jpg").touch()
+    poster.revisar(conn, biblioteca, 1)
+    assert poster._actual(conn, 1)["path"] == "Aliens (1986)/folder.jpg"
+
+    omdb = OmdbConBusqueda({"tt0090605": DATOS_ALIENS})
+    destino = edicion.destino_poster(conn, biblioteca, 1)
+    encontrados, _ = metadatos.obtener(omdb.por_id("tt0090605"), None, [])
+    bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+    edicion.aplicar_omdb(conn, biblioteca, 1, encontrados, bajado)
+
+    assert (biblioteca / "Aliens (1986)" / "posters" / "poster.jpg").read_bytes() == b"https://ejemplo/aliens.jpg"
+    actual = poster._actual(conn, 1)
+    assert (actual["path"], actual["origen"]) == ("Aliens (1986)/folder.jpg", "existente")
+
+
+def test_corregir_match_reemplaza_el_poster_bajado_actual_y_lo_mantiene_como_actual(biblioteca, conn):
+    carpeta(biblioteca, "Aliens (1986)", "Aliens.mp4")
+    # El match automático salió mal y bajó posters/poster.jpg de otra película, que quedó como actual
+    escanear(conn, biblioteca, OmdbFalso({("Aliens", 1986): DATOS_ALIEN}))
+    archivo = biblioteca / "Aliens (1986)" / "posters" / "poster.jpg"
+    previo = archivo.read_bytes()
+    actual = poster._actual(conn, 1)
+    assert (actual["path"], actual["origen"]) == ("Aliens (1986)/posters/poster.jpg", "omdb")
+
+    omdb = OmdbConBusqueda({"tt0090605": DATOS_ALIENS})
+    destino = edicion.destino_poster(conn, biblioteca, 1)
+    encontrados, _ = metadatos.obtener(omdb.por_id("tt0090605"), None, [])
+    bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+    edicion.aplicar_omdb(conn, biblioteca, 1, encontrados, bajado)
+
+    assert archivo.read_bytes() == b"https://ejemplo/aliens.jpg" != previo
+    actual = poster._actual(conn, 1)
+    assert (actual["path"], actual["origen"]) == ("Aliens (1986)/posters/poster.jpg", "omdb")
+    assert conn.execute("SELECT COUNT(*) FROM posters WHERE pelicula_id = 1").fetchone()[0] == 1
+
+
+def test_corregir_match_con_solo_imagenes_propias_no_baja_nada(biblioteca, conn):
+    carpeta(biblioteca, "Aliens (1986)", "Aliens.mp4", "folder.jpg")
+    escanear(conn, biblioteca, OmdbFalso({("Aliens", 1986): DATOS_ALIEN}))
+
+    omdb = OmdbConBusqueda({"tt0090605": DATOS_ALIENS})
+    destino = edicion.destino_poster(conn, biblioteca, 1)
+    encontrados, _ = metadatos.obtener(omdb.por_id("tt0090605"), None, [])
+    bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+    edicion.aplicar_omdb(conn, biblioteca, 1, encontrados, bajado)
+
+    assert omdb.posters == []
+    assert not (biblioteca / "Aliens (1986)" / "posters" / "poster.jpg").exists()
+    assert poster._actual(conn, 1)["path"] == "Aliens (1986)/folder.jpg"
 
 
 def test_candidatos_separa_el_anio(conn):

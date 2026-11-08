@@ -9,9 +9,9 @@ Regla nueva:
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Con un póster de OMDb en el set y una imagen propia como actual, corregir el match reemplaza el archivo de OMDb y la imagen propia sigue siendo la actual.
-- [ ] Con el póster de OMDb como actual, corregir el match lo reemplaza y sigue siendo el actual (comportamiento de hoy).
-- [ ] Con solo imágenes propias, corregir el match no baja nada.
-- [ ] Tests en la suite de edición que cubren los tres casos, sin red.
+- [x] Con un póster de OMDb en el set y una imagen propia como actual, corregir el match reemplaza el archivo de OMDb y la imagen propia sigue siendo la actual.
+- [x] Con el póster de OMDb como actual, corregir el match lo reemplaza y sigue siendo el actual (comportamiento de hoy).
+- [x] Con solo imágenes propias, corregir el match no baja nada.
+- [x] Tests en la suite de edición que cubren los tres casos, sin red.
