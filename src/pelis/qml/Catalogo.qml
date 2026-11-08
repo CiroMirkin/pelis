@@ -10,7 +10,7 @@ Page {
 
     // Texto con el que se filtró la grilla por última vez (el campo puede ir adelantado por la espera)
     property string filtro: ""
-    // "todas", "vistas" o "noVistas"; vive en el modelo para que buscar o elegir época lo restablezca
+    // Vale "todas", "vistas" o "noVistas" y vive en el modelo para que buscar o elegir época lo restablezca
     readonly property string vistas: puente.catalogo.vistas
     // La recomendación (botón y franja) solo se ofrece con el catálogo sin buscar ni filtrar
     readonly property bool sinFiltros: filtro === "" && puente.catalogo.vistas !== "vistas"
@@ -94,6 +94,7 @@ Page {
         color: Tema.noche
         Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Tema.linea }
 
+        // Todos los controles miden 38; los Boton van con enBarra para dibujarse a la misma altura que el selector de época
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: Tema.px(40)
@@ -138,26 +139,11 @@ Page {
                 OpcionVistas { text: "Sin ver"; valor: "noVistas" }
                 OpcionVistas { text: "Vistas"; valor: "vistas" }
             }
-            SelectorEpoca {
-                id: selectorEpoca
-                visible: periodos.length > 1
-                Layout.preferredHeight: Tema.px(38)
-                periodos: puente.catalogo.periodos
-                periodo: puente.catalogo.periodo
-                onElegido: (clave) => puente.catalogo.filtrarPeriodo(clave)
-            }
-            Boton {
-                visible: puente.puedeRecomendar && pagina.sinFiltros
-                Layout.preferredHeight: Tema.px(38)
-                text: "Recomendación"
-                focusPolicy: Qt.TabFocus
-                // A la grilla y no a la ✕: un Enter de más gastaría la recomendación de esta apertura
-                onClicked: { puente.recomendar(); grilla.forceActiveFocus() }
-            }
             // Filtro de incompletas activo: se quita desde acá o desde el menú
             Boton {
                 visible: puente.catalogo.soloIncompletas
                 Layout.preferredHeight: Tema.px(38)
+                enBarra: true
                 text: "Sin datos o portada"
                 icono: "cerrar"
                 focusPolicy: Qt.TabFocus
@@ -186,8 +172,26 @@ Page {
                 font.family: Tema.texto
                 font.pixelSize: Tema.px(14)
             }
+            SelectorEpoca {
+                id: selectorEpoca
+                visible: periodos.length > 1
+                Layout.preferredHeight: Tema.px(38)
+                periodos: puente.catalogo.periodos
+                periodo: puente.catalogo.periodo
+                onElegido: (clave) => puente.catalogo.filtrarPeriodo(clave)
+            }
+            Boton {
+                visible: puente.puedeRecomendar && pagina.sinFiltros
+                Layout.preferredHeight: Tema.px(38)
+                enBarra: true
+                text: "Recomendación"
+                focusPolicy: Qt.TabFocus
+                // A la grilla y no a la ✕: un Enter de más gastaría la recomendación de esta apertura
+                onClicked: { puente.recomendar(); grilla.forceActiveFocus() }
+            }
             BotonMas {
                 alinearDerecha: true
+                enBarra: true
                 focusPolicy: Qt.TabFocus
                 KeyNavigation.down: grilla
                 OpcionMenu {
@@ -235,7 +239,7 @@ Page {
                     onTriggered: actualizacion.iniciar()
                 }
             }
-            BotonPantallaCompleta {}
+            BotonPantallaCompleta { enBarra: true }
         }
     }
 

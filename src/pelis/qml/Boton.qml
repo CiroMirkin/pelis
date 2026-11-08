@@ -9,12 +9,16 @@ Button {
     property bool soloIcono: false
     // Secundario sin contorno (ej. la ✕ de descartar): solo se marca al pasar el mouse
     property bool sinBorde: false
+    // En la barra del catálogo se dibuja a toda la altura, sin los insets de Material, para emparejar con el selector de época
+    property bool enBarra: false
 
     implicitHeight: Tema.px(38)
     leftPadding: soloIcono ? Tema.px(9) : Tema.px(14)
     rightPadding: soloIcono ? Tema.px(9) : Tema.px(16)
     focusPolicy: Qt.StrongFocus
     hoverEnabled: true
+    Binding on topInset { when: boton.enBarra; value: 0 }
+    Binding on bottomInset { when: boton.enBarra; value: 0 }
 
     Keys.onReturnPressed: clicked()
     Keys.onEnterPressed: clicked()
