@@ -5,6 +5,8 @@ import "navegacion.js" as Navegacion
 // Todas las películas de la biblioteca donde participa una persona (dirección o elenco)
 Page {
     id: pagina
+    // navegacion.js la reconoce por este nombre en la pila
+    objectName: "persona"
     required property string nombre
     property var peliculas: []
 
