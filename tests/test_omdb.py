@@ -54,3 +54,15 @@ def test_buscar_traduce_demasiados_resultados():
     omdb = omdb_con(RespuestaFalsa({"Response": "False", "Error": "Too many results."}))
     with pytest.raises(ErrorRed, match="año"):
         omdb.buscar("Alien")
+
+
+def test_id_que_omdb_no_tiene_no_es_error_de_red():
+    # OMDb responde así a un ID bien formado que no existe (tt0000000)
+    omdb = omdb_con(RespuestaFalsa({"Response": "False", "Error": "Error getting data."}))
+    assert omdb.por_id("tt0000000") is None
+
+
+def test_error_getting_data_fuera_de_por_id_sigue_siendo_error_de_red():
+    omdb = omdb_con(RespuestaFalsa({"Response": "False", "Error": "Error getting data."}))
+    with pytest.raises(ErrorRed):
+        omdb.por_titulo("Alien", 1979)

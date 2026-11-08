@@ -30,7 +30,13 @@ class Omdb:
         raise ErrorRed(error or f"HTTP {r.status_code}")
 
     def por_id(self, imdb_id):
-        return self._consultar(i=imdb_id)
+        try:
+            return self._consultar(i=imdb_id)
+        except ErrorRed as e:
+            # Así responde OMDb a un ID bien formado que no tiene (uno mal formado es "Incorrect IMDb ID.")
+            if str(e) == "Error getting data.":
+                return None
+            raise
 
     def por_titulo(self, titulo, year=None):
         params = {"t": titulo, "type": "movie"}

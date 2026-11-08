@@ -7,13 +7,13 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** needs-triage
+**Status:** done
 
-- [ ] `por_id` con un ID bien formado que OMDb no tiene devuelve `None` («no está»).
-- [ ] «Editar datos» muestra el mensaje de que IMDb no tiene esa película.
-- [ ] El escaneo deja la película **No encontrada**, no **Pendiente**.
-- [ ] `"Invalid API key!"`, `"Request limit reached!"` y una respuesta que no es JSON siguen siendo error de red.
-- [ ] Test en `tests/test_omdb.py` con la respuesta `"Error getting data."`.
+- [x] `por_id` con un ID bien formado que OMDb no tiene devuelve `None` («no está»).
+- [x] «Editar datos» muestra el mensaje de que IMDb no tiene esa película.
+- [x] El escaneo deja la película **No encontrada**, no **Pendiente**.
+- [x] `"Invalid API key!"`, `"Request limit reached!"` y una respuesta que no es JSON siguen siendo error de red.
+- [x] Test en `tests/test_omdb.py` con la respuesta `"Error getting data."`.
 
 ## Decisión pendiente
 
@@ -38,3 +38,7 @@ Respuestas reales de OMDb (2026-11-07):
 | `i=tt99999999`, `i=tt12`, `i=xyz` | `Incorrect IMDb ID.` |
 | `t=<título inexistente>`, `s=<título inexistente>` | `Movie not found!` |
 | `s=a` | `Too many results.` |
+
+## Comments
+
+**2026-11-07:** se eligió la opción 2: solo `por_id` trata `"Error getting data."` como «no está». En el escaneo, un ID inexistente ya no frena la cascada: se sigue con la búsqueda por título (con OMDb real, «Aliens (1986) [tt0000000]» quedó matcheada con tt0090605 y una carpeta sin título real quedó **No encontrada**).
