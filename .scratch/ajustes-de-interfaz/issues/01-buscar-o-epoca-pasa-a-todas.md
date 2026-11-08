@@ -4,11 +4,11 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `filtrar` con texto no vacío restablece el filtro de vistas a «todas».
-- [ ] `filtrarPeriodo` con una época no vacía hace lo mismo.
-- [ ] `filtrar("")` y `filtrarPeriodo("")` no tocan el filtro de vistas.
-- [ ] Elegir «Sin ver» o «Vistas» después de buscar o elegir época se combina con ambos.
-- [ ] La barra subraya «Todas» cuando el filtro se restablece solo; la Recomendada y su botón siguen ocultándose con búsqueda, «Vistas», época o incompletas.
-- [ ] Tests en `tests/test_catalogo.py` para cada regla; `test_filtros_de_vistas_periodo_y_busqueda_se_combinan` reescrito con el orden nuevo.
+- [x] `filtrar` con texto no vacío restablece el filtro de vistas a «todas».
+- [x] `filtrarPeriodo` con una época no vacía hace lo mismo.
+- [x] `filtrar("")` y `filtrarPeriodo("")` no tocan el filtro de vistas.
+- [x] Elegir «Sin ver» o «Vistas» después de buscar o elegir época se combina con ambos.
+- [x] La barra subraya «Todas» cuando el filtro se restablece solo; la Recomendada y su botón siguen ocultándose con búsqueda, «Vistas», época o incompletas.
+- [x] Tests en `tests/test_catalogo.py` para cada regla; `test_filtros_de_vistas_periodo_y_busqueda_se_combinan` reescrito con el orden nuevo.

@@ -1,6 +1,6 @@
 # Ajustes de interfaz: navegación, catálogo y reproductor
 
-Status: ready-for-agent
+Status: done
 
 ## Problem Statement
 

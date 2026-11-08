@@ -4,14 +4,14 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Una persona se identifica por nombre y una película por id; si ya está en la pila, se desapila hasta ella.
-- [ ] Si no está, se apila como hoy.
-- [ ] La pantalla a la que se vuelve recarga y deja el foco en la grilla, igual que con «Volver».
-- [ ] Esc y el botón «Volver» llevan al mismo lugar.
-- [ ] Reproductor, visor, editar y faltantes no cambian.
-- [ ] Verificado a mano en la app con el recorrido de la spec.
+- [x] Una persona se identifica por nombre y una película por id; si ya está en la pila, se desapila hasta ella.
+- [x] Si no está, se apila como hoy.
+- [x] La pantalla a la que se vuelve recarga y deja el foco en la grilla, igual que con «Volver».
+- [x] Esc y el botón «Volver» llevan al mismo lugar.
+- [x] Reproductor, visor, editar y faltantes no cambian.
+- [x] Verificado a mano en la app con el recorrido de la spec.
 
 ## Comments
 

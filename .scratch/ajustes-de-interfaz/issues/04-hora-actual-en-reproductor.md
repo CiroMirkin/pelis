@@ -4,9 +4,9 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] «Hora: HH:MM» en 24 horas, cifras tabulares, encima de «Termina».
-- [ ] Se actualiza sola mientras se mira.
-- [ ] Se ve aunque la duración todavía no se conozca.
-- [ ] Verificado a mano en la app, también en pantalla completa.
+- [x] «Hora: HH:MM» en 24 horas, cifras tabulares, encima de «Termina».
+- [x] Se actualiza sola mientras se mira.
+- [x] Se ve aunque la duración todavía no se conozca.
+- [x] Verificado a mano en la app, también en pantalla completa.

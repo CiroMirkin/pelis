@@ -4,12 +4,12 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Con muchas pistas y ventana chica, el panel no tapa la barra superior ni se sale de la ventana.
-- [ ] Las listas scrollean hasta la última pista; el estilo de subtítulos sigue visible.
-- [ ] Tocar fuera del panel (video, barra, barra superior) lo cierra.
-- [ ] Tocar el botón «Audio y subtítulos» con el panel abierto lo cierra, sin reabrirlo.
-- [ ] Esc sigue cerrándolo.
-- [ ] El toque que cierra no pausa, no reanuda ni muestra/oculta controles.
-- [ ] Verificado a mano en la app.
+- [x] Con muchas pistas y ventana chica, el panel no tapa la barra superior ni se sale de la ventana.
+- [x] Las listas scrollean hasta la última pista; el estilo de subtítulos sigue visible.
+- [x] Tocar fuera del panel (video, barra, barra superior) lo cierra.
+- [x] Tocar el botón «Audio y subtítulos» con el panel abierto lo cierra, sin reabrirlo.
+- [x] Esc sigue cerrándolo.
+- [x] El toque que cierra no pausa, no reanuda ni muestra/oculta controles.
+- [x] Verificado a mano en la app.

@@ -4,10 +4,10 @@
 
 **Blocked by:** 03, 04, 05 (tocan los mismos textos; evita conflictos).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Ningún texto de la app usa mayúscula forzada.
-- [ ] Títulos de películas y nombres de personas con su capitalización real.
-- [ ] Rótulos fijos («Dirección», «Elenco», «Audio», «Subtítulos», «Recomendación», «Época», etc.) con mayúscula inicial.
-- [ ] DESIGN.md actualizado: sin tipografía de marca; rótulo y titular dejan de ser «mayúscula».
-- [ ] Revisadas a mano todas las pantallas: catálogo, detalle, persona, editar, faltantes, reproductor, visor y diálogos.
+- [x] Ningún texto de la app usa mayúscula forzada.
+- [x] Títulos de películas y nombres de personas con su capitalización real.
+- [x] Rótulos fijos («Dirección», «Elenco», «Audio», «Subtítulos», «Recomendación», «Época», etc.) con mayúscula inicial.
+- [x] DESIGN.md actualizado: sin tipografía de marca; rótulo y titular dejan de ser «mayúscula».
+- [x] Revisadas a mano todas las pantallas: catálogo, detalle, persona, editar, faltantes, reproductor, visor y diálogos.
