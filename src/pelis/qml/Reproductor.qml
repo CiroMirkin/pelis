@@ -141,8 +141,12 @@ Page {
 
     // QtMultimedia no pide que la pantalla siga encendida mientras reproduce
     onReproduciendoChanged: puente.mantenerPantalla(reproduciendo)
-    // Por si la página se cierra sin pasar por salir(): ahí no llega el cambio de reproduciendo
-    Component.onDestruction: puente.mantenerPantalla(false)
+    // Por si la página se cierra sin pasar por salir(): ahí no llega el cambio de reproduciendo.
+    // Es el único lugar que recarga el catálogo al volver (pausar solo guarda el progreso).
+    Component.onDestruction: {
+        puente.mantenerPantalla(false)
+        puente.salioDelReproductor()
+    }
 
     MediaPlayer {
         id: player

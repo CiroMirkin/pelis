@@ -132,3 +132,23 @@ def test_terminar_un_escaneo_actualiza_catalogo_y_recomendada(puente):
     esperado = url(puente, "Alien/folder.jpg")
     assert puente.recomendada["poster"] == esperado
     assert [f["poster"] for f in puente.catalogo._filas] == [esperado]
+
+
+def test_guardar_progreso_no_recarga_el_catalogo(puente, monkeypatch):
+    p = pelicula(puente, "Alien")
+    recargas = []
+    monkeypatch.setattr(puente, "_recargar_catalogo", lambda: recargas.append(True))
+
+    puente.guardarProgreso(p, 300000)
+
+    assert recargas == []
+    assert db.pelicula(puente.conn, p)["progreso_ms"] == 300000
+
+
+def test_salir_del_reproductor_recarga_el_catalogo(puente, monkeypatch):
+    recargas = []
+    monkeypatch.setattr(puente, "_recargar_catalogo", lambda: recargas.append(True))
+
+    puente.salioDelReproductor()
+
+    assert recargas == [True]

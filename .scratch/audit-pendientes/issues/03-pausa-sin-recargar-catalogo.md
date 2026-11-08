@@ -4,12 +4,12 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Pausar guarda el progreso y no recarga el catálogo.
-- [ ] Al salir del reproductor (Esc, botón volver o cerrar la ventana), la **Tarjeta** muestra la barra de progreso actualizada y la película aparece entre las "a medias".
-- [ ] El detalle, al volver del reproductor, sigue mostrando el progreso y la hora de fin actualizados.
-- [ ] Si era la **Recomendada**, empezarla la sigue cerrando.
+- [x] Pausar guarda el progreso y no recarga el catálogo.
+- [x] Al salir del reproductor (Esc, botón volver o cerrar la ventana), la **Tarjeta** muestra la barra de progreso actualizada y la película aparece entre las "a medias".
+- [x] El detalle, al volver del reproductor, sigue mostrando el progreso y la hora de fin actualizados.
+- [x] Si era la **Recomendada**, empezarla la sigue cerrando.
 
 ## Dónde
 
