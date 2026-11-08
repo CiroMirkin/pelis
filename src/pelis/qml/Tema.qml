@@ -1,8 +1,8 @@
 pragma Singleton
 import QtQuick
 
-// Videoclub de barrio, minimal: local a oscuras en grises carbón, texto blanco roto y un solo naranja de etiqueta.
-// Los nombres (noche, crema, etiqueta…) vienen de la paleta anterior y se mantienen.
+// Los colores y cuándo usar cada uno están en DESIGN.md y hay que cambiar los dos archivos juntos.
+// Los nombres (noche, crema, etiqueta…) vienen de la paleta anterior y se mantienen aunque ya no describan el color.
 QtObject {
     // Escala general de tamaños (1 = escritorio); queda para un futuro modo TV
     property real escala: 1

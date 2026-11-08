@@ -1,6 +1,6 @@
 import QtQuick
 
-// Etiqueta «Vista»: estrella ondulada de picos suaves, como los stickers de oferta de antes
+// Etiqueta «Vista» con forma de estrella ondulada de picos suaves como los stickers de oferta de antes
 Item {
     id: etiqueta
     width: Tema.px(56)

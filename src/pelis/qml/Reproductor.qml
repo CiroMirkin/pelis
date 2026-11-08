@@ -341,7 +341,7 @@ Page {
                 Column {
                     Layout.leftMargin: Tema.px(10)
                     spacing: 1
-                    // La hora actual no depende de la película: se ve aunque falte la duración
+                    // La hora actual no depende de la película entonces se ve aunque falte la duración
                     Text {
                         text: "Hora: " + pagina.horaActual
                         color: Tema.tenue
@@ -408,7 +408,7 @@ Page {
         }
     }
 
-    // Toque fuera del panel: lo cierra y no deja pasar el click al video ni a las barras
+    // Se usa esta capa en vez de CloseOnPressOutside para que el toque no llegue al video (no pausa ni muestra controles) y para que el botón del panel siga siendo interruptor, porque con el popup cerrando por fuera el click del botón lo reabría
     MouseArea {
         anchors.fill: parent
         visible: panel.visible
@@ -417,10 +417,10 @@ Page {
         onClicked: panel.close()
     }
 
-    // Audio y subtítulos: un panel sobre la barra, con dos listas que scrollean por separado
+    // Panel de audio y subtítulos sobre la barra
     Popup {
         id: panel
-        // Deja libre la barra superior y la de controles; si el contenido no entra, scrollea
+        // Deja libre la barra superior (68) y la de controles con 24 de aire
         readonly property int alturaMaxima: pagina.height - Tema.px(68) - barra.height - Tema.px(24)
         x: pagina.width - width - Tema.px(32)
         y: barra.y - height + Tema.px(8)

@@ -90,7 +90,7 @@ class ModeloCatalogo(QAbstractListModel):
         if clave != self._periodo:
             self._periodo = clave
             self.periodoChanged.emit()
-            # Elegir otra época es pedir algo nuevo: se suelta el filtro de vistas
+            # Elegir otra época es pedir algo nuevo entonces se suelta el filtro de vistas
             if clave:
                 self._poner_vistas("todas")
         self._aplicar()
@@ -114,7 +114,7 @@ class ModeloCatalogo(QAbstractListModel):
     def filtrar(self, texto):
         """Deja las películas cuyo título, director o reparto contienen todas las palabras de `texto`."""
         palabras = normalizar(texto).split()
-        # Buscar otra cosa es pedir algo nuevo: se suelta el filtro de vistas para no esconder el resultado.
+        # Buscar otra cosa es pedir algo nuevo entonces se suelta el filtro de vistas para que no esconda el resultado.
         # Repetir la misma búsqueda (Enter, ↓, la espera de 300 ms) no lo toca.
         if palabras and palabras != self._palabras:
             self._poner_vistas("todas")
@@ -123,7 +123,6 @@ class ModeloCatalogo(QAbstractListModel):
 
     @Slot(str)
     def filtrarVistas(self, cuales):
-        """cuales: "todas", "vistas" o "noVistas"."""
         self._poner_vistas(cuales if cuales in ("todas", "vistas", "noVistas") else "todas")
         self._aplicar()
 
