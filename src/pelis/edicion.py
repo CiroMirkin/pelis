@@ -33,6 +33,11 @@ def separar_anio(texto):
 def candidatos(omdb, texto):
     """Películas de OMDb que coinciden con `texto` (título, opcionalmente con el año al final)."""
     titulo, anio = separar_anio(texto)
+    encontradas = omdb.buscar(titulo, anio)
+    if anio is not None and not encontradas:
+        # "Blade Runner 2049": el 2049 se tomó como año y OMDb no tiene esa película.
+        # Se busca una vez más con el texto completo, sin año.
+        encontradas = omdb.buscar(texto.strip())
     return [
         {
             "imdbId": c.get("imdbID", ""),
@@ -40,7 +45,7 @@ def candidatos(omdb, texto):
             "anio": c.get("Year", ""),
             "poster": c["Poster"] if c.get("Poster", "N/A") != "N/A" else "",
         }
-        for c in omdb.buscar(titulo, anio)
+        for c in encontradas
     ]
 
 

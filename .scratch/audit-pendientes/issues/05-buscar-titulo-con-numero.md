@@ -4,12 +4,12 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] «Blade Runner 2049» muestra candidatos aunque OMDb no tenga nada para «Blade Runner» en 2049.
-- [ ] «Aliens 1986» sigue buscando «Aliens» con año 1986 y no hace una segunda consulta si esa trae resultados.
-- [ ] Un texto sin año al final hace una sola consulta, como hoy.
-- [ ] Tests con un OMDb falso, sin red, que cubren los tres casos.
+- [x] «Blade Runner 2049» muestra candidatos aunque OMDb no tenga nada para «Blade Runner» en 2049.
+- [x] «Aliens 1986» sigue buscando «Aliens» con año 1986 y no hace una segunda consulta si esa trae resultados.
+- [x] Un texto sin año al final hace una sola consulta, como hoy.
+- [x] Tests con un OMDb falso, sin red, que cubren los tres casos.
 
 ## Dónde
 

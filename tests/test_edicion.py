@@ -174,6 +174,37 @@ def test_candidatos_separa_el_anio(conn):
     ]
 
 
+def test_candidatos_reintenta_sin_anio_si_la_busqueda_vino_vacia(conn):
+    omdb = OmdbConBusqueda(busquedas={("Blade Runner 2049", None): [
+        {"Title": "Blade Runner 2049", "Year": "2017", "imdbID": "tt1856101", "Poster": "N/A"},
+    ]})
+
+    assert edicion.candidatos(omdb, "Blade Runner 2049") == [
+        {"imdbId": "tt1856101", "titulo": "Blade Runner 2049", "anio": "2017", "poster": ""},
+    ]
+    assert omdb.consultas == [("s", "Blade Runner", 2049), ("s", "Blade Runner 2049", None)]
+
+
+def test_candidatos_no_reintenta_si_la_primera_busqueda_trae_resultados(conn):
+    omdb = OmdbConBusqueda(busquedas={("Aliens", 1986): [
+        {"Title": "Aliens", "Year": "1986", "imdbID": "tt0090605", "Poster": "N/A"},
+    ]})
+
+    edicion.candidatos(omdb, "Aliens 1986")
+
+    assert omdb.consultas == [("s", "Aliens", 1986)]
+
+
+def test_candidatos_sin_anio_hace_una_sola_consulta(conn):
+    omdb = OmdbConBusqueda(busquedas={("Aliens", None): [
+        {"Title": "Aliens", "Year": "1986", "imdbID": "tt0090605", "Poster": "N/A"},
+    ]})
+
+    edicion.candidatos(omdb, "Aliens")
+
+    assert omdb.consultas == [("s", "Aliens", None)]
+
+
 def test_escaneo_reasigna_carpeta_renombrada_conservando_progreso_y_vista(biblioteca, conn):
     vieja = carpeta(biblioteca, "Alien (1979)", "Alien.mp4")
     escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
