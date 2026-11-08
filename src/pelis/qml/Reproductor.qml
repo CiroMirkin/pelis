@@ -59,6 +59,7 @@ Page {
     Timer { interval: 1000; repeat: true; running: pagina.activa; onTriggered: pagina.ahora = new Date() }
     readonly property string horaFin: player.duration > 0
         ? Qt.formatTime(new Date(ahora.getTime() + Math.max(0, player.duration - player.position)), "HH:mm") : ""
+    readonly property string horaActual: Qt.formatTime(pagina.ahora, "HH:mm")
 
     function guardarProgreso() {
         if (inicializado && !terminada && inicio < 0)
@@ -222,8 +223,7 @@ Page {
         styleColor: "black"
         font.family: Tema.rotulo
         font.pixelSize: Tema.px(15)
-        font.capitalization: Font.AllUppercase
-        font.letterSpacing: 0.6
+        font.letterSpacing: 0.2
         SequentialAnimation {
             id: fundidoCaptura
             PropertyAction { target: avisoCaptura; property: "opacity"; value: 1 }
@@ -297,7 +297,6 @@ Page {
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(20)
                 font.weight: Font.Bold
-                font.capitalization: Font.AllUppercase
                 color: Tema.crema
             }
             BotonPantallaCompleta { id: botonPantalla }
@@ -339,16 +338,27 @@ Page {
                     onMoved: player.position = value
                 }
                 Text { text: pagina.formatear(player.duration); color: Tema.tenue; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
-                Text {
-                    visible: pagina.horaFin !== ""
+                Column {
                     Layout.leftMargin: Tema.px(10)
-                    text: "Termina " + pagina.horaFin
-                    color: Tema.tenue
-                    font.family: Tema.rotulo
-                    font.pixelSize: Tema.px(15)
-                    font.capitalization: Font.AllUppercase
-                    font.letterSpacing: 0.6
-                    font.features: { "tnum": 1 }
+                    spacing: 1
+                    // La hora actual no depende de la película entonces se ve aunque falte la duración
+                    Text {
+                        text: "Hora: " + pagina.horaActual
+                        color: Tema.tenue
+                        font.family: Tema.rotulo
+                        font.pixelSize: Tema.px(15)
+                        font.letterSpacing: 0.2
+                        font.features: { "tnum": 1 }
+                    }
+                    Text {
+                        visible: pagina.horaFin !== ""
+                        text: "Termina " + pagina.horaFin
+                        color: Tema.tenue
+                        font.family: Tema.rotulo
+                        font.pixelSize: Tema.px(15)
+                        font.letterSpacing: 0.2
+                        font.features: { "tnum": 1 }
+                    }
                 }
             }
 
@@ -398,14 +408,26 @@ Page {
         }
     }
 
-    // Audio y subtítulos: un panel sobre la barra, con dos listas
+    // Se usa esta capa en vez de CloseOnPressOutside para que el toque no llegue al video (no pausa ni muestra controles) y para que el botón del panel siga siendo interruptor, porque con el popup cerrando por fuera el click del botón lo reabría
+    MouseArea {
+        anchors.fill: parent
+        visible: panel.visible
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        z: 1
+        onClicked: panel.close()
+    }
+
+    // Panel de audio y subtítulos sobre la barra
     Popup {
         id: panel
+        // Deja libre la barra superior (68) y la de controles con 24 de aire
+        readonly property int alturaMaxima: pagina.height - Tema.px(68) - barra.height - Tema.px(24)
         x: pagina.width - width - Tema.px(32)
         y: barra.y - height + Tema.px(8)
         width: Math.min(Tema.px(560), pagina.width - Tema.px(64))
+        height: Math.min(contenidoPanel.implicitHeight + topPadding + bottomPadding, alturaMaxima)
         padding: Tema.px(20)
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+        closePolicy: Popup.CloseOnEscape
         background: Rectangle {
             color: Qt.alpha(Tema.estante, 0.97)
             radius: Tema.px(4)
@@ -427,8 +449,7 @@ Page {
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(14)
                 font.weight: Font.DemiBold
-                font.letterSpacing: 1
-                font.capitalization: Font.AllUppercase
+                font.letterSpacing: 0.4
                 color: Tema.tenue
             }
             Repeater {
@@ -501,35 +522,49 @@ Page {
             font.family: Tema.rotulo
             font.pixelSize: Tema.px(14)
             font.weight: Font.DemiBold
-            font.letterSpacing: 1
-            font.capitalization: Font.AllUppercase
+            font.letterSpacing: 0.4
             color: Tema.tenue
         }
 
-        ColumnLayout {
-            width: panel.availableWidth
+        contentItem: ColumnLayout {
+            id: contenidoPanel
             spacing: Tema.px(16)
             RowLayout {
                 Layout.fillWidth: true
+                Layout.fillHeight: true
                 spacing: Tema.px(24)
-                Lista {
-                    Layout.alignment: Qt.AlignTop
+                ScrollView {
+                    id: scrollAudio
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
                     Layout.preferredWidth: 1
-                    titulo: "Audio"
-                    opciones: pagina.opcionesAudio
-                    actual: Math.max(0, player.activeAudioTrack)
-                    onElegida: (i) => player.activeAudioTrack = i
+                    clip: true
+                    contentWidth: availableWidth
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    Lista {
+                        width: scrollAudio.availableWidth
+                        titulo: "Audio"
+                        opciones: pagina.opcionesAudio
+                        actual: Math.max(0, player.activeAudioTrack)
+                        onElegida: (i) => player.activeAudioTrack = i
+                    }
                 }
                 Rectangle { Layout.fillHeight: true; width: 1; color: Tema.linea }
-                Lista {
-                    Layout.alignment: Qt.AlignTop
+                ScrollView {
+                    id: scrollSubs
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
                     Layout.preferredWidth: 1
-                    titulo: "Subtítulos"
-                    opciones: pagina.opcionesSubs
-                    actual: pagina.indiceSubs
-                    onElegida: (i) => pagina.elegirSubs(i)
+                    clip: true
+                    contentWidth: availableWidth
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    Lista {
+                        width: scrollSubs.availableWidth
+                        titulo: "Subtítulos"
+                        opciones: pagina.opcionesSubs
+                        actual: pagina.indiceSubs
+                        onElegida: (i) => pagina.elegirSubs(i)
+                    }
                 }
             }
 

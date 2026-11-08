@@ -58,7 +58,7 @@ Page {
                 onClicked: pagina.StackView.view.pop()
             }
             Text {
-                text: "FALTANTES"
+                text: "Faltantes"
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(22)
                 font.weight: Font.Bold
@@ -224,7 +224,7 @@ Page {
             width: confirmar.availableWidth
             spacing: Tema.px(18)
             Text {
-                text: "¿REASIGNAR?"
+                text: "¿Reasignar?"
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(22)
                 font.weight: Font.Bold

@@ -10,16 +10,13 @@ Page {
 
     // Texto con el que se filtró la grilla por última vez (el campo puede ir adelantado por la espera)
     property string filtro: ""
-    // "todas", "vistas" o "noVistas"
-    property string vistas: "todas"
+    // Vale "todas", "vistas" o "noVistas" y vive en el modelo para que buscar o elegir época lo restablezca
+    readonly property string vistas: puente.catalogo.vistas
     // La recomendación (botón y franja) solo se ofrece con el catálogo sin buscar ni filtrar
-    readonly property bool sinFiltros: filtro === "" && vistas !== "vistas" && puente.catalogo.periodo === ""
-                                       && !puente.catalogo.soloIncompletas
+    readonly property bool sinFiltros: filtro === "" && puente.catalogo.vistas !== "vistas"
+                                       && puente.catalogo.periodo === "" && !puente.catalogo.soloIncompletas
 
-    function filtrarVistas(cuales) {
-        vistas = cuales
-        puente.catalogo.filtrarVistas(cuales)
-    }
+    function filtrarVistas(cuales) { puente.catalogo.filtrarVistas(cuales) }
 
     // Opción del filtro de vistas: rótulo que se subraya en crema cuando está elegida
     component OpcionVistas: AbstractButton {
@@ -40,8 +37,7 @@ Page {
             font.family: Tema.rotulo
             font.pixelSize: Tema.px(15)
             font.weight: Font.DemiBold
-            font.capitalization: Font.AllUppercase
-            font.letterSpacing: 0.6
+            font.letterSpacing: 0.2
             color: opcion.elegida || opcion.hovered ? Tema.crema : Tema.tenue
         }
         background: Item {
@@ -98,20 +94,13 @@ Page {
         color: Tema.noche
         Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Tema.linea }
 
+        // Todos los controles miden 38; los Boton van con enBarra para dibujarse a la misma altura que el selector de época
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: Tema.px(40)
             anchors.rightMargin: Tema.px(40)
             spacing: Tema.px(20)
 
-            Text {
-                text: "PELIS"
-                font.family: Tema.rotulo
-                font.pixelSize: Tema.px(26)
-                font.weight: Font.Bold
-                font.letterSpacing: 2
-                color: Tema.crema
-            }
             Basic.TextField {
                 id: buscador
                 // Cede ancho para que un aviso no empuje los botones fuera de la ventana
@@ -119,7 +108,7 @@ Page {
                 Layout.minimumWidth: Tema.px(200)
                 Layout.preferredWidth: Tema.px(360)
                 Layout.maximumWidth: Tema.px(360)
-                Layout.leftMargin: Tema.px(20)
+                Layout.preferredHeight: Tema.px(38)
                 placeholderText: "Buscar título, director o reparto"
                 placeholderTextColor: Tema.tenue
                 color: Tema.crema
@@ -144,28 +133,17 @@ Page {
                 }
             }
             Row {
+                Layout.preferredHeight: Tema.px(38)
                 spacing: Tema.px(2)
                 OpcionVistas { text: "Todas"; valor: "todas" }
                 OpcionVistas { text: "Sin ver"; valor: "noVistas" }
                 OpcionVistas { text: "Vistas"; valor: "vistas" }
             }
-            SelectorEpoca {
-                id: selectorEpoca
-                visible: periodos.length > 1
-                periodos: puente.catalogo.periodos
-                periodo: puente.catalogo.periodo
-                onElegido: (clave) => puente.catalogo.filtrarPeriodo(clave)
-            }
-            Boton {
-                visible: puente.puedeRecomendar && pagina.sinFiltros
-                text: "Recomendar"
-                focusPolicy: Qt.TabFocus
-                // A la grilla y no a la ✕: un Enter de más gastaría la recomendación de esta apertura
-                onClicked: { puente.recomendar(); grilla.forceActiveFocus() }
-            }
             // Filtro de incompletas activo: se quita desde acá o desde el menú
             Boton {
                 visible: puente.catalogo.soloIncompletas
+                Layout.preferredHeight: Tema.px(38)
+                enBarra: true
                 text: "Sin datos o portada"
                 icono: "cerrar"
                 focusPolicy: Qt.TabFocus
@@ -194,8 +172,26 @@ Page {
                 font.family: Tema.texto
                 font.pixelSize: Tema.px(14)
             }
+            SelectorEpoca {
+                id: selectorEpoca
+                visible: periodos.length > 1
+                Layout.preferredHeight: Tema.px(38)
+                periodos: puente.catalogo.periodos
+                periodo: puente.catalogo.periodo
+                onElegido: (clave) => puente.catalogo.filtrarPeriodo(clave)
+            }
+            Boton {
+                visible: puente.puedeRecomendar && pagina.sinFiltros
+                Layout.preferredHeight: Tema.px(38)
+                enBarra: true
+                text: "Recomendación"
+                focusPolicy: Qt.TabFocus
+                // A la grilla y no a la ✕: un Enter de más gastaría la recomendación de esta apertura
+                onClicked: { puente.recomendar(); grilla.forceActiveFocus() }
+            }
             BotonMas {
                 alinearDerecha: true
+                enBarra: true
                 focusPolicy: Qt.TabFocus
                 KeyNavigation.down: grilla
                 OpcionMenu {
@@ -243,7 +239,7 @@ Page {
                     onTriggered: actualizacion.iniciar()
                 }
             }
-            BotonPantallaCompleta {}
+            BotonPantallaCompleta { enBarra: true }
         }
     }
 
@@ -301,8 +297,7 @@ Page {
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(13)
                     font.weight: Font.DemiBold
-                    font.capitalization: Font.AllUppercase
-                    font.letterSpacing: 1
+                    font.letterSpacing: 0.4
                     color: Tema.tenue
                 }
                 Text {
@@ -312,7 +307,6 @@ Page {
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(32)
                     font.weight: Font.Bold
-                    font.capitalization: Font.AllUppercase
                     color: Tema.crema
                 }
                 Text {
@@ -323,8 +317,7 @@ Page {
                     wrapMode: Text.WordWrap
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(15)
-                    font.capitalization: Font.AllUppercase
-                    font.letterSpacing: 0.6
+                    font.letterSpacing: 0.2
                     color: Tema.tenue
                 }
             }
@@ -449,7 +442,7 @@ Page {
             width: confirmarVistas.availableWidth
             spacing: Tema.px(18)
             Text {
-                text: "¿MARCAR TODAS COMO VISTAS?"
+                text: "¿Marcar todas como vistas?"
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(22)
                 font.weight: Font.Bold

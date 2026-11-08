@@ -99,7 +99,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 
 ## Recomendación a pedido
 
-* Como espectador, al tocar «Recomendar» en la barra del catálogo veo arriba una película recomendada, con su póster, título, año, género y duración.
+* Como espectador, al tocar «Recomendación» en la barra del catálogo veo arriba una película recomendada, con su póster, título, año, género y duración.
   * Se elige al azar entre las que no vi ni empecé, en el momento de tocar el botón.
   * Puedo pedirla una vez por cada vez que abro la app: después el botón no vuelve hasta la próxima apertura.
   * El botón no aparece si no hay ninguna película sin ver y sin empezar, y aparece si un escaneo trae alguna. Marcar todas como vistas no gasta un botón que no usé.

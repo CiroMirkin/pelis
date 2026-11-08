@@ -1,14 +1,17 @@
 import QtQuick
 import QtQuick.Controls
+import "navegacion.js" as Navegacion
 
 // Todas las películas de la biblioteca donde participa una persona (dirección o elenco)
 Page {
     id: pagina
+    // navegacion.js la reconoce por este nombre en la pila
+    objectName: "persona"
     required property string nombre
     property var peliculas: []
 
     function recargar() { peliculas = puente.peliculasDe(nombre) }
-    function abrir(id) { pagina.StackView.view.push("Detalle.qml", { peliculaId: id }) }
+    function abrir(id) { Navegacion.abrirPelicula(pagina.StackView.view, id) }
     function rol(roles) {
         return roles.length > 1 ? "Dirección y elenco" : roles[0] === "director" ? "Dirección" : "Elenco"
     }
@@ -57,15 +60,13 @@ Page {
             font.family: Tema.rotulo
             font.pixelSize: Tema.px(40)
             font.weight: Font.Bold
-            font.capitalization: Font.AllUppercase
             color: Tema.crema
         }
         Text {
             text: pagina.peliculas.length === 1 ? "1 película" : pagina.peliculas.length + " películas"
             font.family: Tema.rotulo
             font.pixelSize: Tema.px(16)
-            font.capitalization: Font.AllUppercase
-            font.letterSpacing: 0.8
+            font.letterSpacing: 0.3
             color: Tema.tenue
         }
     }
@@ -115,8 +116,7 @@ Page {
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(13)
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 1
-                    font.capitalization: Font.AllUppercase
+                    font.letterSpacing: 0.3
                     color: Tema.tenue
                 }
             }

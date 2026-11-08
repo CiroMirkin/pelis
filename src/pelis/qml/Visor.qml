@@ -296,8 +296,7 @@ Page {
                 color: Tema.tenue
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(15)
-                font.capitalization: Font.AllUppercase
-                font.letterSpacing: 0.6
+                font.letterSpacing: 0.2
                 font.features: { "tnum": 1 }
             }
             Item { Layout.fillWidth: true }
