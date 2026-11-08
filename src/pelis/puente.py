@@ -702,6 +702,10 @@ class Puente(QObject):
         db.guardar_progreso(self.conn, pelicula_id, ms)
         if ms > 0:
             self._avisar_recomendada(self._recomendacion.empezo(pelicula_id))
+
+    @Slot()
+    def salioDelReproductor(self):
+        """El reproductor se cerró: recarga el catálogo una sola vez, ya con el progreso guardado."""
         self._recargar_catalogo()
 
     @Slot(int)

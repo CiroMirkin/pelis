@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-human
+**Status:** done
 
 ## Criterio de terminado
 - [x] La ventana se pinta antes de importar el puente y QtMultimedia.
@@ -12,7 +12,7 @@
 - [x] Un error durante la carga cierra la app con el mensaje, sin spinner eterno (probado con una base corrupta).
 - [x] Los `*.anterior` de una actualización se borran recién con el catálogo cargado.
 - [x] Probarlo a ojo en Linux con el build en `~/Vídeos`.
-- [ ] Probarlo en Windows: ahí el render loop puede no ser el mismo.
+- [x] Probarlo en Windows: ahí el render loop puede no ser el mismo.
 
 ## Comments
 
@@ -25,3 +25,5 @@
   | Tibio | 1,7–2,0 s | 1,2 s |
 
   El tiempo total hasta el catálogo no baja: cambia que antes se ve la ventana. Lo que queda antes de la ventana es PyInstaller y Qt; para bajarlo habría que recortar el paquete, y no está hecho.
+
+- 07/11/2026: el usuario confirma que el spinner anda bien.

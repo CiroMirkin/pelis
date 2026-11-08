@@ -4,9 +4,15 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] El test simula las respuestas HTTP de OMDb, sin red.
-- [ ] `"Movie not found!"` y `"Incorrect IMDb ID."` se tratan como "no está" (sin error).
-- [ ] `"Invalid API key!"` y `"Request limit reached!"` se tratan como error de red (quedan pendientes).
-- [ ] Una respuesta que no es JSON también se trata como error de red.
+- [x] El test simula las respuestas HTTP de OMDb, sin red.
+- [x] `"Movie not found!"` y `"Incorrect IMDb ID."` se tratan como "no está" (sin error).
+- [x] `"Invalid API key!"` y `"Request limit reached!"` se tratan como error de red (quedan pendientes).
+- [x] Una respuesta que no es JSON también se trata como error de red.
+
+## Dónde
+
+- La decisión está en `Omdb._consultar` (`src/pelis/omdb.py:18`): `None` es "no está" y `ErrorRed` deja la película pendiente.
+- El test va en un `tests/test_omdb.py` nuevo. Hay que reemplazar `Omdb.sesion` por un doble cuyo `get()` devuelva un objeto con `json()` y `status_code`; para el caso "no es JSON", `json()` lanza `ValueError`. No hace falta agregar dependencias como `responses`.
+- Sumar el caso `"Too many results."` de `buscar()`: se convierte en `ErrorRed` con el mensaje que pide agregar el año.

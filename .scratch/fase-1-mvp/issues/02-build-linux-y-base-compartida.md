@@ -9,3 +9,7 @@ Armar el build con `tools/build_linux.sh` y probar en Linux Mint con el disco NT
 - [ ] Reproducir → pausar → cerrar → reabrir retoma en la misma posición, en Mint
 - [ ] Una película marcada como vista en Windows aparece vista en Mint (rutas relativas)
 - [ ] "Abrir carpeta" del detalle abre el explorador de archivos en Mint
+
+## Comments
+
+- 07/11/2026: los builds y la actualización funcionan. Falta probar la base compartida: que una película marcada como vista en Windows aparezca vista en Mint.

@@ -4,15 +4,17 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human
+**Status:** done
 
 - [x] «−» y «+» cambian el tamaño de a 2 %
 - [x] El tamaño no baja de 50 % ni sube de 200 %
 - [x] «−» se desactiva en 50 % y «+» en 200 %
 - [x] La etiqueta muestra siempre el porcentaje actual, sin decimales
 - [x] Un tamaño ya guardado se sigue leyendo bien, incluidos los de los pasos anteriores de 25 %
-- [ ] Se comprobó en la app, porque no hay tests de QML
+- [x] Se comprobó en la app, porque no hay tests de QML
 
 ## Comments
 
 Implementado. Se probó el `Reproductor.qml` real con Qt sin pantalla: pasos, límites, botones, etiqueta y valores guardados de 25 % dan bien. Falta mirarlo en la app abierta.
+
+- 07/11/2026: el usuario lo comprobó en la app y está bien.

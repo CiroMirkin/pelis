@@ -169,6 +169,12 @@ def _insertar(conn, pelicula_id, path, origen):
         "INSERT INTO posters (pelicula_id, path, origen) VALUES (?, ?, ?)", (pelicula_id, path, origen)).lastrowid
 
 
+def registrar(conn, pelicula_id, path, origen):
+    """Registra `path` en el set sin cambiar el póster actual. No hace commit."""
+    if path not in _registrados(conn, pelicula_id):
+        _insertar(conn, pelicula_id, path, origen)
+
+
 def _usar(conn, pelicula_id, path, origen):
     """Pone `path` como poster actual, reusando su fila si ya estaba registrado."""
     fila = conn.execute("SELECT id FROM posters WHERE pelicula_id = ? AND path = ?", (pelicula_id, path)).fetchone()
