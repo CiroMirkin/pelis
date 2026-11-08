@@ -4,12 +4,12 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] El test simula las respuestas HTTP de OMDb, sin red.
-- [ ] `"Movie not found!"` y `"Incorrect IMDb ID."` se tratan como "no está" (sin error).
-- [ ] `"Invalid API key!"` y `"Request limit reached!"` se tratan como error de red (quedan pendientes).
-- [ ] Una respuesta que no es JSON también se trata como error de red.
+- [x] El test simula las respuestas HTTP de OMDb, sin red.
+- [x] `"Movie not found!"` y `"Incorrect IMDb ID."` se tratan como "no está" (sin error).
+- [x] `"Invalid API key!"` y `"Request limit reached!"` se tratan como error de red (quedan pendientes).
+- [x] Una respuesta que no es JSON también se trata como error de red.
 
 ## Dónde
 
