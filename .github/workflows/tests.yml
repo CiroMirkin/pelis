@@ -1,0 +1,20 @@
+# Corre los tests en cada push a dev o main y en cada PR; publicar.yml solo los corre al etiquetar una versión.
+name: Tests
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Paquetes del sistema
+        run: sudo apt-get update && sudo apt-get install -y $(grep -v "^#" tools/paquetes-linux.txt)
+      - name: Tests
+        run: uv run --locked pytest -q
