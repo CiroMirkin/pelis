@@ -37,10 +37,16 @@ class Linea:
     def __init__(self, eventos):
         self.eventos = eventos
         self.inicios = [e[0] for e in eventos]
+        # Un evento puede durar más que los 5 que empezaron después: hay que retroceder hasta
+        # donde ninguno pueda seguir vigente.
+        self.duracion_max = max((e - s for s, e, _ in eventos), default=0)
 
     def texto_en(self, ms):
         i = bisect.bisect_right(self.inicios, ms)
-        return "\n".join(t for s, e, t in self.eventos[max(0, i - 5):i] if e > ms)
+        j = i
+        while j > 0 and self.inicios[j - 1] > ms - self.duracion_max:
+            j -= 1
+        return "\n".join(t for s, e, t in self.eventos[j:i] if e > ms)
 
 
 def _idioma_pista(pista, preferido):

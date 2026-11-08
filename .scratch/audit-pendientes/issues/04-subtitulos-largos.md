@@ -4,11 +4,11 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Un test con un evento largo y al menos 6 eventos que empiezan mientras dura: el texto largo se ve durante todo su rango.
-- [ ] Los tests de subtítulos que ya existen siguen pasando.
-- [ ] Mostrar un archivo de unas 1500 líneas sigue siendo instantáneo (no hace falta un índice).
+- [x] Un test con un evento largo y al menos 6 eventos que empiezan mientras dura: el texto largo se ve durante todo su rango.
+- [x] Los tests de subtítulos que ya existen siguen pasando.
+- [x] Mostrar un archivo de unas 1500 líneas sigue siendo instantáneo (no hace falta un índice).
 
 ## Dónde
 

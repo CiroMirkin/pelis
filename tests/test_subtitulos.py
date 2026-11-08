@@ -29,6 +29,15 @@ def test_linea_texto_en():
     assert linea.texto_en(5999) == "tres"
 
 
+def test_linea_mantiene_un_evento_largo_aunque_empiecen_muchos_despues():
+    eventos = [(1000, 11000, "cartel")] + [(2000 + i * 1000, 2500 + i * 1000, f"linea {i}") for i in range(6)]
+    linea = Linea(eventos)
+
+    assert linea.texto_en(10500) == "cartel"
+    assert linea.texto_en(2400) == "cartel\nlinea 0"
+    assert linea.texto_en(11000) == ""
+
+
 def test_externos_solo_mismo_nivel(tmp_path):
     (tmp_path / "Peli.mkv").touch()
     (tmp_path / "Peli.srt").touch()
