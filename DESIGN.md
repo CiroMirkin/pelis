@@ -13,11 +13,6 @@ colors:
   tubo: "#dfeaff"
   alerta: "#ff9a7a"
 typography:
-  marca:
-    fontFamily: "Archivo Narrow"
-    fontSize: "26px"
-    fontWeight: 700
-    letterSpacing: "2px"
   titular:
     fontFamily: "Archivo Narrow"
     fontSize: "40px"
@@ -89,7 +84,7 @@ La interfaz es oscura porque se usa de noche, en una pantalla, con las luces baj
 **Key Characteristics:**
 - Fondo azul noche plano, sin degradés ni sombras de profundidad.
 - Un solo color de acento, el rojo de etiqueta, reservado a la acción principal y a las marcas de estado.
-- Títulos y rótulos en mayúscula condensada (Archivo Narrow); textos de lectura en Atkinson Hyperlegible.
+- Títulos y rótulos en la condensada Archivo Narrow; textos de lectura en Atkinson Hyperlegible.
 - Las cajas (posters) van en filas limpias, sin líneas entre ellas; la elegida se ilumina como bajo un tubo fluorescente.
 
 ## Colors
@@ -97,7 +92,7 @@ La interfaz es oscura porque se usa de noche, en una pantalla, con las luces baj
 Paleta restringida: neutros azulados de local a la noche, crema de etiqueta para el texto y un único rojo.
 
 ### Primary
-- **Rojo etiqueta** (#e0453a): la etiqueta de alquiler. Solo en el botón principal de cada pantalla (Reproducir / Continuar, Cerrar), en la tira de progreso y la etiqueta «VISTA» de los posters, en el marcador de la pista elegida y en la barra de avance del reproductor. Sobre él, el texto va en noche (#0e131c), nunca en blanco.
+- **Rojo etiqueta** (#e0453a): la etiqueta de alquiler. Solo en el botón principal de cada pantalla (Reproducir / Continuar, Cerrar), en la tira de progreso y la etiqueta «Vista» de los posters, en el marcador de la pista elegida y en la barra de avance del reproductor. Sobre él, el texto va en noche (#0e131c), nunca en blanco.
 
 ### Neutral
 - **Noche** (#0e131c): fondo de todas las pantallas.
@@ -110,19 +105,18 @@ Paleta restringida: neutros azulados de local a la noche, crema de etiqueta para
 - **Alerta** (#ff9a7a): avisos y errores en texto.
 
 ### Named Rules
-**La Regla de la Etiqueta Única.** El rojo marca una sola cosa por pantalla para hacer (el botón principal) y los estados de las películas. Ni la marca «PELIS», ni los títulos, ni los fondos van en rojo. Única excepción, pedida por el usuario: en el detalle, un botón redondo rojo de 52px con el play oscuro en la esquina inferior derecha del poster, que invita a hacer click en todo el poster: es un adorno, y es el poster el que hace lo mismo que el botón principal.
+**La Regla de la Etiqueta Única.** El rojo marca una sola cosa por pantalla para hacer (el botón principal) y los estados de las películas. Ni los títulos ni los fondos van en rojo. Única excepción, pedida por el usuario: en el detalle, un botón redondo rojo de 52px con el play oscuro en la esquina inferior derecha del poster, que invita a hacer click en todo el poster: es un adorno, y es el poster el que hace lo mismo que el botón principal.
 
 ## Typography
 
 **Display Font:** Archivo Narrow (variable, con fallback a la sans del sistema)
 **Body Font:** Atkinson Hyperlegible (regular y negrita)
 
-**Character:** La condensada en mayúscula es la letra del lomo de una caja de video y del cartel del local; la Atkinson, diseñada para leerse sin esfuerzo, carga las sinopsis, los títulos de las tarjetas y todo lo que se lee de corrido. Las dos van incluidas en la app (`src/pelis/qml/fuentes/`, licencia OFL), nunca dependen de internet.
+**Character:** La condensada es la letra del lomo de una caja de video y del cartel del local; la Atkinson, diseñada para leerse sin esfuerzo, carga las sinopsis, los títulos de las tarjetas y todo lo que se lee de corrido. Las dos van incluidas en la app (`src/pelis/qml/fuentes/`, licencia OFL), nunca dependen de internet.
 
 ### Hierarchy
-- **Marca** (Archivo Narrow 700, 26px, tracking 2px, mayúscula): «PELIS» en la barra del catálogo, en crema.
-- **Titular** (Archivo Narrow 700, 40px, interlineado 0.95, mayúscula): título de la película en el detalle.
-- **Rótulo** (Archivo Narrow 600, 13–16px, tracking 0.6–1px, mayúscula): botones, años, la línea de año, género y país (separados con «*», nunca con «·»), rótulos «DIRECCIÓN» / «ELENCO» / «AUDIO» / «SUBTÍTULOS», tiempos del reproductor (con cifras tabulares).
+- **Titular** (Archivo Narrow 700, 40px, interlineado 0.95): título de la película en el detalle.
+- **Rótulo** (Archivo Narrow 600, 13–16px, tracking 0.2–0.4px): botones, años, la línea de año, género y país (separados con «*», nunca con «·»), rótulos «Dirección» / «Elenco» / «Audio» / «Subtítulos», tiempos del reproductor (con cifras tabulares).
 - **Título de tarjeta** (Atkinson 700, 15px): título bajo cada poster.
 - **Cuerpo** (Atkinson 400, 15px, interlineado 1.35, máximo ~860px de ancho): sinopsis, director, elenco, informes.
 - **Detalle** (Atkinson 400, 12px): segunda línea de las opciones de pista (nombre de archivo, «SDH», «Forced»).
@@ -144,13 +138,13 @@ Plano. No hay sombras: la profundidad se marca con capas de tono (noche → esta
 
 ## Shapes
 
-Formas de caja de video: esquinas casi rectas (2px en posters, 3px en botones, 4px en paneles). Lo único redondo es la etiqueta «VISTA», un círculo rojo pegado en diagonal (−10°) sobre la esquina del poster, como una etiqueta autoadhesiva, y el play sobre el poster del detalle.
+Formas de caja de video: esquinas casi rectas (2px en posters, 3px en botones, 4px en paneles). Lo único redondo es la etiqueta «Vista», un círculo rojo pegado en diagonal (−10°) sobre la esquina del poster, como una etiqueta autoadhesiva, y el play sobre el poster del detalle.
 
 ## Components
 
 ### Buttons
 - **Shape:** casi rectos (3px), 38px de alto.
-- **Principal:** relleno rojo etiqueta, texto noche en rótulo mayúscula, ícono oscuro. Uno por pantalla.
+- **Principal:** relleno rojo etiqueta, texto noche en rótulo, ícono oscuro. Uno por pantalla.
 - **Secundario:** sin relleno, borde crema al 55% de 2px, texto crema; hover con fondo caja.
 - **Foco:** contorno tubo de 3px, separado 4px.
 - **Solo ícono:** mismos estilos con el texto oculto (play/pausa, pantalla completa).
@@ -158,15 +152,15 @@ Formas de caja de video: esquinas casi rectas (2px en posters, 3px en botones, 4
 - **Íconos:** SVG propios de trazo recto (`src/pelis/qml/iconos/`), en crema y en versión oscura para el botón principal. Nunca caracteres Unicode.
 
 ### Cards / Containers
-- **Tarjeta de película:** poster 2:3 sobre fondo caja, sin borde ni sombra; si no hay imagen, el título en rótulo mayúscula tenue abajo a la izquierda. Debajo, solo título y año (compromiso fijo del producto). Progreso: tira roja de 6px al pie, con el largo exacto de lo visto. Vista: etiqueta redonda roja.
-- **Panel de audio y subtítulos:** superficie estante con borde línea, dos columnas («AUDIO» | «SUBTÍTULOS») separadas por una línea; cada opción es una fila con el idioma en español y un detalle debajo; la elegida lleva un cuadrado rojo de 8px a la izquierda y el nombre en negrita.
-- **Recomendación:** se pide con un botón secundario «RECOMENDAR» en la barra del catálogo. Franja estante con borde línea entre la barra y la grilla: poster chico, rótulo «RECOMENDACIÓN» tenue, título en rótulo crema y año; toda la franja abre la ficha y una ✕ sin borde en la esquina superior derecha la descarta. Sin rojo: no compite con la acción principal.
+- **Tarjeta de película:** poster 2:3 sobre fondo caja, sin borde ni sombra; si no hay imagen, el título en rótulo tenue abajo a la izquierda. Debajo, solo título y año (compromiso fijo del producto). Progreso: tira roja de 6px al pie, con el largo exacto de lo visto. Vista: etiqueta redonda roja.
+- **Panel de audio y subtítulos:** superficie estante con borde línea, dos columnas («Audio» | «Subtítulos») separadas por una línea; cada opción es una fila con el idioma en español y un detalle debajo; la elegida lleva un cuadrado rojo de 8px a la izquierda y el nombre en negrita. Las listas tienen una altura máxima y scrollean por separado; el bloque de estilo (tamaño, color, nota) queda fijo al pie. Un toque fuera del panel lo cierra.
+- **Recomendación:** se pide con un botón secundario «Recomendación» en la barra del catálogo. Franja estante con borde línea entre la barra y la grilla: poster chico, rótulo «Recomendación» tenue, título en rótulo crema y año; toda la franja abre la ficha y una ✕ sin borde en la esquina superior derecha la descarta. Sin rojo: no compite con la acción principal.
 - **Selector de época:** botón secundario con el valor elegido («ÉPOCA», «LOS 80S» o «2025») y una flecha; opciones «Todos», décadas hasta los 2000 («Los 60s», «Los 2000») y los últimos 4 años sueltos; despliega una lista estante con borde línea, filas de 36px en rótulo y la elegida marcada con el cuadrado rojo de 8px, como el panel de pistas. Se maneja con flechas, Enter y Esc.
 - **Arranque:** mientras carga, la ventana noche vacía con un spinner naranja centrado, sin texto.
 - **Diálogo de escaneo:** misma superficie estante, título en rótulo, fondo atenuado en noche al 80%.
 
 ### Navigation
-- Barra superior de 68px sobre noche con una línea de 1px abajo. En el catálogo: «PELIS» y el buscador a la izquierda, seguidos del filtro «TODAS / SIN VER / VISTAS» (rótulos; el elegido en crema y subrayado en crema, los demás en tenue) y el selector de época, conteo y el botón «…» a la derecha («Escanear biblioteca» y, si hay, «Faltantes (N)»). En el detalle: «Volver» con flecha.
+- Barra superior de 68px sobre noche con una línea de 1px abajo. En el catálogo: el buscador a la izquierda, seguido del filtro «Todas / Sin ver / Vistas» (rótulos; el elegido en crema y subrayado en crema, los demás en tenue) y el selector de época, conteo y el botón «…» a la derecha («Escanear biblioteca» y, si hay, «Faltantes (N)»). En el detalle: «Volver» con flecha.
 - **Botón «…» (BotonMas):** botón solo ícono con tres puntos que despliega las opciones secundarias de la pantalla en un menú estante con borde línea; cada opción lleva ícono y texto en rótulo, y se marca con fondo caja. En el detalle: «Editar datos» y «Abrir en otro reproductor».
 - La grilla se recorre con las flechas y se abre con Enter; el detalle arranca con el foco en el botón principal.
 
@@ -178,7 +172,6 @@ Formas de caja de video: esquinas casi rectas (2px en posters, 3px en botones, 4
 - **Do** escribir los idiomas de las pistas en español («Francés», «Inglés») y el resto del texto en lenguaje común.
 
 ### Don't:
-- **Don't** poner la marca «PELIS» en rojo ni en una etiqueta: el usuario lo descartó.
 - **Don't** usar naranja: el acento es rojo.
 - **Don't** sumar datos a la tarjeta del catálogo más allá de poster, título, año y las marcas de progreso y vista.
 - **Don't** usar selectores desplegables (ComboBox) para audio y subtítulos: van en el panel de dos columnas.

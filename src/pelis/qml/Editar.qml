@@ -128,15 +128,13 @@ Page {
         font.family: Tema.rotulo
         font.pixelSize: Tema.px(13)
         font.weight: Font.DemiBold
-        font.letterSpacing: 1
-        font.capitalization: Font.AllUppercase
+        font.letterSpacing: 0.3
         color: Tema.tenue
     }
     component Titulo: Text {
         font.family: Tema.rotulo
         font.pixelSize: Tema.px(22)
         font.weight: Font.Bold
-        font.capitalization: Font.AllUppercase
         color: Tema.crema
     }
     component Nota: Text {

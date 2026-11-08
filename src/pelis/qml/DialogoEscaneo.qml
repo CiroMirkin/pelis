@@ -60,7 +60,6 @@ Popup {
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(22)
                 font.weight: Font.Bold
-                font.capitalization: Font.AllUppercase
                 color: Tema.crema
             }
 

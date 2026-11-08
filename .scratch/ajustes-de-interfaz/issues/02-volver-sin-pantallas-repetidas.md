@@ -12,3 +12,7 @@
 - [ ] Esc y el botón «Volver» llevan al mismo lugar.
 - [ ] Reproductor, visor, editar y faltantes no cambian.
 - [ ] Verificado a mano en la app con el recorrido de la spec.
+
+## Comments
+
+- 08/11/2026: el usuario pidió como máximo 3 «Volver» hasta el catálogo. La regla queda: película (nivel 1) › persona (nivel 2) › película (nivel 3). Abrir una persona desde el nivel 3 vuelve a la misma persona si coincide o la reemplaza si es otra; una película que ya estaba en la pila se puede repetir (Alien › Ridley Scott › Alien). Reemplaza la regla de «no repetir pantallas». Reproductor, visor y editar siguen apilándose encima.

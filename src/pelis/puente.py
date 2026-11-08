@@ -33,6 +33,7 @@ class ModeloCatalogo(QAbstractListModel):
 
     periodosChanged = Signal()
     periodoChanged = Signal()
+    vistasChanged = Signal()
     incompletasChanged = Signal()
 
     def __init__(self, parent=None, anio_actual=None):
@@ -40,7 +41,7 @@ class ModeloCatalogo(QAbstractListModel):
         self._todas = []
         self._filas = []
         self._palabras = []
-        self._vista = None  # None = todas, True = vistas, False = no vistas
+        self._vistas = "todas"  # "todas", "vistas" o "noVistas"
         self._anio_actual = anio_actual  # None = el de hoy
         self._periodo = ""  # "" = todos, "1960s" = una década, "2025" = un año
         self._periodos = []
@@ -75,11 +76,23 @@ class ModeloCatalogo(QAbstractListModel):
     def periodo(self):
         return self._periodo
 
+    @Property(str, notify=vistasChanged)
+    def vistas(self):
+        return self._vistas
+
+    def _poner_vistas(self, cuales):
+        if cuales != self._vistas:
+            self._vistas = cuales
+            self.vistasChanged.emit()
+
     @Slot(str)
     def filtrarPeriodo(self, clave):
         if clave != self._periodo:
             self._periodo = clave
             self.periodoChanged.emit()
+            # Elegir otra época es pedir algo nuevo: se suelta el filtro de vistas
+            if clave:
+                self._poner_vistas("todas")
         self._aplicar()
 
     @Property(int, notify=incompletasChanged)
@@ -100,20 +113,26 @@ class ModeloCatalogo(QAbstractListModel):
     @Slot(str)
     def filtrar(self, texto):
         """Deja las películas cuyo título, director o reparto contienen todas las palabras de `texto`."""
-        self._palabras = normalizar(texto).split()
+        palabras = normalizar(texto).split()
+        # Buscar otra cosa es pedir algo nuevo: se suelta el filtro de vistas para no esconder el resultado.
+        # Repetir la misma búsqueda (Enter, ↓, la espera de 300 ms) no lo toca.
+        if palabras and palabras != self._palabras:
+            self._poner_vistas("todas")
+        self._palabras = palabras
         self._aplicar()
 
     @Slot(str)
     def filtrarVistas(self, cuales):
         """cuales: "todas", "vistas" o "noVistas"."""
-        self._vista = {"vistas": True, "noVistas": False}.get(cuales)
+        self._poner_vistas(cuales if cuales in ("todas", "vistas", "noVistas") else "todas")
         self._aplicar()
 
     def _aplicar(self):
+        vista = {"vistas": True, "noVistas": False}.get(self._vistas)
         self.beginResetModel()
         self._filas = [
             f for f in self._todas
-            if (self._vista is None or f["vista"] == self._vista)
+            if (vista is None or f["vista"] == vista)
             and en_periodo(f["anio"], self._periodo)
             and (not self._solo_incompletas or f["_incompleta"])
             and all(p in f["_busqueda"] for p in self._palabras)

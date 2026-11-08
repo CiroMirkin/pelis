@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "paises.js" as Paises
 import "duracion.js" as Duracion
+import "navegacion.js" as Navegacion
 
 Page {
     id: pagina
@@ -36,8 +37,7 @@ Page {
     component Meta: Text {
         font.family: Tema.rotulo
         font.pixelSize: Tema.px(16)
-        font.capitalization: Font.AllUppercase
-        font.letterSpacing: 0.8
+        font.letterSpacing: 0.3
         color: Tema.tenue
     }
     component Rotulo: Text {
@@ -46,8 +46,7 @@ Page {
         font.family: Tema.rotulo
         font.pixelSize: Tema.px(13)
         font.weight: Font.DemiBold
-        font.letterSpacing: 1
-        font.capitalization: Font.AllUppercase
+        font.letterSpacing: 0.3
         color: Tema.tenue
     }
 
@@ -85,7 +84,7 @@ Page {
                     height: parent.height
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: pagina.StackView.view.push("Persona.qml", { nombre: nombre.modelData.nombre })
+                    onClicked: Navegacion.abrirPersona(pagina.StackView.view, nombre.modelData.nombre)
                 }
             }
         }
@@ -225,7 +224,6 @@ Page {
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(28)
                     font.weight: Font.Bold
-                    font.capitalization: Font.AllUppercase
                     color: Tema.tenue
                 }
                 Image {
@@ -284,7 +282,6 @@ Page {
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(40)
                     font.weight: Font.Bold
-                    font.capitalization: Font.AllUppercase
                     lineHeight: 0.95
                     color: Tema.crema
                 }
@@ -384,8 +381,7 @@ Page {
                           + pagina.horaFin
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(15)
-                    font.capitalization: Font.AllUppercase
-                    font.letterSpacing: 0.6
+                    font.letterSpacing: 0.2
                     font.features: { "tnum": 1 }
                     color: Tema.tenue
                 }

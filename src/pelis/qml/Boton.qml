@@ -34,8 +34,7 @@ Button {
             font.family: Tema.rotulo
             font.pixelSize: Tema.px(15)
             font.weight: Font.DemiBold
-            font.capitalization: Font.AllUppercase
-            font.letterSpacing: 0.6
+            font.letterSpacing: 0.2
             color: boton.principal ? Tema.sobreEtiqueta : Tema.crema
         }
     }

@@ -44,7 +44,6 @@ Column {
                 font.family: Tema.rotulo
                 font.pixelSize: Tema.px(20)
                 font.weight: Font.Bold
-                font.capitalization: Font.AllUppercase
                 color: Tema.tenue
             }
             Image {
