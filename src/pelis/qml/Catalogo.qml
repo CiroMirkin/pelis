@@ -189,6 +189,7 @@ Page {
                 // A la grilla y no a la ✕: un Enter de más gastaría la recomendación de esta apertura
                 onClicked: { puente.recomendar(); grilla.forceActiveFocus() }
             }
+            BotonPantallaCompleta { enBarra: true }
             BotonMas {
                 alinearDerecha: true
                 enBarra: true
@@ -239,7 +240,6 @@ Page {
                     onTriggered: actualizacion.iniciar()
                 }
             }
-            BotonPantallaCompleta { enBarra: true }
         }
     }
 
