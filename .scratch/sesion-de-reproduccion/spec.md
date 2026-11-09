@@ -23,7 +23,7 @@ El bug de «Ir a» (57ce148) se arregló solo en QML. Cada regla nueva del repro
   - una Visita arranca 5 s antes de la posición pedida, acotada a 5 s antes del final.
 - **`src/pelis/reproduccion.py`**, en Python puro y sin Qt, con la clase `Sesion`: la sesión de reproducción de una película, desde que se abre hasta que se sale. Interfaz:
   - `Sesion(conn, pelicula_id, visita_ms=None)`. Con `visita_ms` es una Visita.
-  - `cargo(duracion_ms) → int`: devuelve la posición de arranque en ms y guarda la duración si es mayor que 0.
+  - `cargo(duracion_ms) → int | None`: devuelve la posición de arranque en ms y guarda la duración si es mayor que 0. Una segunda carga devuelve `None`, porque QtMultimedia vuelve a avisar al cambiar de pista; QML no hace nada con ella (hoy eso lo frena `inicializado`).
   - `pauso(posicion_ms) → Resultado`: guarda el Progreso.
   - `reanudo()`: después del final, vuelve a habilitar que salir guarde.
   - `termino() → Resultado`: deja el Progreso en 0 y marca Vista, salvo en una Visita.

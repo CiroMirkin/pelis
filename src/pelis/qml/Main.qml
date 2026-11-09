@@ -36,10 +36,4 @@ ApplicationWindow {
         objectName: "pila"
         anchors.fill: parent
     }
-
-    // Cerrar la app con el reproductor abierto también guarda el progreso
-    onClosing: {
-        if (pila.currentItem && pila.currentItem.guardarProgreso)
-            pila.currentItem.guardarProgreso()
-    }
 }

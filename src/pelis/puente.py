@@ -17,11 +17,11 @@ from PySide6.QtMultimedia import QMediaPlayer
 
 from . import __version__, actualizacion, capturas, db, edicion, metadatos, pantalla, poster, subtitulos
 from .catalogo import (
-    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, posicion_de_retomar,
-    progreso_a_guardar, tarjeta,
+    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta,
     url_poster,
 )
 from .nombres import idioma_de, normalizar
+from .reproduccion import Sesion
 from .escaneo import escanear, importar_sin_red
 from .omdb import ErrorRed, Omdb
 from .tmdb import Tmdb
@@ -241,6 +241,7 @@ class Puente(QObject):
         self._recomendacion = Recomendacion()
         self._linea = subtitulos.Linea([])
         self._externos = []
+        self._sesion = None
         self._consultando = False
         self._midiendo = set()  # ids con una medición de duración en curso
         self._imdbListo.connect(self._imdb_listo)
@@ -662,9 +663,11 @@ class Puente(QObject):
 
     # --- reproducción ---
 
-    @Slot(int, result="QVariantMap")
-    def abrir(self, pelicula_id):
+    @Slot(int, float, result="QVariantMap")
+    def abrir(self, pelicula_id, visita_ms):
+        """QML pasa -1 cuando no es una Visita porque no tiene None."""
         p = db.pelicula(self.conn, pelicula_id)
+        self._sesion = Sesion(self.conn, pelicula_id, int(visita_ms) if visita_ms >= 0 else None)
         video = self._ruta(p["video_path"])
         self._video = video
         self._externos = subtitulos.externos(video) if video.parent.is_dir() else []
@@ -672,7 +675,6 @@ class Puente(QObject):
         return {
             "url": QUrl.fromLocalFile(str(video)).toString(),
             "titulo": p["titulo"],
-            "retomarDesde": posicion_de_retomar(p["progreso_ms"] or 0),
             "externos": [x.name for x in self._externos],
         }
 
@@ -715,23 +717,46 @@ class Puente(QObject):
         tipo, indice = sub if sub else ("", -1)
         return {"audio": audio, "subTipo": tipo, "subIndice": indice}
 
-    @Slot(int, int)
-    def guardarProgreso(self, pelicula_id, ms):
-        ms = progreso_a_guardar(ms)
-        db.guardar_progreso(self.conn, pelicula_id, ms)
-        if ms > 0:
-            self._avisar_recomendada(self._recomendacion.empezo(pelicula_id))
+    # Avisos del reproductor a la sesión abierta; cada uno traduce lo que pasó en recomendada y catálogo
+
+    # float y no int porque las posiciones de QML son real y un int desbordaba (3fea30d)
+    @Slot(float, result=float)
+    def reproduccionCargo(self, duracion_ms):
+        """-1 reemplaza al None de la sesión porque un slot float no puede devolver None a QML."""
+        desde = self._sesion.cargo(int(duracion_ms))
+        if desde is None:
+            return -1
+        if duracion_ms > 0:
+            self._avisar_recomendada(self._recomendacion.duracion(self._sesion.pelicula_id, int(duracion_ms)))
+        return desde
+
+    @Slot(float)
+    def reproduccionPauso(self, posicion_ms):
+        self._resultado(self._sesion.pauso(int(posicion_ms)))
+
+    @Slot()
+    def reproduccionReanudo(self):
+        self._sesion.reanudo()
+
+    @Slot()
+    def reproduccionTermino(self):
+        self._resultado(self._sesion.termino())
+
+    @Slot(float)
+    def reproduccionSalio(self, posicion_ms):
+        self._resultado(self._sesion.salio(int(posicion_ms)))
+
+    def _resultado(self, resultado):
+        # "empezada" no recarga el catálogo porque pausar no debe recargarlo y al salir lo recarga salioDelReproductor
+        if resultado:
+            self._avisar_recomendada(self._recomendacion.empezo(self._sesion.pelicula_id))
+        if resultado == "vista":
+            self._recargar_catalogo()
 
     @Slot()
     def salioDelReproductor(self):
         """El reproductor se cerró: recarga el catálogo una sola vez, ya con el progreso guardado."""
         self._recargar_catalogo()
-
-    @Slot(int)
-    def terminar(self, pelicula_id):
-        """Llegó al final: queda vista y la próxima vez arranca del principio."""
-        db.guardar_progreso(self.conn, pelicula_id, 0)
-        self.marcarVista(pelicula_id, True)
 
     def _volumen(self):
         return float(self._preferencias.value("reproductor/volumen", 1.0))
@@ -772,10 +797,6 @@ class Puente(QObject):
     # Estilo de los subtítulos del overlay, global: escala sobre el tamaño base y color del texto
     subsTamano = Property(float, _subs_tamano, _set_subs_tamano, notify=estiloSubsChanged)
     subsColor = Property(str, _subs_color, _set_subs_color, notify=estiloSubsChanged)
-
-    @Slot(int, int)
-    def guardarDuracion(self, pelicula_id, ms):
-        db.guardar_duracion(self.conn, pelicula_id, ms)
 
     @Slot(int, result=str)
     def cargarExterno(self, indice):
