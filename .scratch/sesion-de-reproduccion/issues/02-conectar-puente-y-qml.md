@@ -1,6 +1,6 @@
 # Puente y QML usan la Sesion
 
-Status: ready-for-agent
+Status: done
 
 Blocked by: 01
 
@@ -17,7 +17,7 @@ Blocked by: 01
 
 ## Criterio de terminado
 - [x] `grep -n "inicio <\|terminada\|inicializado" src/pelis/qml/Reproductor.qml` no encuentra nada.
-- [ ] Prueba a mano:
+- [x] Prueba a mano:
   - seguir una película arranca 15 s antes;
   - pausar y salir guarda;
   - cerrar la app con el reproductor abierto guarda;
@@ -26,7 +26,7 @@ Blocked by: 01
 - [x] La suite pasa.
 
 ## Comments
-- Implementado; falta la prueba a mano.
+- Probado a mano el 2026-11-08: todo anda, incluido cambiar de pista sin que salte la posición.
 - `reproduccionCargo` devuelve -1 desde la segunda carga y `cargaInicial` no hace nada con eso (el LoadedMedia repetido al cambiar de pista).
 - Los slots reciben y devuelven `float` porque las posiciones de QML son `real` (3fea30d: un `int` desbordaba).
 - `progreso_a_guardar` y `posicion_de_retomar` quedaron privadas en `reproduccion.py`.
