@@ -5,14 +5,14 @@ from . import db
 PROGRESO_MINIMO_MS = 3 * 60 * 1000  # antes de esto, salir no la deja empezada
 
 
-def progreso_a_guardar(ms):
+def _progreso_a_guardar(ms):
     return ms if ms >= PROGRESO_MINIMO_MS else 0
 
 
 RETROCESO_AL_RETOMAR_MS = 15 * 1000  # para recuperar el hilo de la escena
 
 
-def posicion_de_retomar(progreso_ms):
+def _posicion_de_retomar(progreso_ms):
     """Dónde arranca el reproductor al seguir una película empezada. El progreso guardado no cambia."""
     return max(0, progreso_ms - RETROCESO_AL_RETOMAR_MS)
 
@@ -46,7 +46,7 @@ class Sesion:
             desde = max(0, self.visita_ms - ANTICIPO_DE_VISITA_MS)
             # Acotado antes del final, para que se llegue a ver algo
             return min(desde, max(0, duracion_ms - ANTICIPO_DE_VISITA_MS)) if duracion_ms > 0 else desde
-        return posicion_de_retomar(db.pelicula(self.conn, self.pelicula_id)["progreso_ms"] or 0)
+        return _posicion_de_retomar(db.pelicula(self.conn, self.pelicula_id)["progreso_ms"] or 0)
 
     def pauso(self, posicion_ms):
         return self._guardar(posicion_ms)
@@ -74,6 +74,6 @@ class Sesion:
     def _guardar(self, posicion_ms):
         if not self._activa() or self._terminada or self.visita_ms is not None:
             return None
-        ms = progreso_a_guardar(posicion_ms)
+        ms = _progreso_a_guardar(posicion_ms)
         db.guardar_progreso(self.conn, self.pelicula_id, ms)
         return "empezada" if ms > 0 else None

@@ -7,18 +7,14 @@ import QtMultimedia
 Page {
     id: pagina
     required property int peliculaId
-    // Posición de arranque en ms (ej. «Ir a» del visor); si es -1, sigue unos segundos antes del progreso guardado.
-    // Con posición es una visita: no toca el progreso ni marca vista.
+    // Posición pedida en ms (ej. «Ir a» del visor), o -1 para seguir desde el progreso. Con posición es una
+    // Visita; qué guarda y desde dónde arranca lo decide la sesión de reproducción (reproduccion.py).
     property real inicio: -1
     property var info: ({})
     // 0 = ninguno, 1 = externo, 2 = embebido
     property int modoSubs: 0
     property int revisionExterno: 0
     property bool controlesVisibles: true
-    // QtMultimedia vuelve a emitir LoadedMedia al cambiar de pista; la carga inicial va una sola vez
-    property bool inicializado: false
-    // Al terminar ya se guardó progreso 0; salir no debe guardar la posición del final
-    property bool terminada: false
     readonly property bool reproduciendo: player.playbackState === MediaPlayer.PlayingState
 
     background: Rectangle { color: "black" }
@@ -61,17 +57,12 @@ Page {
         ? Qt.formatTime(new Date(ahora.getTime() + Math.max(0, player.duration - player.position)), "HH:mm") : ""
     readonly property string horaActual: Qt.formatTime(pagina.ahora, "HH:mm")
 
-    function guardarProgreso() {
-        if (inicializado && !terminada && inicio < 0)
-            puente.guardarProgreso(peliculaId, player.position)
-    }
-
     function alternarPausa() {
         reproduciendo ? player.pause() : player.play()
     }
 
     function salir() {
-        guardarProgreso()
+        puente.reproduccionSalio(player.position)
         player.stop()
         pagina.StackView.view.pop()
     }
@@ -115,10 +106,11 @@ Page {
         indiceSubs = indice
     }
 
+    // QtMultimedia vuelve a emitir LoadedMedia al cambiar de pista; la sesión contesta -1 desde la segunda
     function cargaInicial() {
-        inicializado = true
-        if (player.duration > 0)
-            puente.guardarDuracion(peliculaId, player.duration)
+        const desde = puente.reproduccionCargo(player.duration)
+        if (desde < 0)
+            return
         const e = puente.eleccionInicial(player.audioTracks.map(pista), player.subtitleTracks.map(pista))
         if (e.audio >= 0)
             player.activeAudioTrack = e.audio
@@ -128,15 +120,13 @@ Page {
             elegirSubs(1 + info.externos.length + e.subIndice)
         else
             elegirSubs(0)
-        // Acotado antes del final, para que se llegue a ver algo
-        const desde = inicio < 0 ? info.retomarDesde : player.duration > 0 ? Math.min(inicio, Math.max(0, player.duration - 5000)) : inicio
         if (desde > 0)
             player.position = desde
         player.play()
     }
 
     Component.onCompleted: {
-        info = puente.abrir(peliculaId)
+        info = puente.abrir(peliculaId, inicio)
         player.source = info.url
     }
 
@@ -144,6 +134,12 @@ Page {
     onReproduciendoChanged: puente.mantenerPantalla(reproduciendo)
     // Por si la página se cierra sin pasar por salir(): ahí no llega el cambio de reproduciendo.
     // Es el único lugar que recarga el catálogo al volver (pausar solo guarda el progreso).
+    // Cerrar la app con el reproductor abierto también cuenta como salir
+    Connections {
+        target: Window.window
+        function onClosing() { puente.reproduccionSalio(player.position) }
+    }
+
     Component.onDestruction: {
         puente.mantenerPantalla(false)
         puente.salioDelReproductor()
@@ -159,19 +155,16 @@ Page {
         }
         onErrorOccurred: (error, errorString) => { errorVideo.text = "No se pudo reproducir: " + errorString }
         onMediaStatusChanged: {
-            if (mediaStatus === MediaPlayer.LoadedMedia && !pagina.inicializado)
+            if (mediaStatus === MediaPlayer.LoadedMedia)
                 pagina.cargaInicial()
-            else if (mediaStatus === MediaPlayer.EndOfMedia && pagina.inicializado && !pagina.terminada) {
-                pagina.terminada = true
-                if (pagina.inicio < 0)
-                    puente.terminar(pagina.peliculaId)
-            }
+            else if (mediaStatus === MediaPlayer.EndOfMedia)
+                puente.reproduccionTermino()
         }
         onPlaybackStateChanged: {
             if (playbackState === MediaPlayer.PlayingState)
-                pagina.terminada = false
+                puente.reproduccionReanudo()
             if (playbackState === MediaPlayer.PausedState) {
-                pagina.guardarProgreso()
+                puente.reproduccionPauso(player.position)
                 pagina.mostrarControles()
             }
         }

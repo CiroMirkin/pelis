@@ -16,11 +16,18 @@ Blocked by: 01
 - `test_puente.py`: reemplazar `test_guardar_progreso_no_recarga_el_catalogo` por los tests de traducción de la spec.
 
 ## Criterio de terminado
-- [ ] `grep -n "inicio <\|terminada\|inicializado" src/pelis/qml/Reproductor.qml` no encuentra nada.
+- [x] `grep -n "inicio <\|terminada\|inicializado" src/pelis/qml/Reproductor.qml` no encuentra nada.
 - [ ] Prueba a mano:
   - seguir una película arranca 15 s antes;
   - pausar y salir guarda;
   - cerrar la app con el reproductor abierto guarda;
   - llegar al final la marca vista;
   - «Ir a» desde el visor no toca el progreso ni la vista, aunque llegue al final.
-- [ ] La suite pasa.
+- [x] La suite pasa.
+
+## Comments
+- Implementado; falta la prueba a mano.
+- `reproduccionCargo` devuelve -1 desde la segunda carga y `cargaInicial` no hace nada con eso (el LoadedMedia repetido al cambiar de pista).
+- Los slots reciben y devuelven `float` porque las posiciones de QML son `real` (3fea30d: un `int` desbordaba).
+- `progreso_a_guardar` y `posicion_de_retomar` quedaron privadas en `reproduccion.py`.
+- `test_puente.py` cuenta `catalogo.modelReset` en vez de reemplazar `_recargar_catalogo` (T2), y lee la vista del catálogo por la interfaz del modelo.

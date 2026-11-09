@@ -50,10 +50,9 @@ Page {
         if (!conMomento)
             return
         cerrado(indice)
-        // El visor se reemplaza: Esc en el reproductor vuelve al detalle. Arranca 5 s antes;
-        // el reproductor lo acota a la duración.
-        pagina.StackView.view.replace("Reproductor.qml",
-            { peliculaId: pagina.peliculaId, inicio: Math.max(0, actual.momento - 5000) })
+        // El visor se reemplaza: Esc en el reproductor vuelve al detalle. Es una Visita: arranca unos
+        // segundos antes del momento de la captura.
+        pagina.StackView.view.replace("Reproductor.qml", { peliculaId: pagina.peliculaId, inicio: actual.momento })
     }
 
     // Termina la animación en curso: la vecina pasa a ser la actual y el carril vuelve a 0
