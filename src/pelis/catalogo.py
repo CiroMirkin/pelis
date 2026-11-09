@@ -10,6 +10,14 @@ def progreso_a_guardar(ms):
     return ms if ms >= PROGRESO_MINIMO_MS else 0
 
 
+RETROCESO_AL_RETOMAR_MS = 15 * 1000  # para recuperar el hilo de la escena
+
+
+def posicion_de_retomar(progreso_ms):
+    """Dónde arranca el reproductor al seguir una película empezada. El progreso guardado no cambia."""
+    return max(0, progreso_ms - RETROCESO_AL_RETOMAR_MS)
+
+
 CLAVES_TARJETA = ("peliculaId", "titulo", "anio", "poster", "progreso", "vista")
 
 
