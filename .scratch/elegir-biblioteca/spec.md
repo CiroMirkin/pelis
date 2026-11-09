@@ -30,7 +30,7 @@ Este ticket saca lo que bloquea al instalador: que la app funcione instalada (da
 ### `pelis.toml`
 - En modo instalado es **opcional**: la app no lo crea. Si existe en la carpeta de datos (puesto a mano), se lee; si no, todo toma los valores por defecto (sin claves de OMDb/TMDb, idiomas por defecto). Sin claves la app ya funciona: deja las películas como *pendientes*.
 - La clave `biblioteca` deja de ser obligatoria en los dos modos (no más «Falta 'biblioteca'»).
-- Cargar las claves desde la app es otro ticket: `.scratch/configurar-claves/spec.md`.
+- Cargar las claves desde la app es otro ticket, que se hace antes que este: `.scratch/configurar-claves/spec.md`. Usa la misma precedencia (gana `preferencias.ini` y `pelis.toml` es el valor inicial): reusar ese lector en vez de escribir otro.
 
 ### Dónde se guarda la elección
 - En `preferencias.ini` (`QSettings`), en los dos modos. No se escribe el `.toml`.
