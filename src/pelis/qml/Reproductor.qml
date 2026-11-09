@@ -7,8 +7,8 @@ import QtMultimedia
 Page {
     id: pagina
     required property int peliculaId
-    // Posición pedida en ms (ej. «Ir a» del visor), o -1 para seguir desde el progreso. Con posición es una
-    // Visita; qué guarda y desde dónde arranca lo decide la sesión de reproducción (reproduccion.py).
+    // Posición pedida en ms (ej. «Ir a» del visor) que la vuelve una Visita, o -1 para seguir desde el progreso.
+    // Qué se guarda y desde dónde arranca lo decide reproduccion.py.
     property real inicio: -1
     property var info: ({})
     // 0 = ninguno, 1 = externo, 2 = embebido
@@ -134,7 +134,8 @@ Page {
     onReproduciendoChanged: puente.mantenerPantalla(reproduciendo)
     // Por si la página se cierra sin pasar por salir(): ahí no llega el cambio de reproduciendo.
     // Es el único lugar que recarga el catálogo al volver (pausar solo guarda el progreso).
-    // Cerrar la app con el reproductor abierto también cuenta como salir
+    // Cerrar la app con el reproductor abierto también cuenta como salir y se avisa acá y no en
+    // onDestruction porque ahí el player ya no es confiable
     Connections {
         target: Window.window
         function onClosing() { puente.reproduccionSalio(player.position) }

@@ -1,8 +1,8 @@
-"""La sesión de reproducción de una película, sin Qt: qué pasa con el Progreso y la Vista."""
+"""Las reglas de Progreso, Vista y arranque mientras se reproduce, sin Qt para que se testeen sin el reproductor."""
 
 from . import db
 
-PROGRESO_MINIMO_MS = 3 * 60 * 1000  # antes de esto, salir no la deja empezada
+PROGRESO_MINIMO_MS = 3 * 60 * 1000  # para que abrir una peli y mirar el arranque no la deje empezada
 
 
 def _progreso_a_guardar(ms):
@@ -13,22 +13,25 @@ RETROCESO_AL_RETOMAR_MS = 15 * 1000  # para recuperar el hilo de la escena
 
 
 def _posicion_de_retomar(progreso_ms):
-    """Dónde arranca el reproductor al seguir una película empezada. El progreso guardado no cambia."""
+    """El retroceso es solo al arrancar y el progreso guardado no cambia."""
     return max(0, progreso_ms - RETROCESO_AL_RETOMAR_MS)
 
 
-ANTICIPO_DE_VISITA_MS = 5 * 1000  # una Visita arranca un poco antes de la posición pedida
+ANTICIPO_DE_VISITA_MS = 5 * 1000  # para ver un poco de contexto antes del cuadro de la captura
 
 
 class Sesion:
+    """Cada aviso devuelve "empezada", "vista" o None para que quien llama reaccione sin conocer las reglas."""
+
     def __init__(self, conn, pelicula_id, visita_ms=None):
-        """Con `visita_ms` es una Visita: arranca ahí y no toca el Progreso ni la Vista."""
+        """Con `visita_ms` es una Visita y no toca el Progreso ni la Vista."""
         self.conn = conn
         self.pelicula_id = pelicula_id
         self.visita_ms = visita_ms
-        # Al terminar ya se guardó progreso 0; salir no debe guardar la posición del final
+        # Al terminar ya se guardó progreso 0 entonces salir no debe pisarlo con la posición del final
         self._terminada = False
-        # QtMultimedia avisa pausas antes de cargar; tras salir, el cierre de la ventana vuelve a avisar
+        # QtMultimedia avisa pausas antes de cargar.
+        # Después de salir con Esc, el cierre de la ventana vuelve a avisar la salida.
         self._abierta = False
         self._salio = False
 
@@ -36,7 +39,7 @@ class Sesion:
         return self._abierta and not self._salio
 
     def cargo(self, duracion_ms):
-        """El video cargó: devuelve la posición de arranque en ms, o None si ya había cargado."""
+        """Devuelve None desde la segunda carga porque QtMultimedia vuelve a avisar al cambiar de pista."""
         if self._abierta:
             return None
         self._abierta = True
@@ -44,7 +47,7 @@ class Sesion:
             db.guardar_duracion(self.conn, self.pelicula_id, duracion_ms)
         if self.visita_ms is not None:
             desde = max(0, self.visita_ms - ANTICIPO_DE_VISITA_MS)
-            # Acotado antes del final, para que se llegue a ver algo
+            # Acotado antes del final para que se llegue a ver algo
             return min(desde, max(0, duracion_ms - ANTICIPO_DE_VISITA_MS)) if duracion_ms > 0 else desde
         return _posicion_de_retomar(db.pelicula(self.conn, self.pelicula_id)["progreso_ms"] or 0)
 
@@ -52,11 +55,11 @@ class Sesion:
         return self._guardar(posicion_ms)
 
     def reanudo(self):
-        """Volvió a reproducir: si había llegado al final, salir vuelve a guardar."""
+        """Si había llegado al final y vuelve a reproducir entonces salir guarda de nuevo."""
         self._terminada = False
 
     def termino(self):
-        """Llegó al final: queda vista y la próxima vez arranca del principio."""
+        """El progreso vuelve a 0 para que la próxima vez arranque del principio."""
         if not self._activa():
             return None
         self._terminada = True

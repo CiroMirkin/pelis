@@ -665,7 +665,7 @@ class Puente(QObject):
 
     @Slot(int, float, result="QVariantMap")
     def abrir(self, pelicula_id, visita_ms):
-        """Abre la sesión de reproducción; con `visita_ms` >= 0 es una Visita."""
+        """QML pasa -1 cuando no es una Visita porque no tiene None."""
         p = db.pelicula(self.conn, pelicula_id)
         self._sesion = Sesion(self.conn, pelicula_id, int(visita_ms) if visita_ms >= 0 else None)
         video = self._ruta(p["video_path"])
@@ -719,9 +719,10 @@ class Puente(QObject):
 
     # Avisos del reproductor a la sesión abierta; cada uno traduce lo que pasó en recomendada y catálogo
 
+    # float y no int porque las posiciones de QML son real y un int desbordaba (3fea30d)
     @Slot(float, result=float)
     def reproduccionCargo(self, duracion_ms):
-        """El video cargó: devuelve la posición de arranque, o -1 si ya había cargado (cambio de pista)."""
+        """-1 reemplaza al None de la sesión porque un slot float no puede devolver None a QML."""
         desde = self._sesion.cargo(int(duracion_ms))
         if desde is None:
             return -1
@@ -746,6 +747,7 @@ class Puente(QObject):
         self._resultado(self._sesion.salio(int(posicion_ms)))
 
     def _resultado(self, resultado):
+        # "empezada" no recarga el catálogo porque pausar no debe recargarlo y al salir lo recarga salioDelReproductor
         if resultado:
             self._avisar_recomendada(self._recomendacion.empezo(self._sesion.pelicula_id))
         if resultado == "vista":

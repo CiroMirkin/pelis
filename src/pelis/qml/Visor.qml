@@ -50,8 +50,8 @@ Page {
         if (!conMomento)
             return
         cerrado(indice)
-        // El visor se reemplaza: Esc en el reproductor vuelve al detalle. Es una Visita: arranca unos
-        // segundos antes del momento de la captura.
+        // El visor se reemplaza para que Esc en el reproductor vuelva al detalle.
+        // Es una Visita entonces arranca unos segundos antes del momento de la captura.
         pagina.StackView.view.replace("Reproductor.qml", { peliculaId: pagina.peliculaId, inicio: actual.momento })
     }
 
