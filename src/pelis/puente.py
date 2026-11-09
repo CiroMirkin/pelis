@@ -17,11 +17,11 @@ from PySide6.QtMultimedia import QMediaPlayer
 
 from . import __version__, actualizacion, capturas, db, edicion, metadatos, pantalla, poster, subtitulos
 from .catalogo import (
-    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, posicion_de_retomar,
-    progreso_a_guardar, tarjeta,
+    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta,
     url_poster,
 )
 from .nombres import idioma_de, normalizar
+from .reproduccion import posicion_de_retomar, progreso_a_guardar
 from .escaneo import escanear, importar_sin_red
 from .omdb import ErrorRed, Omdb
 from .tmdb import Tmdb
