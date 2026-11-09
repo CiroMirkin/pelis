@@ -17,7 +17,8 @@ from PySide6.QtMultimedia import QMediaPlayer
 
 from . import __version__, actualizacion, capturas, db, edicion, metadatos, pantalla, poster, subtitulos
 from .catalogo import (
-    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, progreso_a_guardar, tarjeta,
+    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, posicion_de_retomar,
+    progreso_a_guardar, tarjeta,
     url_poster,
 )
 from .nombres import idioma_de, normalizar
@@ -671,7 +672,7 @@ class Puente(QObject):
         return {
             "url": QUrl.fromLocalFile(str(video)).toString(),
             "titulo": p["titulo"],
-            "progreso": p["progreso_ms"] or 0,
+            "retomarDesde": posicion_de_retomar(p["progreso_ms"] or 0),
             "externos": [x.name for x in self._externos],
         }
 
