@@ -55,6 +55,11 @@ Page {
     Timer { interval: 1000; repeat: true; running: pagina.activa; onTriggered: pagina.ahora = new Date() }
     readonly property string horaFin: player.duration > 0
         ? Qt.formatTime(new Date(ahora.getTime() + Math.max(0, player.duration - player.position)), "HH:mm") : ""
+    readonly property string faltan: {
+        if (player.duration <= 0) return ""
+        const min = Math.ceil(Math.max(0, player.duration - player.position) / 60000)
+        return Math.floor(min / 60) + ":" + String(min % 60).padStart(2, "0")
+    }
     readonly property string horaActual: Qt.formatTime(pagina.ahora, "HH:mm")
 
     function alternarPausa() {
@@ -303,7 +308,7 @@ Page {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: Tema.px(100)
+        height: Tema.px(124)
         opacity: pagina.controlesVisibles ? 1 : 0
         visible: opacity > 0
         Behavior on opacity { NumberAnimation { duration: 200 } }
@@ -314,7 +319,9 @@ Page {
         HoverHandler { id: hoverBarra }
 
         ColumnLayout {
-            anchors.fill: parent
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
             anchors.leftMargin: Tema.px(32)
             anchors.rightMargin: Tema.px(32)
             anchors.bottomMargin: Tema.px(14)
@@ -322,17 +329,19 @@ Page {
 
             RowLayout {
                 Layout.fillWidth: true
-                Text { text: pagina.formatear(player.position); color: Tema.crema; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
+                Text { Layout.alignment: Qt.AlignBottom; Layout.preferredHeight: seek.height; verticalAlignment: Text.AlignVCenter; text: pagina.formatear(player.position); color: Tema.crema; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
                 Slider {
                     id: seek
                     Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignBottom
                     from: 0
                     to: Math.max(1, player.duration)
                     value: pressed ? value : player.position
                     onMoved: player.position = value
                 }
-                Text { text: pagina.formatear(player.duration); color: Tema.tenue; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
+                Text { Layout.alignment: Qt.AlignBottom; Layout.preferredHeight: seek.height; verticalAlignment: Text.AlignVCenter; text: pagina.formatear(player.duration); color: Tema.tenue; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
                 Column {
+                    Layout.alignment: Qt.AlignBottom
                     Layout.leftMargin: Tema.px(10)
                     spacing: 1
                     // La hora actual no depende de la película entonces se ve aunque falte la duración
@@ -347,6 +356,15 @@ Page {
                     Text {
                         visible: pagina.horaFin !== ""
                         text: "Termina " + pagina.horaFin
+                        color: Tema.tenue
+                        font.family: Tema.rotulo
+                        font.pixelSize: Tema.px(15)
+                        font.letterSpacing: 0.2
+                        font.features: { "tnum": 1 }
+                    }
+                    Text {
+                        visible: pagina.faltan !== ""
+                        text: "Faltan: " + pagina.faltan
                         color: Tema.tenue
                         font.family: Tema.rotulo
                         font.pixelSize: Tema.px(15)
