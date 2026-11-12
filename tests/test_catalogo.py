@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pelis import db, poster
 from pelis.catalogo import (
-    Recomendacion, es_incompleta, filmografia, periodos, progreso_a_guardar, tarjeta, url_poster,
+    Recomendacion, es_incompleta, filmografia, periodos, tarjeta, url_poster,
 )
 from pelis.puente import ModeloCatalogo
 
@@ -236,9 +236,3 @@ def test_recomendada_poster_y_duracion_sin_cambio_devuelven_false():
     assert r.duracion(1, 9000)
     assert r.datos["duracion"] == 9000
 
-
-def test_progreso_cuenta_desde_los_3_minutos():
-    assert progreso_a_guardar(0) == 0
-    assert progreso_a_guardar(179_999) == 0
-    assert progreso_a_guardar(180_000) == 180_000
-    assert progreso_a_guardar(2_400_000) == 2_400_000

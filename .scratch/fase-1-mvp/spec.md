@@ -78,7 +78,9 @@ Filtros, banderas, personas clickeables, edición de metadatos, corregir match, 
 ## Criterio de terminado
 - [ ] "Escanear biblioteca" sobre la biblioteca real carga todo; cada carpeta termina importada (con metadatos o como "no encontrada") o listada en el informe de problemas
 - [ ] Grid con posters; detalle con todos los campos
-- [ ] Reproducir → pausar → cerrar → reabrir retoma en la misma posición, en Windows y en Linux Mint
+- [x] Reproducir → pausar → cerrar → reabrir retoma en la misma posición, en Windows
+- [x] Reproducir → pausar → cerrar → reabrir retoma en la misma posición, en Linux Mint
+- [x] Una película empezada en Linux Mint se retoma en la misma posición en Windows (base compartida + rutas relativas)
 - [ ] Marcar una película como vista en Windows y verla marcada en Linux Mint (prueba de base compartida + rutas relativas)
 - [ ] La barra de progreso del poster refleja el avance
 - [ ] Instalación local: con `app\` en una unidad interna y `biblioteca` absoluta apuntando a otra, escanea y reproduce igual

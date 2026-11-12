@@ -134,20 +134,65 @@ def test_terminar_un_escaneo_actualiza_catalogo_y_recomendada(puente):
     assert [f["poster"] for f in puente.catalogo._filas] == [esperado]
 
 
-def test_guardar_progreso_no_recarga_el_catalogo(puente, monkeypatch):
-    p = pelicula(puente, "Alien")
+def contar_recargas(puente):
     recargas = []
-    monkeypatch.setattr(puente, "_recargar_catalogo", lambda: recargas.append(True))
+    puente.catalogo.modelReset.connect(lambda: recargas.append(True))
+    return recargas
 
-    puente.guardarProgreso(p, 300000)
+
+def vista_en_catalogo(puente, pelicula_id):
+    modelo = puente.catalogo
+    rol = {v: k for k, v in modelo.roleNames().items()}
+    filas = [modelo.index(i, 0) for i in range(modelo.rowCount())]
+    return next(modelo.data(f, rol[b"vista"]) for f in filas if modelo.data(f, rol[b"peliculaId"]) == pelicula_id)
+
+
+def reproducir(puente, pelicula_id, visita_ms=-1):
+    puente.abrir(pelicula_id, visita_ms)
+    return puente.reproduccionCargo(3_600_000)
+
+
+def test_pausar_no_recarga_el_catalogo(puente):
+    p = pelicula(puente, "Alien")
+    reproducir(puente, p)
+    recargas = contar_recargas(puente)
+
+    puente.reproduccionPauso(300_000)
 
     assert recargas == []
-    assert db.pelicula(puente.conn, p)["progreso_ms"] == 300000
+    assert db.pelicula(puente.conn, p)["progreso_ms"] == 300_000
 
 
-def test_salir_del_reproductor_recarga_el_catalogo(puente, monkeypatch):
-    recargas = []
-    monkeypatch.setattr(puente, "_recargar_catalogo", lambda: recargas.append(True))
+def test_empezar_la_recomendada_la_cierra(puente):
+    p = pelicula(puente, "Alien")
+    puente.recomendar()
+    assert puente.recomendada["id"] == p
+    reproducir(puente, p)
+
+    puente.reproduccionPauso(300_000)
+
+    assert puente.recomendada == {}
+
+
+def test_llegar_al_final_recarga_el_catalogo_con_la_pelicula_vista(puente):
+    p = pelicula(puente, "Alien")
+    importar(puente)
+    reproducir(puente, p)
+
+    puente.reproduccionTermino()
+
+    assert vista_en_catalogo(puente, p)
+
+
+def test_una_visita_arranca_desde_la_posicion_pedida(puente):
+    p = pelicula(puente, "Alien")
+
+    assert reproducir(puente, p, visita_ms=600_000) == 595_000
+    assert puente.reproduccionCargo(3_600_000) == -1
+
+
+def test_salir_del_reproductor_recarga_el_catalogo(puente):
+    recargas = contar_recargas(puente)
 
     puente.salioDelReproductor()
 

@@ -7,18 +7,14 @@ import QtMultimedia
 Page {
     id: pagina
     required property int peliculaId
-    // Posición de arranque en ms (ej. «Ir a» del visor); si es -1, sigue desde el progreso guardado.
-    // Con posición es una visita: no toca el progreso ni marca vista.
+    // Posición pedida en ms (ej. «Ir a» del visor) que la vuelve una Visita, o -1 para seguir desde el progreso.
+    // Qué se guarda y desde dónde arranca lo decide reproduccion.py.
     property real inicio: -1
     property var info: ({})
     // 0 = ninguno, 1 = externo, 2 = embebido
     property int modoSubs: 0
     property int revisionExterno: 0
     property bool controlesVisibles: true
-    // QtMultimedia vuelve a emitir LoadedMedia al cambiar de pista; la carga inicial va una sola vez
-    property bool inicializado: false
-    // Al terminar ya se guardó progreso 0; salir no debe guardar la posición del final
-    property bool terminada: false
     readonly property bool reproduciendo: player.playbackState === MediaPlayer.PlayingState
 
     background: Rectangle { color: "black" }
@@ -59,19 +55,19 @@ Page {
     Timer { interval: 1000; repeat: true; running: pagina.activa; onTriggered: pagina.ahora = new Date() }
     readonly property string horaFin: player.duration > 0
         ? Qt.formatTime(new Date(ahora.getTime() + Math.max(0, player.duration - player.position)), "HH:mm") : ""
-    readonly property string horaActual: Qt.formatTime(pagina.ahora, "HH:mm")
-
-    function guardarProgreso() {
-        if (inicializado && !terminada && inicio < 0)
-            puente.guardarProgreso(peliculaId, player.position)
+    readonly property string faltan: {
+        if (player.duration <= 0) return ""
+        const min = Math.ceil(Math.max(0, player.duration - player.position) / 60000)
+        return Math.floor(min / 60) + ":" + String(min % 60).padStart(2, "0")
     }
+    readonly property string horaActual: Qt.formatTime(pagina.ahora, "HH:mm")
 
     function alternarPausa() {
         reproduciendo ? player.pause() : player.play()
     }
 
     function salir() {
-        guardarProgreso()
+        puente.reproduccionSalio(player.position)
         player.stop()
         pagina.StackView.view.pop()
     }
@@ -115,10 +111,11 @@ Page {
         indiceSubs = indice
     }
 
+    // QtMultimedia vuelve a emitir LoadedMedia al cambiar de pista; la sesión contesta -1 desde la segunda
     function cargaInicial() {
-        inicializado = true
-        if (player.duration > 0)
-            puente.guardarDuracion(peliculaId, player.duration)
+        const desde = puente.reproduccionCargo(player.duration)
+        if (desde < 0)
+            return
         const e = puente.eleccionInicial(player.audioTracks.map(pista), player.subtitleTracks.map(pista))
         if (e.audio >= 0)
             player.activeAudioTrack = e.audio
@@ -128,15 +125,13 @@ Page {
             elegirSubs(1 + info.externos.length + e.subIndice)
         else
             elegirSubs(0)
-        // Acotado antes del final, para que se llegue a ver algo
-        const desde = inicio < 0 ? info.progreso : player.duration > 0 ? Math.min(inicio, Math.max(0, player.duration - 5000)) : inicio
         if (desde > 0)
             player.position = desde
         player.play()
     }
 
     Component.onCompleted: {
-        info = puente.abrir(peliculaId)
+        info = puente.abrir(peliculaId, inicio)
         player.source = info.url
     }
 
@@ -144,6 +139,13 @@ Page {
     onReproduciendoChanged: puente.mantenerPantalla(reproduciendo)
     // Por si la página se cierra sin pasar por salir(): ahí no llega el cambio de reproduciendo.
     // Es el único lugar que recarga el catálogo al volver (pausar solo guarda el progreso).
+    // Cerrar la app con el reproductor abierto también cuenta como salir y se avisa acá y no en
+    // onDestruction porque ahí el player ya no es confiable
+    Connections {
+        target: Window.window
+        function onClosing() { puente.reproduccionSalio(player.position) }
+    }
+
     Component.onDestruction: {
         puente.mantenerPantalla(false)
         puente.salioDelReproductor()
@@ -159,19 +161,16 @@ Page {
         }
         onErrorOccurred: (error, errorString) => { errorVideo.text = "No se pudo reproducir: " + errorString }
         onMediaStatusChanged: {
-            if (mediaStatus === MediaPlayer.LoadedMedia && !pagina.inicializado)
+            if (mediaStatus === MediaPlayer.LoadedMedia)
                 pagina.cargaInicial()
-            else if (mediaStatus === MediaPlayer.EndOfMedia && pagina.inicializado && !pagina.terminada) {
-                pagina.terminada = true
-                if (pagina.inicio < 0)
-                    puente.terminar(pagina.peliculaId)
-            }
+            else if (mediaStatus === MediaPlayer.EndOfMedia)
+                puente.reproduccionTermino()
         }
         onPlaybackStateChanged: {
             if (playbackState === MediaPlayer.PlayingState)
-                pagina.terminada = false
+                puente.reproduccionReanudo()
             if (playbackState === MediaPlayer.PausedState) {
-                pagina.guardarProgreso()
+                puente.reproduccionPauso(player.position)
                 pagina.mostrarControles()
             }
         }
@@ -309,7 +308,7 @@ Page {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: Tema.px(100)
+        height: Tema.px(124)
         opacity: pagina.controlesVisibles ? 1 : 0
         visible: opacity > 0
         Behavior on opacity { NumberAnimation { duration: 200 } }
@@ -320,7 +319,9 @@ Page {
         HoverHandler { id: hoverBarra }
 
         ColumnLayout {
-            anchors.fill: parent
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
             anchors.leftMargin: Tema.px(32)
             anchors.rightMargin: Tema.px(32)
             anchors.bottomMargin: Tema.px(14)
@@ -328,17 +329,19 @@ Page {
 
             RowLayout {
                 Layout.fillWidth: true
-                Text { text: pagina.formatear(player.position); color: Tema.crema; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
+                Text { Layout.alignment: Qt.AlignBottom; Layout.preferredHeight: seek.height; verticalAlignment: Text.AlignVCenter; text: pagina.formatear(player.position); color: Tema.crema; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
                 Slider {
                     id: seek
                     Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignBottom
                     from: 0
                     to: Math.max(1, player.duration)
                     value: pressed ? value : player.position
                     onMoved: player.position = value
                 }
-                Text { text: pagina.formatear(player.duration); color: Tema.tenue; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
+                Text { Layout.alignment: Qt.AlignBottom; Layout.preferredHeight: seek.height; verticalAlignment: Text.AlignVCenter; text: pagina.formatear(player.duration); color: Tema.tenue; font.family: Tema.rotulo; font.pixelSize: Tema.px(15); font.features: { "tnum": 1 } }
                 Column {
+                    Layout.alignment: Qt.AlignBottom
                     Layout.leftMargin: Tema.px(10)
                     spacing: 1
                     // La hora actual no depende de la película entonces se ve aunque falte la duración
@@ -353,6 +356,15 @@ Page {
                     Text {
                         visible: pagina.horaFin !== ""
                         text: "Termina " + pagina.horaFin
+                        color: Tema.tenue
+                        font.family: Tema.rotulo
+                        font.pixelSize: Tema.px(15)
+                        font.letterSpacing: 0.2
+                        font.features: { "tnum": 1 }
+                    }
+                    Text {
+                        visible: pagina.faltan !== ""
+                        text: "Faltan: " + pagina.faltan
                         color: Tema.tenue
                         font.family: Tema.rotulo
                         font.pixelSize: Tema.px(15)

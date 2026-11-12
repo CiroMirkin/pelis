@@ -13,3 +13,9 @@
 **pelis.json**: copia portátil de los metadatos dentro de la carpeta de cada película. Se lee solo si la base no tiene datos; si no coincide, gana la base (ADR 0001).
 
 **Captura**: imagen PNG de un cuadro de la película, en resolución original y sin subtítulos, tomada con la tecla `.` en el reproductor. Se guarda en `capturas/` dentro de la carpeta de la película, con la posición como nombre (`01-23-45.png`).
+
+**Visita**: reproducción que arranca en una posición dada (por ejemplo, «Ir a» desde el visor de capturas). No cambia el progreso guardado ni marca la película vista, aunque llegue al final.
+
+**Progreso**: la posición desde la que sigue una película al volver a reproducirla. Queda en 0 si no se llegó a ver 3 minutos o si se llegó al final.
+
+**Vista**: la película se vio hasta el final, o el usuario la marcó así. Marcarla vista no borra el progreso.
