@@ -64,15 +64,6 @@ Column {
                 color: Tema.etiqueta
             }
         }
-
-        // Vista: sticker pegado sobre la caja
-        EtiquetaVista {
-            visible: tarjeta.vista
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.topMargin: Tema.px(7)
-            anchors.rightMargin: -Tema.px(11)
-        }
     }
 
     Text {
@@ -85,11 +76,32 @@ Column {
         font.bold: true
         color: Tema.crema
     }
-    Text {
-        text: tarjeta.anio > 0 ? tarjeta.anio : ""
-        font.family: Tema.rotulo
-        font.pixelSize: Tema.px(15)
-        font.letterSpacing: 0.5
-        color: Tema.tenue
+    // Año a la izquierda; la etiqueta de vista, centrada con él, en el otro extremo
+    Item {
+        width: parent.width
+        height: anio.implicitHeight
+        Text {
+            id: anio
+            text: tarjeta.anio > 0 ? tarjeta.anio : ""
+            font.family: Tema.rotulo
+            font.pixelSize: Tema.px(15)
+            font.letterSpacing: 0.5
+            color: Tema.tenue
+        }
+        Row {
+            visible: tarjeta.vista
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Tema.px(6)
+            EtiquetaVista { anchors.verticalCenter: parent.verticalCenter }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Vista"
+                font.family: Tema.rotulo
+                font.pixelSize: Tema.px(15)
+                font.letterSpacing: 0.5
+                color: Tema.etiqueta
+            }
+        }
     }
 }
