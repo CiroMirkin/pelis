@@ -17,8 +17,9 @@ Hace falta un instalador para Windows y otro para Linux. La app tiene que seguir
 
 - Las instalaciones se actualizan con el mismo botón «Buscar actualización» que ya existe.
 - La Release publica los instaladores junto con los zips portables, y se distinguen en el nombre: los portables llevan «(Portable)».
+- Linux: el instalador es un `.deb`.
+- En una instalación, el botón «Buscar actualización» baja el instalador nuevo y lo ejecuta, porque la app no puede reemplazar su propia carpeta de solo lectura.
 
 ## Por decidir
-- Windows: el instalador es un `.exe` armado con Inno Setup. Falta decidir si instala en `C:\Program Files\Pelis` o por usuario.
-- Linux: no hay un `.exe` equivalente. Opciones: `.deb` (nativo de Mint, se instala con doble clic), AppImage (un solo archivo que se ejecuta sin instalar) o los dos.
-- Qué hace el botón de actualizar en una instalación, porque no puede reemplazar su propia carpeta de solo lectura (por ejemplo, bajar el instalador nuevo y ejecutarlo).
+- Windows: si instala en `C:\Program Files\Pelis` o por usuario.
+- Linux: cómo se ejecuta el `.deb` bajado desde la app, porque instalar necesita permisos de administrador.
