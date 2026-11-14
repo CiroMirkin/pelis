@@ -241,6 +241,10 @@ Page {
 
     Connections {
         target: puente
+        function onDiscoSacado(etiqueta) {
+            player.pause()
+            errorVideo.text = "Se sacó el disco " + etiqueta
+        }
         function onCapturaGuardada(ok) {
             avisoCaptura.text = ok ? "Captura" : "Captura fallida"
             avisoCaptura.color = ok ? Tema.tenue : Tema.alerta
@@ -650,7 +654,7 @@ Page {
     Shortcut { enabled: pagina.activa; sequence: "Down"; onActivated: pagina.cambiarVolumen(-0.05) }
     Shortcut { enabled: pagina.activa; sequence: "M"; onActivated: { puente.silenciado = !puente.silenciado; pagina.mostrarControles() } }
     Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: botonPantalla.alternar() }
-    Shortcut { enabled: pagina.activa && !panel.visible; sequence: "."; autoRepeat: false; onActivated: pagina.capturar() }
+    Shortcut { enabled: pagina.activa && !panel.visible && !info.soloLectura; sequence: "."; autoRepeat: false; onActivated: pagina.capturar() }
     Shortcut {
         enabled: pagina.activa
         sequence: "Esc"

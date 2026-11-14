@@ -25,7 +25,7 @@ def puente(tmp_path):
     QCoreApplication.instance() or QCoreApplication([])
     biblioteca = tmp_path / "Peliculas"
     biblioteca.mkdir()
-    p = Puente(Config(tmp_path, biblioteca, "", "", [], "", ""))
+    p = Puente(Config(tmp_path, biblioteca, "", "", [], "", ""), volumenes=lambda: [])
     esperar_importacion(p)
     yield p
     p.conn.close()
@@ -246,7 +246,7 @@ def test_guardar_claves_validas_las_aplica_en_caliente_y_las_recuerda(puente, mo
 
     assert r["guardado"] and not r["errores"]
     assert puente.claves() == {"omdb": "k1", "tmdb": "k2"}
-    reabierto = Puente(Config(puente.config.app_dir, puente.config.biblioteca, "", "", [], "", ""))
+    reabierto = Puente(Config(puente.config.app_dir, puente.config.biblioteca, "", "", [], "", ""), volumenes=lambda: [])
     esperar_importacion(reabierto)
     assert reabierto.claves() == {"omdb": "k1", "tmdb": "k2"}
     reabierto.conn.close()
@@ -297,7 +297,7 @@ def test_la_clave_guardada_en_la_app_gana_incluso_vacia_sobre_la_del_toml(tmp_pa
     biblioteca = tmp_path / "Peliculas"
     biblioteca.mkdir()
     (tmp_path / "preferencias.ini").write_text("[claves]\nomdb=\n")
-    p = Puente(Config(tmp_path, biblioteca, "del-toml", "tmdb-del-toml", [], "", ""))
+    p = Puente(Config(tmp_path, biblioteca, "del-toml", "tmdb-del-toml", [], "", ""), volumenes=lambda: [])
     esperar_importacion(p)
 
     assert p.claves() == {"omdb": "", "tmdb": "tmdb-del-toml"}
@@ -359,7 +359,7 @@ def test_imdb_id_de_un_texto(puente):
 def test_sin_biblioteca_el_catalogo_queda_vacio(tmp_path):
     biblioteca = tmp_path / "Peliculas"
     biblioteca.mkdir()
-    p = Puente(Config(tmp_path, biblioteca, "", "", [], "", ""))
+    p = Puente(Config(tmp_path, biblioteca, "", "", [], "", ""), volumenes=lambda: [])
     esperar_importacion(p)
     try:
         pelicula(p, "Alien")
@@ -373,7 +373,7 @@ def test_sin_biblioteca_el_catalogo_queda_vacio(tmp_path):
 
 
 def test_al_abrir_sin_biblioteca_no_se_importa_nada(tmp_path):
-    p = Puente(Config(tmp_path, None, "", "", [], "", ""))
+    p = Puente(Config(tmp_path, None, "", "", [], "", ""), volumenes=lambda: [])
     try:
         assert p._hilo is None
     finally:
@@ -381,7 +381,7 @@ def test_al_abrir_sin_biblioteca_no_se_importa_nada(tmp_path):
 
 
 def test_una_biblioteca_que_no_esta_se_informa_con_su_ruta(tmp_path):
-    p = Puente(Config(tmp_path, tmp_path / "Disco", "", "", [], "", ""))
+    p = Puente(Config(tmp_path, tmp_path / "Disco", "", "", [], "", ""), volumenes=lambda: [])
     try:
         assert not p.hayBiblioteca and p.rutaBiblioteca == str(tmp_path / "Disco")
     finally:
