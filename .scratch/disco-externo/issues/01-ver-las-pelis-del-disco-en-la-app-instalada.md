@@ -15,4 +15,4 @@
 
 ## Preguntas abiertas
 
-- ¿Cómo se detecta el disco al insertarlo (montaje, etiqueta, archivo marcador)?
+Ninguna: las decisiones cerradas están en `../spec.md` (detección, varios discos, solo lectura, sondeo).
