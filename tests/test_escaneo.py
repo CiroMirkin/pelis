@@ -328,3 +328,11 @@ def test_pelis_json_completo_no_consulta_tmdb(biblioteca, conn, tmp_path):
     escanear(otra, biblioteca, OmdbFalso(), tmdb=tmdb)
     assert tmdb.consultas == []
     otra.close()
+
+
+@pytest.mark.parametrize("imdb_id", ["tt", "tt123"])
+def test_pelis_json_con_imdb_id_corto_es_invalido(biblioteca, conn, imdb_id):
+    c = carpeta(biblioteca, "Alien (1979)", "x.mkv")
+    (c / "pelis.json").write_text(f'{{"imdb_id": "{imdb_id}"}}', encoding="utf-8")
+    informe = escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
+    assert [carpeta for carpeta, _ in informe.archivos_invalidos] == ["Alien (1979)"]

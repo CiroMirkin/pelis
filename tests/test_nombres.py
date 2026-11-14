@@ -1,6 +1,6 @@
 import pytest
 
-from pelis.nombres import idioma_de, normalizar, parsear_carpeta, parsear_video
+from pelis.nombres import anio_valido, idioma_de, imdb_id, separar_anio, normalizar, parsear_carpeta, parsear_video
 
 
 @pytest.mark.parametrize("nombre, esperado", [
@@ -8,6 +8,7 @@ from pelis.nombres import idioma_de, normalizar, parsear_carpeta, parsear_video
     ("(1979) Alien", ("Alien", 1979, None)),
     ("Alien (1979) [tt0078748]", ("Alien", 1979, "tt0078748")),
     ("Gatillero (2025) [TT1234567]", ("Gatillero", 2025, "tt1234567")),
+    ("Alien [tt123]", ("Alien", None, None)),
     ("Kill Bill Vol. 1 (2003)", ("Kill Bill Vol. 1", 2003, None)),
     ("Red Desert (1964)", ("Red Desert", 1964, None)),
     ("Punch-Drunk Love", ("Punch-Drunk Love", None, None)),
@@ -60,3 +61,37 @@ def test_idioma_de_con_preferido():
 ])
 def test_normalizar(texto, esperado):
     assert normalizar(texto) == esperado
+
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("tt0078748", "tt0078748"),
+    ("https://www.imdb.com/title/tt0078748/?ref_=fn_al_tt_1", "tt0078748"),
+    ("TT12345678", "tt12345678"),
+    ("Alien [tt0078748]", "tt0078748"),
+    ("tt", None),
+    ("tt123", None),
+    ("", None),
+    (None, None),
+    ("Alien 1979", None),
+])
+def test_imdb_id_de(texto, esperado):
+    assert imdb_id(texto) == esperado
+
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("Alien 1979", ("Alien", 1979)),
+    ("Alien (1979)", ("Alien", 1979)),
+    ("Alien", ("Alien", None)),
+    ("1917", ("1917", None)),
+    ("2001 1968", ("2001", 1968)),
+    ("Película 1879", ("Película 1879", None)),
+    ("Película 2101", ("Película 2101", None)),
+    ("Película 1880", ("Película", 1880)),
+    ("Película 2100", ("Película", 2100)),
+])
+def test_separar_anio(texto, esperado):
+    assert separar_anio(texto) == esperado
+
+
+def test_anio_valido():
+    assert [anio_valido(a) for a in (1879, 1880, 2100, 2101)] == [False, True, True, False]

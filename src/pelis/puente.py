@@ -20,6 +20,7 @@ from .catalogo import (
     CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta,
     url_poster,
 )
+from . import nombres
 from .nombres import idioma_de, normalizar
 from .reproduccion import Sesion
 from .escaneo import escanear, importar_sin_red
@@ -447,10 +448,15 @@ class Puente(QObject):
     def consultandoImdb(self):
         return self._consultando
 
+    @Slot(str, result=str)
+    def imdbIdDe(self, texto):
+        """IMDb ID que aparece en `texto` (un ID o un link de imdb.com), o ''."""
+        return nombres.imdb_id(texto) or ""
+
     @Slot(int, str)
     def buscarEnImdb(self, pelicula_id, texto):
         """Con un IMDb ID (o un link) trae los datos de esa película; con un título, lista candidatos."""
-        imdb_id = edicion.imdb_id_de(texto)
+        imdb_id = nombres.imdb_id(texto)
         if imdb_id:
             self.usarImdb(pelicula_id, imdb_id)
         elif texto.strip():

@@ -1,6 +1,6 @@
 # Editar.qml pregunta a Python si el texto es un IMDb ID
 
-Status: ready-for-agent
+Status: done
 
 Blocked by: 01
 
@@ -9,6 +9,6 @@ Blocked by: 01
 - `Editar.qml:buscar` lo usa en lugar de la regex
 
 ## Criterio de terminado
-- [ ] Test del slot: ID suelto, link y texto sin ID
-- [ ] En la app, pegar un link de IMDb reemplaza los datos y un título lista candidatos
-- [ ] No queda ninguna regex de `tt\d` en `src/pelis/qml/`
+- [x] Test del slot: ID suelto, link y texto sin ID
+- [x] En la app, pegar un link de IMDb reemplaza los datos y un título lista candidatos
+- [x] No queda ninguna regex de `tt\d` en `src/pelis/qml/`

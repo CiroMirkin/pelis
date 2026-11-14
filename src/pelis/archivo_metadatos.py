@@ -9,6 +9,8 @@
 import json
 import os
 
+from . import nombres
+
 NOMBRE = "pelis.json"
 VERSION = 1
 CAMPOS = ("titulo", "imdb_id", "year", "sinopsis", "sinopsis_idioma", "pais", "genero", "director", "elenco", "poster_url",
@@ -33,7 +35,7 @@ def leer(carpeta):
     if datos.get("version", VERSION) > VERSION:
         raise ArchivoInvalido(f"versión {datos['version']} más nueva que la soportada ({VERSION})")
     imdb_id = datos.get("imdb_id")
-    if imdb_id is not None and not (isinstance(imdb_id, str) and imdb_id.lower().startswith("tt")):
+    if imdb_id is not None and not (isinstance(imdb_id, str) and nombres.imdb_id(imdb_id)):
         raise ArchivoInvalido(f"imdb_id inválido: {imdb_id!r}")
     return datos
 

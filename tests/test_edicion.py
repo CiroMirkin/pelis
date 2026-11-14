@@ -55,27 +55,6 @@ def leer_json(biblioteca, nombre):
     return json.loads((biblioteca / nombre / "pelis.json").read_text(encoding="utf-8"))
 
 
-@pytest.mark.parametrize("texto, esperado", [
-    ("tt0078748", "tt0078748"),
-    ("https://www.imdb.com/title/tt0078748/?ref_=fn_al_tt_1", "tt0078748"),
-    ("TT12345678", "tt12345678"),
-    ("Alien 1979", None),
-])
-def test_imdb_id_de(texto, esperado):
-    assert edicion.imdb_id_de(texto) == esperado
-
-
-@pytest.mark.parametrize("texto, esperado", [
-    ("Alien 1979", ("Alien", 1979)),
-    ("Alien (1979)", ("Alien", 1979)),
-    ("Alien", ("Alien", None)),
-    ("1917", ("1917", None)),
-    ("2001 1968", ("2001", 1968)),
-])
-def test_separar_anio(texto, esperado):
-    assert edicion.separar_anio(texto) == esperado
-
-
 def test_guardar_manual_completa_una_no_encontrada(biblioteca, conn):
     carpeta(biblioteca, "Gatillero (2025)", "Gatillero.mp4")
     escanear(conn, biblioteca, OmdbFalso())

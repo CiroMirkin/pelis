@@ -44,8 +44,8 @@ Page {
         candidatos = []
         estadoImdb = ""
         // Un ID o un link reemplaza los datos enseguida: se confirma antes si hay algo que perder
-        const id = (busqueda.text.match(/tt\d{7,}/i) || [""])[0]
-        if (id) usar(id.toLowerCase())
+        const id = puente.imdbIdDe(busqueda.text)
+        if (id) usar(id)
         else puente.buscarEnImdb(peliculaId, busqueda.text)
     }
 

@@ -1,6 +1,6 @@
 # Un solo reconocedor de IMDb ID y de año
 
-Status: ready-for-agent
+Status: done
 
 Candidato 5 de `ignore/architecture-review-20261022-235128.html`. Decisiones tomadas el 2026-11-13.
 

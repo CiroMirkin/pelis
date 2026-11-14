@@ -348,3 +348,9 @@ def test_guardar_dos_veces_seguidas_valida_una_sola_vez(puente, monkeypatch):
 
     assert omdb.claves == ["k1"]
     assert puente.claves()["omdb"] == "k1"
+
+
+def test_imdb_id_de_un_texto(puente):
+    assert puente.imdbIdDe("https://www.imdb.com/title/tt0078748/?ref_=x") == "tt0078748"
+    assert puente.imdbIdDe("TT0078748") == "tt0078748"
+    assert puente.imdbIdDe("Alien 1979") == ""

@@ -3,36 +3,19 @@
 Cada cambio se guarda con `metadatos`, en la base y en el pelis.json de la carpeta, así sobrevive a una base nueva.
 """
 
-import re
 from pathlib import Path
 
-from . import db, metadatos, poster
+from . import db, metadatos, nombres, poster
 from .omdb import ErrorRed
-
-ID_IMDB = re.compile(r"tt\d{7,}", re.IGNORECASE)
-ANIO_FINAL = re.compile(r"^(.*?)[\s(]+((?:18|19|20)\d\d)\)?\s*$")
 
 
 class DatoInvalido(Exception):
     pass
 
 
-def imdb_id_de(texto):
-    """IMDb ID que aparece en `texto` (ej. un link de imdb.com), o None."""
-    m = ID_IMDB.search(texto or "")
-    return m.group(0).lower() if m else None
-
-
-def separar_anio(texto):
-    """"Alien 1979" o "Alien (1979)" -> ("Alien", 1979); sin año -> (texto, None)."""
-    texto = texto.strip()
-    m = ANIO_FINAL.match(texto)
-    return (m.group(1).strip(), int(m.group(2))) if m and m.group(1).strip() else (texto, None)
-
-
 def candidatos(omdb, texto):
     """Películas de OMDb que coinciden con `texto` (título, opcionalmente con el año al final)."""
-    titulo, anio = separar_anio(texto)
+    titulo, anio = nombres.separar_anio(texto)
     encontradas = omdb.buscar(titulo, anio)
     if anio is not None and not encontradas:
         # "Blade Runner 2049": el 2049 se tomó como año y OMDb no tiene esa película.
@@ -78,7 +61,7 @@ def guardar_manual(conn, biblioteca, pelicula_id, campos):
     if not titulo:
         raise DatoInvalido("El título no puede quedar vacío.")
     anio_texto = str(campos.get("anio") or "").strip()
-    if anio_texto and not (anio_texto.isdigit() and 1880 <= int(anio_texto) <= 2100):
+    if anio_texto and not (anio_texto.isdigit() and nombres.anio_valido(int(anio_texto))):
         raise DatoInvalido(f"El año «{anio_texto}» no es válido.")
     anio = int(anio_texto) if anio_texto else None
     p = db.pelicula(conn, pelicula_id)
