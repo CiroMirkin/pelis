@@ -134,7 +134,7 @@ class Instalacion:
         return "Pelis.bat" if self.windows else "pelis.sh"
 
     def paquete(self, version):
-        return f"Pelis-windows-v{version}.zip" if self.windows else f"Pelis-linux-v{version}.tar.gz"
+        return f"Pelis-windows-v{version}-portable.zip" if self.windows else f"Pelis-linux-v{version}-portable.tar.gz"
 
 
 def instalacion_actual():
@@ -177,25 +177,32 @@ def descargar(sesion, url, destino, progreso=lambda fraccion: None, cancelado=la
         raise ErrorRed(str(e)) from e
 
 
+def bajar_verificado(sesion, nueva, nombre, carpeta, progreso, cancelado):
+    urls = nueva["paquetes"]
+    if nombre not in urls or "SHA256SUMS" not in urls:
+        raise ErrorActualizacion(f"La versión {nueva['version']} no trae el paquete para este sistema.")
+    sumas_archivo = carpeta / "SHA256SUMS"
+    descargar(sesion, urls["SHA256SUMS"], sumas_archivo, cancelado=cancelado)
+    esperado = leer_sumas(sumas_archivo.read_text(encoding="utf-8")).get(nombre)
+    archivo = carpeta / nombre
+    descargar(sesion, urls[nombre], archivo, progreso, cancelado)
+    if esperado is None or sha256(archivo) != esperado:
+        raise ErrorActualizacion("La descarga llegó dañada (no coincide con SHA256SUMS). Probá de nuevo.")
+    return archivo
+
+
 def preparar(inst, nueva, sesion=requests, progreso=lambda fraccion: None, cancelado=lambda: False):
     """Baja y verifica el paquete de este sistema y lo extrae en `inst.descarga`; devuelve la carpeta extraída.
 
     No toca la instalación: si algo falla o se cancela, borra la descarga y deja todo como estaba.
     """
     nombre = inst.paquete(nueva["version"])
-    urls = nueva["paquetes"]
-    if nombre not in urls or "SHA256SUMS" not in urls:
+    if nombre not in nueva["paquetes"] or "SHA256SUMS" not in nueva["paquetes"]:
         raise ErrorActualizacion(f"La versión {nueva['version']} no trae el paquete para este sistema.")
     shutil.rmtree(inst.descarga, ignore_errors=True)
     inst.descarga.mkdir(parents=True)
     try:
-        sumas_archivo = inst.descarga / "SHA256SUMS"
-        descargar(sesion, urls["SHA256SUMS"], sumas_archivo, cancelado=cancelado)
-        esperado = leer_sumas(sumas_archivo.read_text(encoding="utf-8")).get(nombre)
-        archivo = inst.descarga / nombre
-        descargar(sesion, urls[nombre], archivo, progreso, cancelado)
-        if esperado is None or sha256(archivo) != esperado:
-            raise ErrorActualizacion("La descarga llegó dañada (no coincide con SHA256SUMS). Probá de nuevo.")
+        archivo = bajar_verificado(sesion, nueva, nombre, inst.descarga, progreso, cancelado)
         nuevo = inst.descarga / "nuevo"
         if inst.windows:
             with zipfile.ZipFile(archivo) as z:

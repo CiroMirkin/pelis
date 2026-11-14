@@ -65,7 +65,7 @@ RELEASE = {
     "tag_name": "v0.3.0",
     "body": "## Nuevo\n\n- Buscar actualización",
     "assets": [
-        {"name": "Pelis-windows-v0.3.0.zip", "browser_download_url": "https://x/win.zip"},
+        {"name": "Pelis-windows-v0.3.0-portable.zip", "browser_download_url": "https://x/win.zip"},
         {"name": "SHA256SUMS", "browser_download_url": "https://x/SHA256SUMS"},
     ],
 }
@@ -76,7 +76,7 @@ def test_hay_version_nueva():
     assert actualizacion.buscar(sesion, actual="0.2.0") == {
         "version": "0.3.0",
         "notas": "## Nuevo\n\n- Buscar actualización",
-        "paquetes": {"Pelis-windows-v0.3.0.zip": "https://x/win.zip", "SHA256SUMS": "https://x/SHA256SUMS"},
+        "paquetes": {"Pelis-windows-v0.3.0-portable.zip": "https://x/win.zip", "SHA256SUMS": "https://x/SHA256SUMS"},
     }
     assert sesion.urls == [actualizacion.API]
 
@@ -198,7 +198,7 @@ def test_preparar_baja_verifica_y_extrae(tmp_path, sistema):
 
 def test_hash_distinto_aborta_sin_tocar_nada(tmp_path):
     inst = _instalacion(tmp_path)
-    nueva, archivos = _release(inst, "0.2.0", sumas=f"{'0' * 64}  Pelis-linux-v0.2.0.tar.gz\n")
+    nueva, archivos = _release(inst, "0.2.0", sumas=f"{'0' * 64}  Pelis-linux-v0.2.0-portable.tar.gz\n")
     with pytest.raises(actualizacion.ErrorActualizacion, match="dañada"):
         actualizacion.preparar(inst, nueva, Servidor(archivos))
     assert not inst.descarga.exists()
@@ -223,7 +223,7 @@ def test_cancelar_borra_la_descarga(tmp_path):
 
 def test_release_sin_paquete_del_sistema(tmp_path):
     inst = _instalacion(tmp_path, "win")
-    nueva = {"version": "0.2.0", "notas": "", "paquetes": {"Pelis-linux-v0.2.0.tar.gz": "u", "SHA256SUMS": "u"}}
+    nueva = {"version": "0.2.0", "notas": "", "paquetes": {"Pelis-linux-v0.2.0-portable.tar.gz": "u", "SHA256SUMS": "u"}}
     with pytest.raises(actualizacion.ErrorActualizacion, match="no trae"):
         actualizacion.preparar(inst, nueva, Servidor({}))
 

@@ -1,5 +1,5 @@
 # Arma Pelis para Windows y Linux. Con un tag vX.Y.Z publica una Release; a mano, solo deja los
-# paquetes como artifacts del run. Reglas en .scratch/fase-7-publicacion/spec.md.
+# paquetes como artifacts del run (portables e instaladores). Reglas en .scratch/fase-7-publicacion/spec.md.
 name: Publicar
 
 on:
@@ -52,13 +52,29 @@ jobs:
         run: |
           call tools\build_win.bat
           if errorlevel 1 exit /b 1
-          powershell -NoProfile -Command "Compress-Archive -Path dist\Pelis-win\* -DestinationPath Pelis-windows-v${{ steps.version.outputs.version }}.zip"
+          powershell -NoProfile -Command "Compress-Archive -Path dist\Pelis-win\* -DestinationPath Pelis-windows-v${{ steps.version.outputs.version }}-portable.zip"
+
+      - name: Instalador (Windows)
+        if: matrix.sistema == 'windows'
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; if ($LASTEXITCODE) { exit 1 } }
+          & $iscc "/DVersion=${{ steps.version.outputs.version }}" tools\pelis.iss
+          if ($LASTEXITCODE) { exit 1 }
+          Move-Item "dist\Pelis-windows-v${{ steps.version.outputs.version }}-setup.exe" .
 
       - name: Armar (Linux)
         if: matrix.sistema == 'linux'
         run: |
           tools/build_linux.sh
-          tar -czf "Pelis-linux-v${{ steps.version.outputs.version }}.tar.gz" -C dist/Pelis-linux .
+          tar -czf "Pelis-linux-v${{ steps.version.outputs.version }}-portable.tar.gz" -C dist/Pelis-linux .
+
+      - name: Instalador (Linux)
+        if: matrix.sistema == 'linux'
+        run: |
+          tools/build_deb.sh
+          mv "dist/Pelis-linux-v${{ steps.version.outputs.version }}.deb" .
 
       - uses: actions/upload-artifact@v4
         with:
@@ -88,6 +104,7 @@ jobs:
           # checkout deja el tag como liviano: se vuelve a traer para leer su mensaje
           git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
           git tag -l --format='%(contents)' "$TAG" > notas.md
+          printf '\n\n`-setup.exe` (Windows) y `.deb` (Ubuntu y Debian) instalan Pelis y se actualizan desde la app. Los archivos con «portable» en el nombre son la versión (Portable): se descomprime y anda, sin instalar.\n' >> notas.md
           (cd paquetes && sha256sum * > SHA256SUMS)
           pre=""
           [[ "$TAG" == *-rc* ]] && pre="--prerelease"
