@@ -8,7 +8,10 @@ a = Analysis(
     [os.path.join(SPECPATH, "pelis_entrada.py")],
     pathex=[os.path.join(raiz, "src")],
     # __main__.py carga Path(__file__).parent / "qml": en el build es _internal\pelis\qml
-    datas=[(os.path.join(raiz, "src", "pelis", "qml"), "pelis/qml")],
+    datas=[
+        (os.path.join(raiz, "src", "pelis", "qml"), "pelis/qml"),
+        (os.path.join(raiz, "src", "pelis", "icono.png"), "pelis"),
+    ],
     hiddenimports=[],
     excludes=["tkinter", "PySide6.QtWidgets", "PySide6.QtMultimediaWidgets"],
 )
@@ -69,6 +72,7 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name="pelis",
+    icon=os.path.join(raiz, "assets", "icono.ico"),
     console=False,
     upx=False,
 )

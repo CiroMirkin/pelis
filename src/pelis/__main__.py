@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, QTimer, Slot
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
@@ -95,6 +95,7 @@ def main():
     QQuickStyle.setStyle("Material")
     app = QGuiApplication(sys.argv)
     app.setApplicationName("Pelis")
+    app.setWindowIcon(QIcon(str(Path(__file__).parent / "icono.png")))
 
     arranque = Arranque(config, args.prerelease)
     codigo = app.exec()
