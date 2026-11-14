@@ -14,11 +14,11 @@ a = Analysis(
 )
 
 # Los hooks de PySide6 juntan todos los módulos QML y sus DLL. La app usa QtQuick,
-# QtQuick.Controls (Material), QtQuick.Layouts y QtMultimedia: se saca el resto.
+# QtQuick.Controls (Material), QtQuick.Layouts, QtQuick.Dialogs (el selector de carpeta nativo necesita también las DLL de QuickDialogs2) y QtMultimedia: se saca el resto.
 QML_FUERA = (
     "Qt3D Qt5Compat QtCharts QtDataVisualization QtGraphs QtLocation QtPositioning "
     "QtQuick3D QtRemoteObjects QtScxml QtSensors QtTest QtTextToSpeech QtWebChannel "
-    "QtWebEngine QtWebSockets QtWebView QtQuick/Dialogs QtQuick/LocalStorage "
+    "QtWebEngine QtWebSockets QtWebView QtQuick/LocalStorage "
     "QtQuick/NativeStyle QtQuick/Particles QtQuick/Pdf QtQuick/Scene2D QtQuick/Scene3D "
     "QtQuick/Timeline QtQuick/VectorImage QtQuick/VirtualKeyboard QtQuick/tooling "
     "QtQuick/Controls/FluentWinUI3 QtQuick/Controls/Fusion QtQuick/Controls/Imagine "
@@ -29,7 +29,7 @@ QML_FUERA = (
 DLL_FUERA = re.compile(
     r"^(lib)?Qt6(3D|Quick3D|WebEngine|WebView|WebChannel|WebSockets|Charts|DataVisualization|Graphs"
     r"|Location|Positioning|Pdf|RemoteObjects|Scxml|Sensors|SpatialAudio|StateMachine"
-    r"|TextToSpeech|VirtualKeyboard|QuickTimeline|QuickParticles|Test|QuickTest|QuickDialogs2"
+    r"|TextToSpeech|VirtualKeyboard|QuickTimeline|QuickParticles|Test|QuickTest"
     r"|Labs|QmlLocalStorage|QmlXmlListModel|Sql|QuickVectorImage|ShaderTools|MultimediaWidgets"
     r"|OpenGLWidgets|QmlDesignSupport|QuickShapesDesignHelpers"
     r"|QuickControls2(FluentWinUI3|Fusion|Imagine|Universal|Windows|Native))"

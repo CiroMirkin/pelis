@@ -154,6 +154,8 @@ subs_preferido   = "es"
 
 Las claves también se cargan desde la app, en **«…» › Claves de API…**. Si una clave se guardó ahí, gana sobre la de `pelis.toml`; el archivo sirve de valor inicial.
 
+La biblioteca también se elige desde la app: en **«…» › Cambiar biblioteca…**, o en la pantalla que aparece cuando no se encuentra la carpeta. Lo elegido se guarda en `preferencias.ini` y gana sobre `biblioteca` de `pelis.toml`, que pasa a ser opcional. Sin `pelis.toml` junto a la carpeta de la app, Pelis corre como instalada y guarda todo en `%APPDATA%\Pelis` (Windows) o `~/.local/share/pelis` (Linux).
+
 > [!TIP]
 > Con una ruta relativa, el mismo disco funciona con cualquier letra de unidad o punto de montaje. En la base, las rutas de las películas se guardan relativas a `biblioteca`.
 

@@ -25,6 +25,7 @@ from .nombres import idioma_de, normalizar
 from .reproduccion import Sesion
 from .escaneo import escanear, importar_sin_red
 from .claves import GestorClaves
+from .config import texto_de_biblioteca
 from .omdb import ErrorRed, Omdb
 from .tmdb import Tmdb
 
@@ -221,6 +222,7 @@ class Puente(QObject):
     # Resultado de una consulta a IMDb: {error} | {candidatos} | {aplicado, aviso}
     imdbRespondio = Signal("QVariantMap")
     _imdbListo = Signal(object)  # desde el hilo de la consulta; se procesa en el de la UI
+    bibliotecaChanged = Signal()
     validandoClavesChanged = Signal()
     clavesRespondio = Signal("QVariantMap")
     capturaGuardada = Signal(bool)  # True = escrita; False = falló y el motivo va al log
@@ -262,11 +264,50 @@ class Puente(QObject):
         self._descargaLista.connect(self._descarga_lista)
         self._pantalla = pantalla.Pantalla()
         self._recargar_catalogo()
-        self._iniciar_escaneo(sin_red=True)
+        if self.hayBiblioteca:
+            self._iniciar_escaneo(sin_red=True)
 
     def _recargar_catalogo(self):
-        self._catalogo.recargar(db.catalogo(self.conn), self.config.biblioteca)
+        # Sin biblioteca no hay dónde buscar los pósters entonces el catálogo queda vacío
+        filas = db.catalogo(self.conn) if self.hayBiblioteca else []
+        self._catalogo.recargar(filas, self.config.biblioteca or Path())
         self.contadoresChanged.emit()
+
+    # --- biblioteca ---
+
+    @Property(bool, notify=bibliotecaChanged)
+    def hayBiblioteca(self):
+        return self.config.biblioteca is not None and self.config.biblioteca.is_dir()
+
+    @Property(str, notify=bibliotecaChanged)
+    def rutaBiblioteca(self):
+        """Se informa aunque no exista para que la pantalla de elegir la muestre cuando el disco no está montado."""
+        return str(self.config.biblioteca or "")
+
+    @staticmethod
+    def _carpeta(destino):
+        return Path(QUrl(destino).toLocalFile() if destino.startswith("file:") else destino)
+
+    @Slot(str, result=bool)
+    def cambiarBibliotecaPierdePeliculas(self, destino):
+        """Con la base vacía nunca avisa porque no hay nada que perder."""
+        carpeta = self._carpeta(destino)
+        carpetas = db.peliculas_por_carpeta(self.conn)
+        return bool(carpetas) and not any((carpeta / c).is_dir() for c in carpetas)
+
+    @Slot(str, result=bool)
+    def cambiarBiblioteca(self, destino):
+        """Con un escaneo en curso no cambia porque ese escaneo sigue leyendo la biblioteca anterior."""
+        carpeta = self._carpeta(destino)
+        if self._hilo is not None or not carpeta.is_dir():
+            return False
+        self._preferencias.setValue("biblioteca/ruta", texto_de_biblioteca(self.config, carpeta))
+        self._preferencias.sync()
+        self.config.biblioteca = carpeta.resolve()
+        self._avisar_recomendada(self._recomendacion.cerrar())
+        self._recargar_catalogo()
+        self.bibliotecaChanged.emit()
+        return True
 
     def _ruta(self, relativa):
         return self.config.biblioteca / relativa

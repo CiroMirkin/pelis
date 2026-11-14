@@ -1,6 +1,6 @@
 # Elegir la biblioteca
 
-Status: ready-for-agent
+Status: done
 
 Anotada el 2026-11-01. Decisiones cerradas el 2026-11-01.
 

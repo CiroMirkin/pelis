@@ -82,12 +82,10 @@ def main():
     args = parser.parse_args()
 
     try:
-        app_dir = Path(args.app_dir) if args.app_dir else configuracion.app_dir_por_defecto()
-        config = configuracion.cargar(app_dir)
+        app_dir, portable = (Path(args.app_dir), True) if args.app_dir else configuracion.app_dir_por_defecto()
+        config = configuracion.cargar(app_dir, portable)
     except configuracion.ErrorConfig as e:
         fallar(f"Error de configuración: {e}")
-    if not config.biblioteca.is_dir():
-        fallar(f"No existe la biblioteca: {config.biblioteca}")
 
     os.environ.setdefault("QT_QUICK_CONTROLS_MATERIAL_THEME", "Dark")
     if sys.platform.startswith("linux"):

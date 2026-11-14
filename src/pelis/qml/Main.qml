@@ -20,7 +20,7 @@ ApplicationWindow {
 
     // Lo prende __main__.py cuando el puente está listo: antes de eso `puente` no existe
     property bool listo: false
-    onListoChanged: pila.push("Catalogo.qml", {}, StackView.Immediate)
+    onListoChanged: pila.push(puente.hayBiblioteca ? "Catalogo.qml" : "SinBiblioteca.qml", {}, StackView.Immediate)
 
     // Corre en el hilo de render, así sigue girando mientras se carga lo pesado
     BusyIndicator {

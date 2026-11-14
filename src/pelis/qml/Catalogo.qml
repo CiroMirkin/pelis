@@ -86,7 +86,8 @@ Page {
         onActivated: { buscador.forceActiveFocus(); buscador.selectAll() }
     }
 
-    Component.onCompleted: grilla.forceActiveFocus()
+    property bool escanearAlEntrar: false
+    Component.onCompleted: { grilla.forceActiveFocus(); if (escanearAlEntrar) dialogo.iniciar() }
     StackView.onActivated: grilla.forceActiveFocus()
 
     header: Rectangle {
@@ -231,6 +232,12 @@ Page {
                     text: "Faltantes (" + puente.cantidadFaltantes + ")"
                     icono: "faltantes"
                     onTriggered: pagina.StackView.view.push("Faltantes.qml")
+                }
+                OpcionMenu {
+                    text: "Cambiar biblioteca…"
+                    icono: "carpeta"
+                    enabled: !puente.escaneando
+                    onTriggered: biblioteca.iniciar()
                 }
                 OpcionMenu {
                     text: "Claves de API…"
@@ -422,6 +429,12 @@ Page {
     DialogoEscaneo {
         id: dialogo
         onConfigurarClave: { close(); claves.iniciar() }
+    }
+
+    ElegirBiblioteca {
+        id: biblioteca
+        onCambiada: dialogo.iniciar()
+        onCerrado: grilla.forceActiveFocus()
     }
 
     DialogoClaves {
