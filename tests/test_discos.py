@@ -1,4 +1,5 @@
 import sqlite3
+import sys
 import time
 
 import pytest
@@ -287,6 +288,7 @@ def test_la_filmografia_incluye_las_pelis_del_disco(puente, volumenes, tmp_path)
     assert [(p["titulo"], p["disco"]) for p in peliculas] == [("Alien", "Disco")]
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows no deja renombrar una db abierta, que es como se simula sacar el disco")
 def test_avisa_si_se_saca_el_disco_en_plena_reproduccion_y_no_guarda_el_progreso(puente, volumenes, tmp_path):
     disco = crear_disco(tmp_path)
     volumenes.montados = [(disco, "Disco")]
