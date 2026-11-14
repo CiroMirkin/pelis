@@ -14,10 +14,11 @@ Ver "Windows" en la spec.
 - La versión sale de `__version__` (sin el sufijo `-rcN` si Inno no lo acepta, o en `AppVersion`)
 
 ## Criterio de terminado
-- [ ] Se arma el `.exe` en `windows-latest`
+- [x] Se arma el `.exe` en `windows-latest`
 - [ ] Instalada, la app arranca en modo instalado y guarda los datos en `%APPDATA%\Pelis`
 - [ ] Desinstalar deja la base y las preferencias
 
 ## Comments
 
 - 14/11/2026: `tools/pelis.iss` escrito (por usuario, sin UAC, español, acceso directo, `skipifsilent` en el «Abrir Pelis»). No se pudo compilar ni probar acá (no hay Windows). Se prueba con el workflow (issue 07) y a mano (issue 08).
+- 14/11/2026: el workflow (run 43607256065) compiló `Pelis-windows-v0.3.0-rc9-setup.exe` en `windows-latest`. Falta instalarlo a mano en Windows (issue 08).
