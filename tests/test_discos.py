@@ -94,6 +94,25 @@ def test_un_disco_con_app_entra_al_catalogo_y_al_sacarlo_desaparece(puente, volu
     assert not puente.hayDiscos
 
 
+def test_un_disco_con_pelis_instalada_se_reconoce_al_conectarlo(puente, volumenes, tmp_path):
+    disco = crear_disco(tmp_path)
+    (disco / "pelis-app").mkdir()
+    (disco / "app").rename(disco / "pelis-app" / "app")
+    (disco / "pelis-app" / "app" / "pelis.toml").write_text('biblioteca = "../../Peliculas"\n')
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    assert tarjeta_de(puente, "Alien")["disco"] == "Disco"
+
+
+def test_un_volumen_con_pelis_db_en_la_raiz_no_se_detecta_solo(puente, volumenes, tmp_path):
+    disco = crear_disco(tmp_path)
+    (disco / "app" / "pelis.db").rename(disco / "pelis.db")
+    (disco / "pelis.toml").write_text('biblioteca = "Peliculas"\n')
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    assert titulos(puente) == []
+
+
 def test_la_db_de_la_compu_no_guarda_nada_de_un_disco(puente, volumenes, tmp_path):
     volumenes.montados = [(crear_disco(tmp_path), "Disco")]
     puente._sondear()

@@ -203,8 +203,9 @@ class Discos:
     # --- sondeo ---
 
     @staticmethod
-    def _app_de(carpeta):
-        for app in (carpeta / "app", carpeta):
+    def _app_de(carpeta, con_raiz=True):
+        """Una instalación de Pelis en un disco pone su app en `pelis-app/app/` de la raíz y la raíz misma solo vale si el usuario la elige a mano."""
+        for app in (carpeta / "pelis-app" / "app", carpeta / "app") + ((carpeta,) if con_raiz else ()):
             if _es_archivo(app / "pelis.db"):
                 return app
         return None
@@ -230,8 +231,9 @@ class Discos:
         ocultos = set(self.ocultos())
         entradas = {}
         for raiz, etiqueta in volumenes:
-            if _es_archivo(raiz / "app" / "pelis.db") and not self._es_esta_app(raiz / "app"):
-                e = Entrada(clave_de(raiz / "app", etiqueta), raiz / "app", etiqueta, manual=False)
+            app = self._app_de(raiz, con_raiz=False)
+            if app is not None and not self._es_esta_app(app):
+                e = Entrada(clave_de(app, etiqueta), app, etiqueta, manual=False)
                 entradas[e.clave] = e
         for texto in self.manuales():
             app = Path(texto)
