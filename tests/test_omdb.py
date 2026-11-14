@@ -66,3 +66,19 @@ def test_error_getting_data_fuera_de_por_id_sigue_siendo_error_de_red():
     omdb = omdb_con(RespuestaFalsa({"Response": "False", "Error": "Error getting data."}))
     with pytest.raises(ErrorRed):
         omdb.por_titulo("Alien", 1979)
+
+
+@pytest.mark.parametrize("error", ["Invalid API key!", "No API key provided."])
+def test_clave_rechazada_no_es_valida(error):
+    omdb = omdb_con(RespuestaFalsa({"Response": "False", "Error": error}))
+    assert omdb.clave_valida() is False
+
+
+def test_clave_aceptada_es_valida():
+    assert omdb_con(RespuestaFalsa({"Response": "True", "Title": "x"})).clave_valida() is True
+
+
+def test_limite_diario_no_dice_si_la_clave_sirve():
+    omdb = omdb_con(RespuestaFalsa({"Response": "False", "Error": "Request limit reached!"}))
+    with pytest.raises(ErrorRed):
+        omdb.clave_valida()

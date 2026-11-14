@@ -61,9 +61,9 @@ class Escaneo:
         self.marcar_faltantes = marcar_faltantes
         self.informe = Informe()
         self._reasignadas = set()  # ids que pasaron a otra carpeta: no se marcan faltantes
-        self.omdb_caido = False  # tras el primer error de red no se insiste: el resto queda pendiente
+        self.omdb_caido = False  # Tras el primer error de red no se insiste entonces el resto queda pendiente
         if omdb is None:
-            self.informe.aviso_omdb = "Falta omdb_api_key en pelis.toml: las películas quedan pendientes de metadatos."
+            self.informe.aviso_omdb = "Falta la clave de OMDb: las películas quedan pendientes de metadatos."
 
     def ejecutar(self):
         existentes = db.peliculas_por_carpeta(self.conn)

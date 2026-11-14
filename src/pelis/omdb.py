@@ -29,6 +29,18 @@ class Omdb:
             return None
         raise ErrorRed(error or f"HTTP {r.status_code}")
 
+    def clave_valida(self):
+        """Lanza ErrorRed si no se pudo saber (sin red, límite diario...)."""
+        try:
+            datos = self.sesion.get(URL, params={"apikey": self.api_key, "i": "tt0111161"}, timeout=TIMEOUT).json()
+        except (requests.RequestException, ValueError) as e:
+            raise ErrorRed(str(e)) from e
+        if datos.get("Response") == "True":
+            return True
+        if "api key" in datos.get("Error", "").lower():
+            return False
+        raise ErrorRed(datos.get("Error", "respuesta inesperada"))
+
     def por_id(self, imdb_id):
         try:
             return self._consultar(i=imdb_id)

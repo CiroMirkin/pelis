@@ -12,6 +12,7 @@ Popup {
     modal: true
     closePolicy: puente.escaneando ? Popup.NoAutoClose : Popup.CloseOnEscape
 
+    signal configurarClave()
     property int actual: 0
     property int total: 0
     property string nombre: ""
@@ -113,13 +114,21 @@ Popup {
                 }
             }
 
-            Boton {
-                id: cerrar
+            RowLayout {
                 visible: !!dialogo.informe
                 Layout.alignment: Qt.AlignRight
-                principal: true
-                text: "Cerrar"
-                onClicked: dialogo.close()
+                spacing: Tema.px(10)
+                Boton {
+                    visible: !!dialogo.informe && dialogo.informe.sinClaveOmdb === true
+                    text: "Configurar clave"
+                    onClicked: dialogo.configurarClave()
+                }
+                Boton {
+                    id: cerrar
+                    principal: true
+                    text: "Cerrar"
+                    onClicked: dialogo.close()
+                }
             }
         }
     }

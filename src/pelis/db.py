@@ -179,6 +179,10 @@ def marcar_pendiente(conn, pelicula_id):
     conn.execute("UPDATE peliculas SET omdb_estado = 'pendiente' WHERE id = ?", (pelicula_id,))
 
 
+def cantidad_pendientes(conn):
+    return conn.execute("SELECT COUNT(*) FROM peliculas WHERE omdb_estado = 'pendiente' AND estado != 'papelera'").fetchone()[0]
+
+
 def cambiar_estado(conn, pelicula_id, estado):
     conn.execute("UPDATE peliculas SET estado = ? WHERE id = ?", (estado, pelicula_id))
 

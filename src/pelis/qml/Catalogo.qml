@@ -233,6 +233,11 @@ Page {
                     onTriggered: pagina.StackView.view.push("Faltantes.qml")
                 }
                 OpcionMenu {
+                    text: "Claves de API…"
+                    icono: "editar"
+                    onTriggered: claves.iniciar()
+                }
+                OpcionMenu {
                     // Desde el código no hay build que reemplazar
                     enabled: puente.puedeActualizar && !puente.buscandoActualizacion
                     text: "Buscar actualización"
@@ -414,7 +419,16 @@ Page {
         color: Tema.tenue
     }
 
-    DialogoEscaneo { id: dialogo }
+    DialogoEscaneo {
+        id: dialogo
+        onConfigurarClave: { close(); claves.iniciar() }
+    }
+
+    DialogoClaves {
+        id: claves
+        onEscanearPendientes: dialogo.iniciar()
+        onCerrado: grilla.forceActiveFocus()
+    }
 
     DialogoActualizacion {
         id: actualizacion
