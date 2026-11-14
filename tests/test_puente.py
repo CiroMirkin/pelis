@@ -354,3 +354,98 @@ def test_imdb_id_de_un_texto(puente):
     assert puente.imdbIdDe("https://www.imdb.com/title/tt0078748/?ref_=x") == "tt0078748"
     assert puente.imdbIdDe("TT0078748") == "tt0078748"
     assert puente.imdbIdDe("Alien 1979") == ""
+
+
+def test_sin_biblioteca_el_catalogo_queda_vacio(tmp_path):
+    biblioteca = tmp_path / "Peliculas"
+    biblioteca.mkdir()
+    p = Puente(Config(tmp_path, biblioteca, "", "", [], "", ""))
+    esperar_importacion(p)
+    try:
+        pelicula(p, "Alien")
+        p._recargar_catalogo()
+        assert p.catalogo.rowCount() == 1
+        p.config.biblioteca = None
+        p._recargar_catalogo()
+        assert not p.hayBiblioteca and p.rutaBiblioteca == "" and p.catalogo.rowCount() == 0
+    finally:
+        p.conn.close()
+
+
+def test_al_abrir_sin_biblioteca_no_se_importa_nada(tmp_path):
+    p = Puente(Config(tmp_path, None, "", "", [], "", ""))
+    try:
+        assert p._hilo is None
+    finally:
+        p.conn.close()
+
+
+def test_una_biblioteca_que_no_esta_se_informa_con_su_ruta(tmp_path):
+    p = Puente(Config(tmp_path, tmp_path / "Disco", "", "", [], "", ""))
+    try:
+        assert not p.hayBiblioteca and p.rutaBiblioteca == str(tmp_path / "Disco")
+    finally:
+        p.conn.close()
+
+
+def test_cambiar_biblioteca_guarda_la_eleccion_y_recarga_el_catalogo(puente, tmp_path):
+    pelicula(puente, "Alien", "folder.jpg")
+    puente._recargar_catalogo()
+    anterior = puente.catalogo._filas[0]["poster"]
+    nueva = tmp_path / "Otra"
+    nueva.mkdir()
+    assert puente.cambiarBiblioteca(str(nueva))
+    assert puente.config.biblioteca == nueva.resolve()
+    assert puente._preferencias.value("biblioteca/ruta") == "Otra"  # portable: relativa a app/
+    assert anterior and puente.catalogo._filas[0]["poster"] == url_poster(nueva, "Alien/folder.jpg") != anterior
+
+
+def test_cambiar_biblioteca_cierra_la_recomendada(puente, tmp_path):
+    pelicula(puente, "Alien")
+    puente.recomendar()
+    assert puente.recomendada
+    nueva = tmp_path / "Otra"
+    nueva.mkdir()
+    puente.cambiarBiblioteca(str(nueva))
+    assert not puente.recomendada
+
+
+def test_cambiar_biblioteca_avisa_a_la_interfaz(puente, tmp_path):
+    avisos = []
+    puente.bibliotecaChanged.connect(lambda: avisos.append(True))
+    nueva = tmp_path / "Otra"
+    nueva.mkdir()
+    puente.cambiarBiblioteca(str(nueva))
+    assert avisos and puente.rutaBiblioteca == str(nueva.resolve())
+
+
+def test_cambiar_biblioteca_acepta_una_url_de_archivo(puente, tmp_path):
+    nueva = tmp_path / "Otra"
+    nueva.mkdir()
+    assert puente.cambiarBiblioteca(nueva.as_uri())
+    assert puente.config.biblioteca == nueva.resolve()
+
+
+def test_cambiar_biblioteca_no_hace_nada_con_un_escaneo_en_curso(puente, tmp_path):
+    nueva = tmp_path / "Otra"
+    nueva.mkdir()
+    anterior = puente.config.biblioteca
+    puente._iniciar_escaneo(sin_red=True)
+    assert not puente.cambiarBiblioteca(str(nueva))
+    assert puente.config.biblioteca == anterior
+    esperar_importacion(puente)
+
+
+def test_cambiar_biblioteca_rechaza_lo_que_no_es_una_carpeta(puente, tmp_path):
+    assert not puente.cambiarBiblioteca(str(tmp_path / "no-existe"))
+
+
+def test_el_aviso_solo_si_la_carpeta_nueva_no_tiene_ninguna_de_la_base(puente, tmp_path):
+    nueva = tmp_path / "Otra"
+    nueva.mkdir()
+    assert not puente.cambiarBibliotecaPierdePeliculas(str(nueva))  # base vacía: primera apertura
+    pelicula(puente, "Alien")
+    pelicula(puente, "Aliens")
+    assert puente.cambiarBibliotecaPierdePeliculas(str(nueva))
+    (nueva / "Alien").mkdir()  # con una sola de las dos alcanza para no avisar
+    assert not puente.cambiarBibliotecaPierdePeliculas(str(nueva))
