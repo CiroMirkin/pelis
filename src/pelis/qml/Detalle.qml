@@ -207,9 +207,13 @@ Page {
             width: parent.width - Tema.px(80)
             spacing: Tema.px(40)
 
-            Rectangle {
+            ColumnLayout {
                 Layout.alignment: Qt.AlignTop
                 Layout.preferredWidth: Tema.px(280)
+                spacing: Tema.px(10)
+
+            Rectangle {
+                Layout.fillWidth: true
                 Layout.preferredHeight: Tema.px(420)
                 radius: Tema.px(2)
                 color: Tema.caja
@@ -267,6 +271,18 @@ Page {
                             pagina.recargar()
                     }
                 }
+            }
+
+            Text {
+                visible: !!pagina.p.disco
+                Layout.fillWidth: true
+                text: "Está en el disco «" + pagina.p.disco + "»"
+                      + (pagina.p.soloLectura ? ", en solo lectura: se puede ver, pero no cambiar nada." : ".")
+                wrapMode: Text.WordWrap
+                font.family: Tema.texto
+                font.pixelSize: Tema.px(14)
+                color: Tema.tenue
+            }
             }
 
             ColumnLayout {
@@ -331,16 +347,6 @@ Page {
                     font.family: Tema.texto
                     font.pixelSize: Tema.px(14)
                     color: Tema.alerta
-                }
-                Text {
-                    visible: !!pagina.p.disco
-                    Layout.fillWidth: true
-                    text: "Está en el disco «" + pagina.p.disco + "»"
-                          + (pagina.p.soloLectura ? ", en solo lectura: se puede ver, pero no cambiar nada." : ".")
-                    wrapMode: Text.WordWrap
-                    font.family: Tema.texto
-                    font.pixelSize: Tema.px(14)
-                    color: Tema.tenue
                 }
 
                 Flow {

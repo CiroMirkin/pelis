@@ -65,27 +65,6 @@ Column {
                 color: Tema.etiqueta
             }
         }
-
-        Rectangle {
-            visible: tarjeta.disco !== ""
-            anchors.left: caja.left
-            anchors.top: caja.top
-            anchors.margins: Tema.px(6)
-            width: Math.min(etiquetaDisco.implicitWidth + Tema.px(12), caja.width - Tema.px(12))
-            height: etiquetaDisco.implicitHeight + Tema.px(6)
-            radius: Tema.px(2)
-            color: Qt.alpha(Tema.noche, 0.85)
-            Text {
-                id: etiquetaDisco
-                anchors.centerIn: parent
-                width: parent.width - Tema.px(12)
-                text: tarjeta.disco
-                elide: Text.ElideRight
-                font.family: Tema.rotulo
-                font.pixelSize: Tema.px(13)
-                color: Tema.crema
-            }
-        }
     }
 
     Text {
@@ -110,7 +89,22 @@ Column {
             font.letterSpacing: 0.5
             color: Tema.tenue
         }
+        // La etiqueta del disco queda centrada entre el año y la marca de vista y el lugar de la marca se reserva aunque no esté para que la etiqueta no cambie de sitio entre tarjetas
+        Text {
+            visible: tarjeta.disco !== ""
+            x: anio.width + Tema.px(10)
+            width: Math.max(0, parent.width - marcaVista.implicitWidth - x - Tema.px(10))
+            anchors.verticalCenter: parent.verticalCenter
+            horizontalAlignment: Text.AlignHCenter
+            text: tarjeta.disco
+            elide: Text.ElideRight
+            font.family: Tema.rotulo
+            font.pixelSize: Tema.px(15)
+            font.letterSpacing: 0.5
+            color: Qt.alpha(Tema.crema, 0.4)
+        }
         Row {
+            id: marcaVista
             visible: tarjeta.vista
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
