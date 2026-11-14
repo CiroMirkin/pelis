@@ -3,7 +3,7 @@
 ULTIMA_DECADA = 2000  # las posteriores no se agrupan
 ANIOS_SUELTOS = 4  # los últimos años, incluido el actual, se filtran de a uno
 
-CLAVES_TARJETA = ("peliculaId", "titulo", "anio", "poster", "progreso", "vista")
+CLAVES_TARJETA = ("peliculaId", "titulo", "anio", "poster", "progreso", "vista", "disco")
 
 
 def periodos(anios, anio_actual):

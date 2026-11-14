@@ -9,6 +9,7 @@ Column {
     property real progreso
     property bool vista
     property bool encendida  // halo del foco
+    property string disco  // etiqueta del disco de donde viene; vacío si es de la compu
     spacing: Tema.px(6)
 
     Item {
@@ -62,6 +63,27 @@ Column {
                 width: parent.width * Math.min(1, tarjeta.progreso)
                 height: Tema.px(6)
                 color: Tema.etiqueta
+            }
+        }
+
+        Rectangle {
+            visible: tarjeta.disco !== ""
+            anchors.left: caja.left
+            anchors.top: caja.top
+            anchors.margins: Tema.px(6)
+            width: Math.min(etiquetaDisco.implicitWidth + Tema.px(12), caja.width - Tema.px(12))
+            height: etiquetaDisco.implicitHeight + Tema.px(6)
+            radius: Tema.px(2)
+            color: Qt.alpha(Tema.noche, 0.85)
+            Text {
+                id: etiquetaDisco
+                anchors.centerIn: parent
+                width: parent.width - Tema.px(12)
+                text: tarjeta.disco
+                elide: Text.ElideRight
+                font.family: Tema.rotulo
+                font.pixelSize: Tema.px(13)
+                color: Tema.crema
             }
         }
     }

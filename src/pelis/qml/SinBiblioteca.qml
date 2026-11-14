@@ -8,6 +8,15 @@ Page {
     background: Rectangle { color: Tema.noche }
     Component.onCompleted: elegir.forceActiveFocus()
 
+    // Un disco con películas que se conecta con esta pantalla abierta
+    Connections {
+        target: puente
+        function onDiscosChanged() {
+            if (puente.hayDiscos && pagina.StackView.status === StackView.Active)
+                pagina.StackView.view.replace("Catalogo.qml", {}, StackView.Immediate)
+        }
+    }
+
     ColumnLayout {
         anchors.centerIn: parent
         width: Math.min(Tema.px(560), parent.width - 48)

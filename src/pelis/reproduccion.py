@@ -23,8 +23,9 @@ ANTICIPO_DE_VISITA_MS = 5 * 1000  # para ver un poco de contexto antes del cuadr
 class Sesion:
     """Cada aviso devuelve "empezada", "vista" o None para que quien llama reaccione sin conocer las reglas."""
 
-    def __init__(self, conn, pelicula_id, visita_ms=None):
-        """Con `visita_ms` es una Visita y no toca el Progreso ni la Vista."""
+    def __init__(self, conn, pelicula_id, visita_ms=None, escribe=True):
+        """Con `visita_ms` es una Visita y no toca el Progreso ni la Vista y sin `escribe` tampoco escribe nada, por ejemplo en un disco en solo lectura o sacado."""
+        self.escribe = escribe
         self.conn = conn
         self.pelicula_id = pelicula_id
         self.visita_ms = visita_ms
@@ -43,7 +44,7 @@ class Sesion:
         if self._abierta:
             return None
         self._abierta = True
-        if duracion_ms > 0:
+        if duracion_ms > 0 and self.escribe:
             db.guardar_duracion(self.conn, self.pelicula_id, duracion_ms)
         if self.visita_ms is not None:
             desde = max(0, self.visita_ms - ANTICIPO_DE_VISITA_MS)
@@ -63,7 +64,7 @@ class Sesion:
         if not self._activa():
             return None
         self._terminada = True
-        if self.visita_ms is not None:
+        if self.visita_ms is not None or not self.escribe:
             return None
         db.guardar_progreso(self.conn, self.pelicula_id, 0)
         db.marcar_vista(self.conn, self.pelicula_id, True)
@@ -75,7 +76,7 @@ class Sesion:
         return resultado
 
     def _guardar(self, posicion_ms):
-        if not self._activa() or self._terminada or self.visita_ms is not None:
+        if not self._activa() or self._terminada or self.visita_ms is not None or not self.escribe:
             return None
         ms = _progreso_a_guardar(posicion_ms)
         db.guardar_progreso(self.conn, self.pelicula_id, ms)

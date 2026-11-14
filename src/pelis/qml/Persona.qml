@@ -109,6 +109,7 @@ Page {
                     poster: celda.modelData.poster
                     progreso: celda.modelData.progreso
                     vista: celda.modelData.vista
+                    disco: celda.modelData.disco
                     encendida: celda.GridView.isCurrentItem && (grilla.activeFocus || zona.containsMouse)
                 }
                 Text {

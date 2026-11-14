@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Basic as Basic
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import "duracion.js" as Duracion
 
@@ -87,7 +88,18 @@ Page {
     }
 
     property bool escanearAlEntrar: false
-    Component.onCompleted: { grilla.forceActiveFocus(); if (escanearAlEntrar) dialogo.iniciar() }
+    function avisar(texto) {
+        sumadas.text = texto
+        sumadas.visible = true
+        ocultarSumadas.restart()
+    }
+
+    Component.onCompleted: {
+        grilla.forceActiveFocus()
+        const avisos = puente.avisosIniciales()
+        if (avisos.length > 0) avisar(avisos.join(" "))
+        if (escanearAlEntrar) dialogo.iniciar()
+    }
     StackView.onActivated: grilla.forceActiveFocus()
 
     header: Rectangle {
@@ -160,6 +172,7 @@ Page {
                 Timer { id: ocultarSumadas; interval: 8000; onTriggered: sumadas.visible = false }
                 Connections {
                     target: puente
+                    function onAvisoDisco(texto) { pagina.avisar(texto) }
                     function onImportacionTerminada(n) {
                         sumadas.text = n === 1 ? "Se sumó 1 película" : "Se sumaron " + n + " películas"
                         sumadas.visible = true
@@ -199,12 +212,13 @@ Page {
                 OpcionMenu {
                     text: "Escanear biblioteca"
                     icono: "escanear"
+                    enabled: puente.hayBiblioteca
                     onTriggered: dialogo.iniciar()
                 }
                 OpcionMenu {
                     text: "Renovar portadas"
                     icono: "renovar"
-                    enabled: !puente.escaneando
+                    enabled: !puente.escaneando && puente.hayBiblioteca
                     onTriggered: {
                         const n = puente.renovarPortadas()
                         sumadas.text = n === 0 ? "No hay portadas para renovar"
@@ -238,6 +252,16 @@ Page {
                     icono: "carpeta"
                     enabled: !puente.escaneando
                     onTriggered: biblioteca.iniciar()
+                }
+                OpcionMenu {
+                    text: "Agregar disco…"
+                    icono: "carpeta"
+                    onTriggered: elegirDisco.open()
+                }
+                OpcionMenu {
+                    text: "Discos…"
+                    icono: "carpeta"
+                    onTriggered: discos.iniciar()
                 }
                 OpcionMenu {
                     text: "Claves de API…"
@@ -380,6 +404,7 @@ Page {
             required property string poster
             required property real progreso
             required property bool vista
+            required property string disco
             readonly property bool encendida: GridView.isCurrentItem && (grilla.activeFocus || zona.containsMouse)
             width: grilla.cellWidth
             height: grilla.cellHeight
@@ -391,6 +416,7 @@ Page {
                 poster: celda.poster
                 progreso: celda.progreso
                 vista: celda.vista
+                disco: celda.disco
                 encendida: celda.encendida
             }
 
@@ -434,6 +460,22 @@ Page {
     ElegirBiblioteca {
         id: biblioteca
         onCambiada: dialogo.iniciar()
+        onCerrado: grilla.forceActiveFocus()
+    }
+
+    FolderDialog {
+        id: elegirDisco
+        title: "Elegir el disco (o su carpeta app) con Pelis"
+        onAccepted: {
+            const error = puente.agregarDisco(selectedFolder.toString())
+            if (error) pagina.avisar(error)
+            grilla.forceActiveFocus()
+        }
+        onRejected: grilla.forceActiveFocus()
+    }
+
+    DialogoDiscos {
+        id: discos
         onCerrado: grilla.forceActiveFocus()
     }
 

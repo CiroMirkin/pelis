@@ -263,7 +263,7 @@ Page {
                     onClicked: mouse => {
                         if (mouse.button === Qt.LeftButton)
                             pagina.reproducirPelicula()
-                        else if (puente.siguientePortada(pagina.peliculaId))
+                        else if (!pagina.p.soloLectura && puente.siguientePortada(pagina.peliculaId))
                             pagina.recargar()
                     }
                 }
@@ -332,6 +332,16 @@ Page {
                     font.pixelSize: Tema.px(14)
                     color: Tema.alerta
                 }
+                Text {
+                    visible: !!pagina.p.disco
+                    Layout.fillWidth: true
+                    text: "Está en el disco «" + pagina.p.disco + "»"
+                          + (pagina.p.soloLectura ? ", en solo lectura: se puede ver, pero no cambiar nada." : ".")
+                    wrapMode: Text.WordWrap
+                    font.family: Tema.texto
+                    font.pixelSize: Tema.px(14)
+                    color: Tema.tenue
+                }
 
                 Flow {
                     Layout.fillWidth: true
@@ -349,6 +359,7 @@ Page {
                     Boton {
                         id: marcar
                         icono: pagina.p.vista ? "visto" : ""
+                        enabled: !pagina.p.soloLectura
                         text: pagina.p.vista ? "Vista" : "Marcar como vista"
                         KeyNavigation.left: reproducir
                         KeyNavigation.right: mas
@@ -361,6 +372,7 @@ Page {
                         OpcionMenu {
                             text: "Editar datos"
                             icono: "editar"
+                            enabled: !pagina.p.soloLectura
                             onTriggered: pagina.StackView.view.push("Editar.qml", { peliculaId: pagina.peliculaId })
                         }
                         OpcionMenu {

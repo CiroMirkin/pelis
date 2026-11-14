@@ -2,6 +2,8 @@
 
 import logging
 import os
+import random
+import sqlite3
 import sys
 import threading
 from dataclasses import asdict
@@ -9,8 +11,8 @@ from datetime import date
 from pathlib import Path
 
 from PySide6.QtCore import (
-    Property, QAbstractListModel, QBuffer, QCoreApplication, QModelIndex, QObject, QSettings, QThread, Qt, QUrl,
-    Signal, Slot,
+    Property, QAbstractListModel, QBuffer, QCoreApplication, QModelIndex, QObject, QSettings, QThread, QTimer, Qt,
+    QUrl, Signal, Slot,
 )
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtMultimedia import QMediaPlayer
@@ -25,11 +27,14 @@ from .nombres import idioma_de, normalizar
 from .reproduccion import Sesion
 from .escaneo import escanear, importar_sin_red
 from .claves import GestorClaves
+from .discos import Discos, Fuente, id_global, separar, volumenes_montados
 from .config import texto_de_biblioteca
 from .omdb import ErrorRed, Omdb
 from .tmdb import Tmdb
 
 log = logging.getLogger(__name__)
+
+SOLO_LECTURA = "Este disco está en solo lectura: no se puede cambiar nada de sus películas."
 
 
 class ModeloCatalogo(QAbstractListModel):
@@ -51,15 +56,14 @@ class ModeloCatalogo(QAbstractListModel):
         self._periodos = []
         self._solo_incompletas = False
 
-    def recargar(self, filas, biblioteca):
-        self._todas = [
-            {
-                **tarjeta(f, biblioteca),
-                "_busqueda": normalizar(f"{f['titulo']} | {f['personas'] or ''}"),
-                "_incompleta": es_incompleta(f, biblioteca),
-            }
-            for f in filas
-        ]
+    def recargar(self, filas, biblioteca, discos=()):
+        self._todas = self._tarjetas(filas, biblioteca, 0, "")
+        if discos:
+            for filas_disco, biblioteca_disco, indice, etiqueta in discos:
+                self._todas += self._tarjetas(filas_disco, biblioteca_disco, indice, etiqueta)
+            # Cada db viene ordenada por separado entonces se ordena de nuevo como lo hace db.catalogo
+            self._todas.sort(key=lambda t: (t["vista"], not (t["progreso"] > 0 and not t["vista"]),
+                                            t["titulo"].casefold()))
         self.incompletasChanged.emit()
         # Solo las épocas presentes en la biblioteca, nunca vacías
         opciones = [{"clave": c, "etiqueta": e}
@@ -71,6 +75,18 @@ class ModeloCatalogo(QAbstractListModel):
             self._periodo = ""
             self.periodoChanged.emit()
         self._aplicar()
+
+    @staticmethod
+    def _tarjetas(filas, biblioteca, indice, etiqueta):
+        return [
+            {
+                **tarjeta({**dict(f), "id": id_global(indice, f["id"])}, biblioteca),
+                "disco": etiqueta,
+                "_busqueda": normalizar(f"{f['titulo']} | {f['personas'] or ''}"),
+                "_incompleta": es_incompleta(f, biblioteca),
+            }
+            for f in filas
+        ]
 
     @Property(list, notify=periodosChanged)
     def periodos(self):
@@ -233,8 +249,11 @@ class Puente(QObject):
     descargaProgreso = Signal(float)  # 0 a 1
     descargaTerminada = Signal(str)  # "" = lista para reiniciar; si no, el motivo para el usuario
     _descargaLista = Signal(object)  # desde el hilo de la descarga
+    discosChanged = Signal()
+    avisoDisco = Signal(str)
+    discoSacado = Signal(str)  # la etiqueta del disco de la película en curso
 
-    def __init__(self, config, prerelease=False):
+    def __init__(self, config, prerelease=False, volumenes=volumenes_montados):
         super().__init__()
         self.config = config
         self._prerelease = prerelease  # --prerelease: también ofrece las RC
@@ -263,15 +282,101 @@ class Puente(QObject):
         self._descargado = None  # carpeta con la versión nueva, lista para el cambio
         self._descargaLista.connect(self._descarga_lista)
         self._pantalla = pantalla.Pantalla()
+        self._volumenes = volumenes
+        self._discos = Discos(config, self._preferencias)
+        self._en_curso = None
+        self._sesion_id = 0
+        self._sacado = False
+        self._discos.sondear(self._volumenes())
+        self._avisos_iniciales = self._tomar_avisos()  # se guardan porque la UI todavía no está conectada a `avisoDisco`
         self._recargar_catalogo()
+        self._timer = QTimer(self)
+        self._timer.setInterval(3000)
+        self._timer.timeout.connect(self._sondear)
+        self._timer.start()
         if self.hayBiblioteca:
             self._iniciar_escaneo(sin_red=True)
 
+    def _local(self):
+        return Fuente(0, "", self.config.app_dir, self.config.biblioteca or Path(), self.conn)
+
+    def _fuentes(self):
+        """Las que tienen películas para ofrecer: la de la compu si tiene biblioteca y los discos abiertos."""
+        return ([self._local()] if self.hayBiblioteca else []) + list(self._discos.abiertas.values())
+
+    def _resolver(self, id_ui):
+        """(Fuente, id en su db) de una película de la UI; la fuente es None si su disco ya no está."""
+        indice, local = separar(id_ui)
+        return (self._local() if indice == 0 else self._discos.abiertas.get(indice)), local
+
     def _recargar_catalogo(self):
-        # Sin biblioteca no hay dónde buscar los pósters entonces el catálogo queda vacío
+        # Sin biblioteca no hay dónde buscar los pósters entonces el catálogo local queda vacío
         filas = db.catalogo(self.conn) if self.hayBiblioteca else []
-        self._catalogo.recargar(filas, self.config.biblioteca or Path())
+        grupos = []
+        for f in self._discos.abiertas.values():
+            try:
+                grupos.append(([dict(r) for r in db.catalogo(f.conn)], f.biblioteca, f.indice, f.etiqueta))
+            except sqlite3.Error as e:  # por un esquema de otra versión o un disco que se fue a mitad de la lectura
+                log.warning("No se pudo leer el catálogo de «%s»: %s", f.etiqueta, e)
+        self._catalogo.recargar(filas, self.config.biblioteca or Path(), grupos)
         self.contadoresChanged.emit()
+
+    # --- discos externos ---
+
+    def _tomar_avisos(self):
+        avisos, self._discos.avisos = self._discos.avisos, []
+        return avisos
+
+    def _sondear(self):
+        """Con una reproducción en curso solo mira que siga su disco y si no busca los discos que entran o salen."""
+        if self._en_curso is not None:
+            if self._en_curso.indice and not self._sacado and not self._en_curso.sigue():
+                self._sacado = True
+                if self._sesion is not None:
+                    self._sesion.escribe = False  # porque el disco ya no está y no se intenta guardar el progreso
+                self.discoSacado.emit(self._en_curso.etiqueta)
+            return
+        if self._discos.sondear(self._volumenes()):
+            if self._recomendacion.datos and self._resolver(self._recomendacion.datos["id"])[0] is None:
+                self._avisar_recomendada(self._recomendacion.cerrar())
+            self._recargar_catalogo()
+            self.discosChanged.emit()
+        for aviso in self._tomar_avisos():
+            self.avisoDisco.emit(aviso)
+
+    @Slot(result="QVariantList")
+    def avisosIniciales(self):
+        avisos, self._avisos_iniciales = self._avisos_iniciales, []
+        return avisos
+
+    @Property(bool, notify=discosChanged)
+    def hayDiscos(self):
+        return bool(self._discos.abiertas)
+
+    @Slot(result="QVariantList")
+    def discos(self):
+        return self._discos.lista()
+
+    @Slot(str, result=str)
+    def agregarDisco(self, destino):
+        """Guarda un disco a mano. Devuelve un error para mostrar, o ''."""
+        error = self._discos.agregar(self._carpeta(destino))
+        if not error:
+            self._sondear()
+            self.discosChanged.emit()
+        return error
+
+    @Slot(str)
+    def quitarDisco(self, clave):
+        self._discos.quitar(clave)
+        self._sondear()
+        self.discosChanged.emit()
+
+    @Slot(str, bool)
+    def ocultarDisco(self, clave, oculto):
+        self._discos.ocultar(clave, oculto)
+        self._sondear()
+        self.discosChanged.emit()
 
     # --- biblioteca ---
 
@@ -305,12 +410,10 @@ class Puente(QObject):
         self._preferencias.sync()
         self.config.biblioteca = carpeta.resolve()
         self._avisar_recomendada(self._recomendacion.cerrar())
+        self._discos.sondear(self._volumenes())  # un disco con esta misma biblioteca se descarta
         self._recargar_catalogo()
         self.bibliotecaChanged.emit()
         return True
-
-    def _ruta(self, relativa):
-        return self.config.biblioteca / relativa
 
     # --- catálogo y detalle ---
 
@@ -328,22 +431,37 @@ class Puente(QObject):
         if cambio:
             self.recomendadaChanged.emit()
 
+    def _candidata(self):
+        """(Fuente, fila) de una película para recomendar, al azar entre las fuentes que tienen, o None."""
+        candidatas = []
+        for f in self._fuentes():
+            try:
+                fila = db.recomendada(f.conn)
+            except sqlite3.Error:
+                continue
+            if fila is not None:
+                candidatas.append((f, {**dict(fila), "id": f.global_id(fila["id"])}))
+        return random.choice(candidatas) if candidatas else None
+
     @Property(bool, notify=contadoresChanged)
     def puedeRecomendar(self):
-        return not self._recomendacion.usada and db.recomendada(self.conn) is not None
+        return not self._recomendacion.usada and self._candidata() is not None
 
     @Slot()
     def recomendar(self):
-        p = db.recomendada(self.conn)
-        if self._recomendacion.elegir(p, self.config.biblioteca):
+        candidata = self._candidata()
+        fuente, p = candidata if candidata else (None, None)
+        if self._recomendacion.elegir(p, fuente.biblioteca if fuente else None):
             self.recomendadaChanged.emit()
             self.contadoresChanged.emit()
             if not p["duracion_ms"]:
-                self._medir_duracion(p["id"], p["video_path"])
+                self._medir_duracion(fuente, separar(p["id"])[1], p["video_path"])
 
-    def _medir_duracion(self, pelicula_id, video_path):
-        """La duración la da el reproductor al cargar; para la recomendada y el detalle se mide sin reproducir."""
-        if pelicula_id in self._midiendo:
+    def _medir_duracion(self, fuente, local, video_path):
+        """La duración la da el reproductor al cargar; para la recomendada y el detalle se mide sin reproducir.
+        En un disco en solo lectura no se mide porque no hay dónde guardarla."""
+        pelicula_id = fuente.global_id(local)
+        if pelicula_id in self._midiendo or not fuente.escribible:
             return
         self._midiendo.add(pelicula_id)
         medidor = QMediaPlayer(self)
@@ -352,21 +470,26 @@ class Puente(QObject):
             if status not in (QMediaPlayer.LoadedMedia, QMediaPlayer.InvalidMedia):
                 return
             if status == QMediaPlayer.LoadedMedia and medidor.duration() > 0:
-                db.guardar_duracion(self.conn, pelicula_id, medidor.duration())
-                self._avisar_recomendada(self._recomendacion.duracion(pelicula_id, medidor.duration()))
-                self.duracionMedida.emit(pelicula_id, medidor.duration())
+                try:
+                    db.guardar_duracion(fuente.conn, local, medidor.duration())
+                except sqlite3.Error as e:  # el disco se fue mientras se medía
+                    log.warning("No se pudo guardar la duración en «%s»: %s", fuente.etiqueta, e)
+                else:
+                    self._avisar_recomendada(self._recomendacion.duracion(pelicula_id, medidor.duration()))
+                    self.duracionMedida.emit(pelicula_id, medidor.duration())
             self._midiendo.discard(pelicula_id)
             medidor.deleteLater()
 
         medidor.mediaStatusChanged.connect(estado)
-        medidor.setSource(QUrl.fromLocalFile(str(self._ruta(video_path))))
+        medidor.setSource(QUrl.fromLocalFile(str(fuente.biblioteca / video_path)))
 
     def _posters_cambiaron(self):
         """Tras cambiar algún poster: lo refleja en el catálogo y en la recomendada, si es la suya."""
         self._recargar_catalogo()
         if self._recomendacion.datos:
-            p = db.pelicula(self.conn, self._recomendacion.datos["id"])
-            self._avisar_recomendada(self._recomendacion.poster(url_poster(self.config.biblioteca, p["poster"]) if p else ""))
+            fuente, local = self._resolver(self._recomendacion.datos["id"])
+            p = db.pelicula(fuente.conn, local) if fuente else None
+            self._avisar_recomendada(self._recomendacion.poster(url_poster(fuente.biblioteca, p["poster"]) if p else ""))
 
     @Slot()
     def cerrarRecomendacion(self):
@@ -374,30 +497,34 @@ class Puente(QObject):
 
     @Slot(int, result="QVariantMap")
     def pelicula(self, pelicula_id):
-        p = db.pelicula(self.conn, pelicula_id)
+        fuente, local = self._resolver(pelicula_id)
+        p = db.pelicula(fuente.conn, local) if fuente else None
         if p is None:
             return {}
         # Al abrir el detalle se mira la carpeta: un poster agregado a mano aparece sin re-escanear
-        if poster.revisar(self.conn, self.config.biblioteca, pelicula_id):
+        if fuente.escribible and poster.revisar(fuente.conn, fuente.biblioteca, local):
             self._posters_cambiaron()
-            p = db.pelicula(self.conn, pelicula_id)
+            p = db.pelicula(fuente.conn, local)
         if not p["duracion_ms"] and p["video_path"]:
-            self._medir_duracion(pelicula_id, p["video_path"])
+            self._medir_duracion(fuente, local, p["video_path"])
+        biblioteca = fuente.biblioteca
         return {
-            "id": p["id"],
+            "id": pelicula_id,
+            "disco": fuente.etiqueta,
+            "soloLectura": not fuente.escribible,
             "titulo": p["titulo"],
             "anio": p["year"] or 0,
             "sinopsis": p["sinopsis"] or "",
             "pais": p["pais"] or "",
             "genero": p["genero"] or "",
-            "directores": [{"nombre": n, "otras": o} for n, o in db.personas_de(self.conn, pelicula_id, "director")],
-            "actores": [{"nombre": n, "otras": o} for n, o in db.personas_de(self.conn, pelicula_id, "actor")],
+            "directores": [{"nombre": n, "otras": o} for n, o in db.personas_de(fuente.conn, local, "director")],
+            "actores": [{"nombre": n, "otras": o} for n, o in db.personas_de(fuente.conn, local, "actor")],
             "omdbEstado": p["omdb_estado"],
-            "poster": url_poster(self.config.biblioteca, p["poster"]),
+            "poster": url_poster(biblioteca, p["poster"]),
             # Se mira la carpeta en cada apertura: las tomadas en el reproductor aparecen al volver.
             # `momento`: ms que dice el nombre, o None si no es cronológica (el visor no ofrece «Ir a»)
-            "capturas": [{"url": url_poster(self.config.biblioteca, r), "momento": capturas.momento_ms(r)}
-                         for r in capturas.listar(self._ruta(p["folder_path"]))],
+            "capturas": [{"url": url_poster(biblioteca, r), "momento": capturas.momento_ms(r)}
+                         for r in capturas.listar(biblioteca / p["folder_path"])],
             "vista": bool(p["watched"]),
             "progreso": p["progreso_ms"] or 0,
             "duracion": p["duracion_ms"] or 0,
@@ -409,7 +536,10 @@ class Puente(QObject):
 
     @Slot(int, bool)
     def marcarVista(self, pelicula_id, vista):
-        db.marcar_vista(self.conn, pelicula_id, vista)
+        fuente, local = self._resolver(pelicula_id)
+        if fuente is None or not fuente.escribible:
+            return
+        db.marcar_vista(fuente.conn, local, vista)
         if vista:
             self._avisar_recomendada(self._recomendacion.empezo(pelicula_id))
         self._recargar_catalogo()
@@ -434,33 +564,49 @@ class Puente(QObject):
 
     @Slot(int, result=bool)
     def siguientePortada(self, pelicula_id):
-        if self._hilo is not None:  # el escaneo también escribe posters
+        fuente, local = self._resolver(pelicula_id)
+        if self._hilo is not None or fuente is None or not fuente.escribible:  # el escaneo también escribe posters
             return False
-        cambio = poster.siguiente(self.conn, self.config.biblioteca, pelicula_id)
+        cambio = poster.siguiente(fuente.conn, fuente.biblioteca, local)
         if cambio:
             self._posters_cambiaron()
         return cambio
 
     @Slot(str, result="QVariantList")
     def peliculasDe(self, nombre):
-        """Películas de una persona, con los mismos datos que una tarjeta del catálogo."""
-        return filmografia(db.peliculas_de_persona(self.conn, nombre), self.config.biblioteca)
+        """Películas de una persona, con los mismos datos que una tarjeta del catálogo, también las de los discos."""
+        fuentes = self._fuentes()
+        resultado = []
+        for f in fuentes:
+            try:
+                filas = [{**dict(r), "id": f.global_id(r["id"])} for r in db.peliculas_de_persona(f.conn, nombre)]
+            except sqlite3.Error:
+                continue
+            resultado += [{**t, "disco": f.etiqueta} for t in filmografia(filas, f.biblioteca)]
+        if len(fuentes) > 1:
+            resultado.sort(key=lambda t: (not t["anio"], t["anio"], t["titulo"].casefold()))
+        return resultado
 
     @Slot(int)
     def abrirCarpeta(self, pelicula_id):
-        p = db.pelicula(self.conn, pelicula_id)
-        QDesktopServices.openUrl(QUrl.fromLocalFile(str(self._ruta(p["folder_path"]))))
+        fuente, local = self._resolver(pelicula_id)
+        if fuente:
+            p = db.pelicula(fuente.conn, local)
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(fuente.biblioteca / p["folder_path"])))
 
     @Slot(int)
     def abrirConSistema(self, pelicula_id):
-        p = db.pelicula(self.conn, pelicula_id)
-        QDesktopServices.openUrl(QUrl.fromLocalFile(str(self._ruta(p["video_path"]))))
+        fuente, local = self._resolver(pelicula_id)
+        if fuente:
+            p = db.pelicula(fuente.conn, local)
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(fuente.biblioteca / p["video_path"])))
 
     # --- edición ---
 
     @Slot(int, result="QVariantMap")
     def datosEdicion(self, pelicula_id):
-        p = db.pelicula(self.conn, pelicula_id)
+        fuente, local = self._resolver(pelicula_id)
+        p = db.pelicula(fuente.conn, local)
         return {
             "titulo": p["titulo"],
             "anio": str(p["year"] or ""),
@@ -478,8 +624,11 @@ class Puente(QObject):
     @Slot(int, "QVariantMap", result=str)
     def guardarEdicion(self, pelicula_id, campos):
         """Guarda el formulario. Devuelve un error para mostrar, o ''."""
+        fuente, local = self._resolver(pelicula_id)
+        if fuente is None or not fuente.escribible:
+            return SOLO_LECTURA
         try:
-            aviso = edicion.guardar_manual(self.conn, self.config.biblioteca, pelicula_id, campos)
+            aviso = edicion.guardar_manual(fuente.conn, fuente.biblioteca, local, campos)
         except edicion.DatoInvalido as e:
             return str(e)
         self._recargar_catalogo()
@@ -506,7 +655,11 @@ class Puente(QObject):
     @Slot(int, str)
     def usarImdb(self, pelicula_id, imdb_id):
         """Reemplaza los metadatos por los de `imdb_id` (corregir match o resincronizar)."""
-        destino = poster.destino_omdb(self.conn, self.config.biblioteca, pelicula_id, reemplazar=True)
+        fuente, local = self._resolver(pelicula_id)
+        if fuente is None or not fuente.escribible:
+            self.imdbRespondio.emit({"error": SOLO_LECTURA})
+            return
+        destino = poster.destino_omdb(fuente.conn, fuente.biblioteca, local, reemplazar=True)
         idiomas = self.config.idiomas_sinopsis
 
         def trabajo(omdb, tmdb):
@@ -565,10 +718,14 @@ class Puente(QObject):
         self.consultandoImdbChanged.emit()
         if "aplicar" in resultado:
             pelicula_id, encontrados, bajado = resultado.pop("aplicar")
-            aviso = edicion.aplicar_omdb(self.conn, self.config.biblioteca, pelicula_id, encontrados, bajado)
-            resultado["aviso"] = "\n\n".join(a for a in (resultado.get("aviso"), aviso) if a)
-            self._posters_cambiaron()
-            resultado["aplicado"] = True
+            fuente, local = self._resolver(pelicula_id)
+            if fuente is None:
+                resultado = {"error": "El disco de esta película ya no está."}
+            else:
+                aviso = edicion.aplicar_omdb(fuente.conn, fuente.biblioteca, local, encontrados, bajado)
+                resultado["aviso"] = "\n\n".join(a for a in (resultado.get("aviso"), aviso) if a)
+                self._posters_cambiaron()
+                resultado["aplicado"] = True
         self.imdbRespondio.emit(resultado)
 
     # --- actualización ---
@@ -739,9 +896,13 @@ class Puente(QObject):
     @Slot(int, float, result="QVariantMap")
     def abrir(self, pelicula_id, visita_ms):
         """QML pasa -1 cuando no es una Visita porque no tiene None."""
-        p = db.pelicula(self.conn, pelicula_id)
-        self._sesion = Sesion(self.conn, pelicula_id, int(visita_ms) if visita_ms >= 0 else None)
-        video = self._ruta(p["video_path"])
+        fuente, local = self._resolver(pelicula_id)
+        p = db.pelicula(fuente.conn, local)
+        self._sesion = Sesion(fuente.conn, local, int(visita_ms) if visita_ms >= 0 else None, fuente.escribible)
+        self._sesion_id = pelicula_id
+        self._en_curso = fuente
+        self._sacado = False
+        video = fuente.biblioteca / p["video_path"]
         self._video = video
         self._externos = subtitulos.externos(video) if video.parent.is_dir() else []
         self._linea = subtitulos.Linea([])
@@ -749,6 +910,7 @@ class Puente(QObject):
             "url": QUrl.fromLocalFile(str(video)).toString(),
             "titulo": p["titulo"],
             "externos": [x.name for x in self._externos],
+            "soloLectura": not fuente.escribible,
         }
 
     @Slot(QObject, int)
@@ -757,7 +919,7 @@ class Puente(QObject):
         # En el hilo de la UI solo se toma el cuadro; convertirlo y codificar un 4K a PNG tarda
         # y va aparte
         cuadro = sink.videoFrame()
-        if not cuadro.isValid():
+        if self._en_curso is None or not self._en_curso.escribible or not cuadro.isValid():
             log.warning("Captura fallida: todavía no hay cuadro")
             self.capturaGuardada.emit(False)
             return
@@ -800,7 +962,7 @@ class Puente(QObject):
         if desde is None:
             return -1
         if duracion_ms > 0:
-            self._avisar_recomendada(self._recomendacion.duracion(self._sesion.pelicula_id, int(duracion_ms)))
+            self._avisar_recomendada(self._recomendacion.duracion(self._sesion_id, int(duracion_ms)))
         return desde
 
     @Slot(float)
@@ -822,14 +984,16 @@ class Puente(QObject):
     def _resultado(self, resultado):
         # "empezada" no recarga el catálogo porque pausar no debe recargarlo y al salir lo recarga salioDelReproductor
         if resultado:
-            self._avisar_recomendada(self._recomendacion.empezo(self._sesion.pelicula_id))
+            self._avisar_recomendada(self._recomendacion.empezo(self._sesion_id))
         if resultado == "vista":
             self._recargar_catalogo()
 
     @Slot()
     def salioDelReproductor(self):
         """El reproductor se cerró: recarga el catálogo una sola vez, ya con el progreso guardado."""
+        self._en_curso = None
         self._recargar_catalogo()
+        QTimer.singleShot(10_000, self._sondear)  # porque durante la reproducción no se buscan discos
 
     def _volumen(self):
         return float(self._preferencias.value("reproductor/volumen", 1.0))
@@ -900,5 +1064,7 @@ class Puente(QObject):
         if self._hilo is not None:
             self._hilo.quit()
             self._hilo.wait()
+        self._timer.stop()
+        self._discos.cerrar()
         self._preferencias.sync()
         self.conn.close()
