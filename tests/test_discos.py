@@ -1,7 +1,9 @@
 import sqlite3
+import time
 
 import pytest
-from PySide6.QtCore import QCoreApplication
+from PySide6.QtCore import QCoreApplication, QTimer
+from PySide6.QtGui import QColor, QImage
 
 from pelis import db
 from pelis.config import Config
@@ -20,8 +22,9 @@ class Volumenes:
         return list(self.montados)
 
 
-def crear_disco(raiz, nombre="Disco", peliculas=("Alien",), con_toml=True):
-    """Un disco con su propia app: app/pelis.db, app/pelis.toml y la carpeta de películas al lado."""
+def crear_disco(raiz, nombre="Disco", peliculas=("Alien",), con_toml=True, con_duracion=True, archivos=()):
+    """Un disco con su propia app: app/pelis.db, app/pelis.toml y la carpeta de películas al lado.
+    `archivos` se crean dentro de la carpeta de cada película."""
     disco = raiz / nombre
     (disco / "app").mkdir(parents=True)
     (disco / "Peliculas").mkdir()
@@ -31,11 +34,22 @@ def crear_disco(raiz, nombre="Disco", peliculas=("Alien",), con_toml=True):
     for titulo in peliculas:
         (disco / "Peliculas" / titulo).mkdir()
         (disco / "Peliculas" / titulo / f"{titulo}.mp4").touch()
+        for archivo in archivos:
+            (disco / "Peliculas" / titulo / archivo).touch()
         pid = db.insertar_pelicula(conn, titulo, 1979, titulo, f"{titulo}/{titulo}.mp4")
-        db.guardar_duracion(conn, pid, 1000)
+        if con_duracion:
+            db.guardar_duracion(conn, pid, 1000)
     conn.commit()
     conn.close()
     return disco
+
+
+def en_solo_lectura(disco):
+    """Le agrega a la db una columna que esta versión no conoce, así que la compu la abre en solo lectura."""
+    conn = sqlite3.connect(disco / "app" / "pelis.db")
+    conn.execute("ALTER TABLE peliculas ADD COLUMN de_otra_version TEXT")
+    conn.commit()
+    conn.close()
 
 
 @pytest.fixture
@@ -50,6 +64,8 @@ def puente(tmp_path, volumenes):
     biblioteca = tmp_path / "compu" / "Peliculas"
     biblioteca.mkdir(parents=True)
     p = Puente(Config(tmp_path / "compu" / "app", biblioteca, "", "", [], "", ""), volumenes=volumenes)
+    while p._hilo is not None:  # la importación al abrir bloquea las acciones que escriben portadas
+        QCoreApplication.processEvents()
     yield p
     p.cerrar()
 
@@ -109,10 +125,7 @@ def test_peli_repetida_en_compu_y_disco_da_dos_tarjetas(puente, volumenes, tmp_p
 
 def test_esquema_distinto_es_solo_lectura_y_avisa_una_vez(puente, volumenes, tmp_path):
     disco = crear_disco(tmp_path)
-    conn = sqlite3.connect(disco / "app" / "pelis.db")
-    conn.execute("ALTER TABLE peliculas ADD COLUMN de_otra_version TEXT")
-    conn.commit()
-    conn.close()
+    en_solo_lectura(disco)
     avisos = []
     puente.avisoDisco.connect(avisos.append)
     volumenes.montados = [(disco, "Disco")]
@@ -126,7 +139,7 @@ def test_esquema_distinto_es_solo_lectura_y_avisa_una_vez(puente, volumenes, tmp
     assert len(avisos) == 1 and "solo lectura" in avisos[0]
 
 
-def test_db_tomada_es_solo_lectura_y_al_liberarse_se_reabre_escribible(puente, volumenes, tmp_path):
+def test_una_base_tomada_por_otra_app_se_abre_en_solo_lectura_hasta_que_se_libera(puente, volumenes, tmp_path):
     disco = crear_disco(tmp_path)
     ocupante = sqlite3.connect(disco / "app" / "pelis.db")
     ocupante.execute("BEGIN IMMEDIATE")
@@ -141,8 +154,9 @@ def test_db_tomada_es_solo_lectura_y_al_liberarse_se_reabre_escribible(puente, v
     assert not puente.pelicula(pid)["soloLectura"]
 
 
-def test_se_descarta_el_disco_que_es_esta_misma_app(puente, volumenes):
-    (puente.config.app_dir / "pelis.toml").write_text('biblioteca = "../Peliculas"\n')
+def test_se_descarta_el_disco_que_es_esta_misma_app_aunque_su_biblioteca_sea_otra(puente, volumenes):
+    (puente.config.app_dir.parent / "Otras").mkdir()
+    (puente.config.app_dir / "pelis.toml").write_text('biblioteca = "../Otras"\n')
     volumenes.montados = [(puente.config.app_dir.parent, "Compu")]
     puente._sondear()
     assert not puente.hayDiscos
@@ -273,7 +287,7 @@ def test_la_filmografia_incluye_las_pelis_del_disco(puente, volumenes, tmp_path)
     assert [(p["titulo"], p["disco"]) for p in peliculas] == [("Alien", "Disco")]
 
 
-def test_con_un_disco_sacado_en_plena_reproduccion_se_avisa_y_no_se_guarda(puente, volumenes, tmp_path):
+def test_avisa_si_se_saca_el_disco_en_plena_reproduccion_y_no_guarda_el_progreso(puente, volumenes, tmp_path):
     disco = crear_disco(tmp_path)
     volumenes.montados = [(disco, "Disco")]
     puente._sondear()
@@ -298,7 +312,7 @@ def test_con_un_disco_sacado_en_plena_reproduccion_se_avisa_y_no_se_guarda(puent
     conn.close()
 
 
-def test_sesion_sin_escribir_no_toca_la_db(tmp_path):
+def test_una_reproduccion_de_un_disco_en_solo_lectura_no_guarda_duracion_progreso_ni_vista(tmp_path):
     conn = db.conectar(tmp_path / "p.db")
     pid = db.insertar_pelicula(conn, "X", None, "X", "X/x.mp4")
     sesion = Sesion(conn, pid, escribe=False)
@@ -307,3 +321,138 @@ def test_sesion_sin_escribir_no_toca_la_db(tmp_path):
     assert sesion.termino() is None
     row = conn.execute("SELECT progreso_ms, duracion_ms, watched FROM peliculas").fetchone()
     assert tuple(row) == (0, None, 0)
+
+
+def test_no_cambia_la_portada_de_una_peli_de_un_disco_en_solo_lectura(puente, volumenes, tmp_path):
+    disco = crear_disco(tmp_path, archivos=("poster.jpg", "folder.jpg"))
+    en_solo_lectura(disco)
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    pid = tarjeta_de(puente, "Alien")["peliculaId"]
+    assert not puente.siguientePortada(pid)
+
+
+def test_rechaza_traer_datos_de_imdb_para_una_peli_de_un_disco_en_solo_lectura(puente, volumenes, tmp_path):
+    disco = crear_disco(tmp_path)
+    en_solo_lectura(disco)
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    pid = tarjeta_de(puente, "Alien")["peliculaId"]
+    respuestas = []
+    puente.imdbRespondio.connect(respuestas.append)
+    puente.usarImdb(pid, "tt0078748")
+    assert len(respuestas) == 1 and "solo lectura" in respuestas[0]["error"]
+
+
+class CuadroFalso:
+    def isValid(self):
+        return True
+
+    def toImage(self):
+        imagen = QImage(4, 4, QImage.Format_RGB32)
+        imagen.fill(QColor("red"))
+        return imagen
+
+
+class SinkFalso:
+    def videoFrame(self):
+        return CuadroFalso()
+
+
+def test_no_guarda_capturas_de_un_disco_en_solo_lectura(puente, volumenes, tmp_path):
+    disco = crear_disco(tmp_path)
+    en_solo_lectura(disco)
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    pid = tarjeta_de(puente, "Alien")["peliculaId"]
+    puente.abrir(pid, -1)
+    resultados = []
+    puente.capturaGuardada.connect(resultados.append)
+    puente.capturar(SinkFalso(), 5000)
+    time.sleep(0.5)  # una captura que sí se escribiera lo haría en otro hilo
+    assert resultados == [False]
+    assert not (disco / "Peliculas" / "Alien" / "capturas").exists()
+
+
+def test_no_mide_la_duracion_de_una_peli_de_un_disco_en_solo_lectura(puente, volumenes, tmp_path):
+    disco = crear_disco(tmp_path, con_duracion=False)
+    en_solo_lectura(disco)
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    puente.pelicula(tarjeta_de(puente, "Alien")["peliculaId"])
+    assert puente._midiendo == set()
+
+
+def test_ordena_juntas_las_pelis_de_la_compu_y_del_disco_con_las_vistas_al_final(puente, volumenes, tmp_path):
+    db.insertar_pelicula(puente.conn, "Zeta", 1990, "Zeta", "Zeta/Zeta.mp4")
+    puente.conn.commit()
+    disco = crear_disco(tmp_path, peliculas=("Alfa", "Mono"))
+    conn = sqlite3.connect(disco / "app" / "pelis.db")
+    conn.execute("UPDATE peliculas SET watched = 1 WHERE titulo = 'Mono'")
+    conn.commit()
+    conn.close()
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    assert titulos(puente) == ["Alfa", "Zeta", "Mono"]
+
+
+def test_ordena_por_anio_la_filmografia_de_la_compu_y_del_disco(puente, volumenes, tmp_path):
+    disco = crear_disco(tmp_path)
+    conn = sqlite3.connect(disco / "app" / "pelis.db")
+    conn.execute("INSERT INTO personas (nombre) VALUES ('Ridley Scott')")
+    conn.execute("INSERT INTO pelicula_personas VALUES (1, 1, 'director')")
+    conn.commit()
+    conn.close()
+    zeta = db.insertar_pelicula(puente.conn, "Zeta", 1990, "Zeta", "Zeta/Zeta.mp4")
+    puente.conn.execute("INSERT INTO personas (nombre) VALUES ('Ridley Scott')")
+    puente.conn.execute("INSERT INTO pelicula_personas VALUES (?, 1, 'director')", (zeta,))
+    puente.conn.commit()
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    assert [p["titulo"] for p in puente.peliculasDe("Ridley Scott")] == ["Alien", "Zeta"]
+
+
+def test_diez_segundos_despues_de_salir_del_reproductor_busca_los_discos_de_nuevo(puente, volumenes, tmp_path, monkeypatch):
+    class TimerFalso(QTimer):
+        llamadas = []
+
+        @staticmethod
+        def singleShot(ms, funcion):
+            TimerFalso.llamadas.append((ms, funcion))
+
+    monkeypatch.setattr("pelis.puente.QTimer", TimerFalso)
+    volumenes.montados = [(crear_disco(tmp_path), "Disco")]
+    puente._sondear()
+    puente.abrir(tarjeta_de(puente, "Alien")["peliculaId"], -1)
+    volumenes.montados = []
+    puente.salioDelReproductor()
+    ms, buscar = TimerFalso.llamadas[0]
+    assert ms == 10_000
+    assert puente.hayDiscos
+    buscar()
+    assert not puente.hayDiscos
+
+
+def test_un_disco_agregado_a_mano_muestra_la_etiqueta_de_su_volumen(puente, volumenes, tmp_path):
+    disco = crear_disco(tmp_path)
+    volumenes.montados = [(tmp_path, "Mi volumen")]
+    puente.agregarDisco(str(disco))
+    assert tarjeta_de(puente, "Alien")["disco"] == "Mi volumen"
+
+
+def test_un_disco_que_no_se_puede_leer_no_rompe_el_catalogo_de_la_compu(puente, volumenes, tmp_path):
+    db.insertar_pelicula(puente.conn, "Zeta", 1990, "Zeta", "Zeta/Zeta.mp4")
+    puente.conn.commit()
+    disco = crear_disco(tmp_path)
+    conn = sqlite3.connect(disco / "app" / "pelis.db")
+    conn.execute("ALTER TABLE posters RENAME TO posters_vieja")
+    conn.commit()
+    conn.close()
+    volumenes.montados = [(disco, "Disco")]
+    puente._sondear()
+    assert titulos(puente) == ["Zeta"]
+
+
+def test_no_deja_agregar_la_app_que_se_esta_usando(puente):
+    assert "la app que estás usando" in puente.agregarDisco(str(puente.config.app_dir))
+    assert puente.discos() == []
