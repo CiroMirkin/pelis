@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Corre el job de Linux de .github/workflows/publicar.yml en un contenedor ubuntu:24.04 limpio:
-# tests, build y arranque del binario. Usa el uv de esta máquina, montado en el contenedor.
+# tests, build, arranque del binario y el .deb instalado en otro contenedor limpio. Usa el uv de esta máquina, montado en el contenedor.
 # Prueba el árbol de trabajo tal como está, con los cambios sin commitear y sin lo ignorado.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 UV="$(command -v uv)" || { echo "Falta uv"; exit 1; }
-exec docker run --rm -v "$PWD":/src:ro -v "$UV":/usr/local/bin/uv:ro ubuntu:24.04 bash -c '
+mkdir -p dist
+rm -f dist/*.deb
+docker run --rm -v "$PWD":/src:ro -v "$PWD/dist":/salida -v "$UV":/usr/local/bin/uv:ro ubuntu:24.04 bash -c '
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive UV_PROJECT_ENVIRONMENT=.venv-linux QT_QPA_PLATFORM=offscreen
 apt-get update -qq
@@ -26,4 +28,21 @@ timeout 10 dist/Pelis-linux/pelis-app/app/linux/pelis --app-dir /tmp/app
 codigo=$?
 set -e
 if [ "$codigo" = 124 ]; then echo "Arrancó y siguió abierta 10 s: OK"; else echo "Salió con $codigo"; exit 1; fi
+echo "== .deb"
+tools/build_deb.sh
+cp dist/*.deb /salida/
+'
+
+echo "== Instalar el .deb en un ubuntu:24.04 limpio (sin paquetes de Qt de antes)"
+docker run --rm -v "$PWD/dist":/salida:ro -e QT_QPA_PLATFORM=offscreen ubuntu:24.04 bash -c '
+set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq /salida/*.deb >/dev/null
+test -x /usr/bin/pelis && test -f /usr/share/applications/pelis.desktop
+set +e
+HOME=/tmp/casa timeout 10 pelis
+codigo=$?
+set -e
+if [ "$codigo" = 124 ]; then echo "Instalado, arrancó y siguió abierta 10 s: OK"; else echo "Salió con $codigo"; exit 1; fi
 '
