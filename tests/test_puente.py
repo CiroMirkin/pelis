@@ -257,7 +257,7 @@ def test_una_clave_invalida_no_guarda_ninguna(puente, monkeypatch):
     puente.guardarClaves("k1", "k2")
     r = esperar_claves(puente)
 
-    assert not r["guardado"] and list(r["errores"]) == ["tmdb"]
+    assert not r["guardado"] and r["errores"] == {"tmdb": "La clave no es válida."}
     assert puente.claves() == {"omdb": "", "tmdb": ""}
 
 
@@ -314,3 +314,37 @@ def test_guardar_una_clave_de_omdb_nueva_informa_cuantas_pendientes_hay(puente, 
 
     assert esperar_claves(puente)["pendientes"] == 1
 
+
+def test_solo_la_clave_de_tmdb_nueva_no_ofrece_buscar_pendientes(puente, monkeypatch):
+    validar_con(monkeypatch)
+    pelicula(puente, "Alien", "Alien.mp4")
+    db.marcar_pendiente(puente.conn, 1)
+    puente.conn.commit()
+
+    puente.guardarClaves("", "k2")
+
+    assert esperar_claves(puente)["pendientes"] == 0
+
+
+def test_vaciar_una_clave_no_la_valida(puente, monkeypatch):
+    validar_con(monkeypatch)
+    puente.guardarClaves("k1", "")
+    esperar_claves(puente)
+    omdb, _ = validar_con(monkeypatch, omdb=Responde(False))
+
+    puente.guardarClaves("", "")
+    r = esperar_claves(puente)
+
+    assert r["guardado"] and not r["errores"]
+    assert omdb.claves == []
+
+
+def test_guardar_dos_veces_seguidas_valida_una_sola_vez(puente, monkeypatch):
+    omdb, _ = validar_con(monkeypatch)
+
+    puente.guardarClaves("k1", "")
+    puente.guardarClaves("otra", "")
+    esperar_claves(puente)
+
+    assert omdb.claves == ["k1"]
+    assert puente.claves()["omdb"] == "k1"
