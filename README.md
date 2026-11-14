@@ -150,6 +150,8 @@ audio_preferido  = "es"
 subs_preferido   = "es"
 ```
 
+Las claves también se cargan desde la app, en **«…» › Claves de API…**. Si una clave se guardó ahí, gana sobre la de `pelis.toml`; el archivo sirve de valor inicial.
+
 > [!TIP]
 > Con una ruta relativa, el mismo disco funciona con cualquier letra de unidad o punto de montaje. En la base, las rutas de las películas se guardan relativas a `biblioteca`.
 

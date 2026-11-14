@@ -202,7 +202,7 @@ Page {
             }
             Nota {
                 visible: pagina.d.conClave === false
-                text: "Para traer datos de IMDb falta omdb_api_key en pelis.toml."
+                text: "Para traer datos de IMDb falta la clave de OMDb."
                 color: Tema.alerta
             }
             RowLayout {

@@ -23,6 +23,7 @@ from .catalogo import (
 from .nombres import idioma_de, normalizar
 from .reproduccion import Sesion
 from .escaneo import escanear, importar_sin_red
+from .claves import GestorClaves
 from .omdb import ErrorRed, Omdb
 from .tmdb import Tmdb
 
@@ -197,6 +198,7 @@ class TrabajoEscaneo(QObject):
             "problemas": [{"carpeta": c, "motivo": m} for c, m in datos["problemas"]],
             "desdeArchivo": datos["desde_archivo"],
             "archivosInvalidos": [{"carpeta": c, "motivo": m} for c, m in datos["archivos_invalidos"]],
+            "sinClaveOmdb": not self.config.omdb_api_key,
             "aviso": "\n\n".join(a for a in (datos["aviso_omdb"], datos["aviso_tmdb"],
                                                _aviso_archivos(datos["archivos_sin_escribir"])) if a),
             "error": "",
@@ -218,6 +220,8 @@ class Puente(QObject):
     # Resultado de una consulta a IMDb: {error} | {candidatos} | {aplicado, aviso}
     imdbRespondio = Signal("QVariantMap")
     _imdbListo = Signal(object)  # desde el hilo de la consulta; se procesa en el de la UI
+    validandoClavesChanged = Signal()
+    clavesRespondio = Signal("QVariantMap")
     capturaGuardada = Signal(bool)  # True = escrita; False = falló y el motivo va al log
     buscandoActualizacionChanged = Signal()
     actualizacionRespondio = Signal("QVariantMap")
@@ -235,6 +239,9 @@ class Puente(QObject):
         self._catalogo = ModeloCatalogo(self)
         # Preferencias de la app (no de la biblioteca): quedan junto a pelis.toml
         self._preferencias = QSettings(str(config.app_dir / "preferencias.ini"), QSettings.IniFormat)
+        self._claves = GestorClaves(config, self._preferencias, self.conn, self)
+        self._claves.validandoChanged.connect(self.validandoClavesChanged)
+        self._claves.respondio.connect(self.clavesRespondio)
         self._hilo = None
         self._trabajo = None
         self._escanear_despues = False  # pidieron escanear mientras corría la importación al abrir
@@ -465,11 +472,23 @@ class Puente(QObject):
 
         self._consultar(trabajo)
 
+    @Property(bool, notify=validandoClavesChanged)
+    def validandoClaves(self):
+        return self._claves.validando
+
+    @Slot(result="QVariantMap")
+    def claves(self):
+        return self._claves.claves()
+
+    @Slot(str, str)
+    def guardarClaves(self, omdb, tmdb):
+        self._claves.guardar(omdb, tmdb)
+
     def _consultar(self, trabajo):
         if self._consultando:
             return
         if not self.config.omdb_api_key:
-            self.imdbRespondio.emit({"error": "Falta omdb_api_key en pelis.toml."})
+            self.imdbRespondio.emit({"error": "Falta la clave de OMDb."})
             return
         omdb = Omdb(self.config.omdb_api_key)
         tmdb = Tmdb(self.config.tmdb_api_key) if self.config.tmdb_api_key else None

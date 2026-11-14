@@ -1,9 +1,12 @@
+import time
+
 import pytest
 from PySide6.QtCore import QCoreApplication
 
 from pelis import db, poster
 from pelis.catalogo import url_poster
 from pelis.config import Config
+from pelis.omdb import ErrorRed
 from pelis.puente import Puente
 
 
@@ -197,3 +200,151 @@ def test_salir_del_reproductor_recarga_el_catalogo(puente):
     puente.salioDelReproductor()
 
     assert recargas == [True]
+
+
+def esperar_claves(puente, segundos=5):
+    respuestas = []
+    puente.clavesRespondio.connect(respuestas.append)
+    limite = time.monotonic() + segundos
+    while not respuestas:
+        assert time.monotonic() < limite, "guardarClaves no respondió"
+        QCoreApplication.processEvents()
+    return respuestas[0]
+
+
+class Responde:
+    """Reemplaza a Omdb/Tmdb: la clave es válida o no según `valida`."""
+    def __init__(self, valida=True):
+        self.valida = valida
+        self.claves = []
+
+    def __call__(self, clave):
+        self.claves.append(clave)
+        return self
+
+    def clave_valida(self):
+        return self.valida
+
+
+class SinRed(Responde):
+    """Reemplaza a Omdb/Tmdb cuando no se pudo saber si la clave sirve."""
+    def clave_valida(self):
+        raise ErrorRed("sin conexión")
+
+
+def validar_con(monkeypatch, omdb=None, tmdb=None):
+    omdb, tmdb = omdb or Responde(), tmdb or Responde()
+    monkeypatch.setattr("pelis.claves.Omdb", omdb)
+    monkeypatch.setattr("pelis.claves.Tmdb", tmdb)
+    return omdb, tmdb
+
+
+def test_guardar_claves_validas_las_aplica_en_caliente_y_las_recuerda(puente, monkeypatch):
+    validar_con(monkeypatch)
+    puente.guardarClaves(" k1 ", "k2")
+    r = esperar_claves(puente)
+
+    assert r["guardado"] and not r["errores"]
+    assert puente.claves() == {"omdb": "k1", "tmdb": "k2"}
+    reabierto = Puente(Config(puente.config.app_dir, puente.config.biblioteca, "", "", [], "", ""))
+    esperar_importacion(reabierto)
+    assert reabierto.claves() == {"omdb": "k1", "tmdb": "k2"}
+    reabierto.conn.close()
+
+
+def test_una_clave_invalida_no_guarda_ninguna(puente, monkeypatch):
+    validar_con(monkeypatch, tmdb=Responde(False))
+    puente.guardarClaves("k1", "k2")
+    r = esperar_claves(puente)
+
+    assert not r["guardado"] and r["errores"] == {"tmdb": "La clave no es válida."}
+    assert puente.claves() == {"omdb": "", "tmdb": ""}
+
+
+def test_sin_red_guarda_igual_y_avisa(puente, monkeypatch):
+    validar_con(monkeypatch, omdb=SinRed())
+    puente.guardarClaves("k1", "")
+    r = esperar_claves(puente)
+
+    assert r["guardado"] and r["sinVerificar"]
+    assert puente.claves()["omdb"] == "k1"
+
+
+def test_solo_se_validan_las_claves_que_cambiaron(puente, monkeypatch):
+    validar_con(monkeypatch)
+    puente.guardarClaves("k1", "k2")
+    esperar_claves(puente)
+    validar_con(monkeypatch, Responde(False), Responde(False))  # si se consultara alguna, fallaría
+
+    puente.guardarClaves("k1", "k2")
+    assert esperar_claves(puente)["guardado"]
+
+
+def test_vaciar_la_clave_de_omdb_se_guarda_y_avisa(puente, monkeypatch):
+    validar_con(monkeypatch)
+    puente.guardarClaves("k1", "")
+    esperar_claves(puente)
+
+    puente.guardarClaves("", "")
+    r = esperar_claves(puente)
+
+    assert r["guardado"] and r["omdbVacia"]
+    assert puente.claves()["omdb"] == ""
+
+
+def test_la_clave_guardada_en_la_app_gana_incluso_vacia_sobre_la_del_toml(tmp_path):
+    QCoreApplication.instance() or QCoreApplication([])
+    biblioteca = tmp_path / "Peliculas"
+    biblioteca.mkdir()
+    (tmp_path / "preferencias.ini").write_text("[claves]\nomdb=\n")
+    p = Puente(Config(tmp_path, biblioteca, "del-toml", "tmdb-del-toml", [], "", ""))
+    esperar_importacion(p)
+
+    assert p.claves() == {"omdb": "", "tmdb": "tmdb-del-toml"}
+    p.conn.close()
+
+
+def test_guardar_una_clave_de_omdb_nueva_informa_cuantas_pendientes_hay(puente, monkeypatch):
+    validar_con(monkeypatch)
+    pelicula(puente, "Alien", "Alien.mp4")
+    db.marcar_pendiente(puente.conn, 1)
+    puente.conn.commit()
+
+    puente.guardarClaves("k1", "")
+
+    assert esperar_claves(puente)["pendientes"] == 1
+
+
+def test_solo_la_clave_de_tmdb_nueva_no_ofrece_buscar_pendientes(puente, monkeypatch):
+    validar_con(monkeypatch)
+    pelicula(puente, "Alien", "Alien.mp4")
+    db.marcar_pendiente(puente.conn, 1)
+    puente.conn.commit()
+
+    puente.guardarClaves("", "k2")
+
+    assert esperar_claves(puente)["pendientes"] == 0
+
+
+def test_vaciar_una_clave_no_la_valida(puente, monkeypatch):
+    validar_con(monkeypatch)
+    puente.guardarClaves("k1", "")
+    esperar_claves(puente)
+    omdb, _ = validar_con(monkeypatch, omdb=Responde(False))
+
+    puente.guardarClaves("", "")
+    r = esperar_claves(puente)
+
+    assert r["guardado"] and not r["errores"]
+    assert omdb.claves == []
+
+
+def test_guardar_dos_veces_seguidas_valida_una_sola_vez(puente, monkeypatch):
+    omdb, _ = validar_con(monkeypatch)
+
+    puente.guardarClaves("k1", "")
+    puente.guardarClaves("otra", "")
+    esperar_claves(puente)
+
+    assert omdb.claves == ["k1"]
+    assert puente.claves()["omdb"] == "k1"

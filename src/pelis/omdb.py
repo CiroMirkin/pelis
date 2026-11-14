@@ -29,6 +29,20 @@ class Omdb:
             return None
         raise ErrorRed(error or f"HTTP {r.status_code}")
 
+    def clave_valida(self):
+        """Lanza ErrorRed si no se pudo saber (sin red, límite diario...)."""
+        try:
+            # tt0111161 es Sueños de libertad y solo es un ID real cualquiera para que la consulta sea válida
+            datos = self.sesion.get(URL, params={"apikey": self.api_key, "i": "tt0111161"}, timeout=TIMEOUT).json()
+        except (requests.RequestException, ValueError) as e:
+            raise ErrorRed(str(e)) from e
+        if datos.get("Response") == "True":
+            return True
+        # OMDb responde HTTP 401 con "Invalid API key!" y lo único estable para distinguirlo del límite diario es el texto
+        if "api key" in datos.get("Error", "").lower():
+            return False
+        raise ErrorRed(datos.get("Error", "respuesta inesperada"))
+
     def por_id(self, imdb_id):
         try:
             return self._consultar(i=imdb_id)

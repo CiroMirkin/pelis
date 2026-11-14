@@ -1,6 +1,7 @@
 # Copiar como pelis.toml (en esta misma carpeta) y completar las claves.
+# Las claves también se configuran desde la app, en «…» › «Claves de API…»; la de la app gana.
 biblioteca      = "../../Peliculas"   # relativa a esta carpeta, o absoluta
-omdb_api_key    = ""                  # https://www.omdbapi.com/apikey.aspx ; vacío = no busca metadatos
+omdb_api_key    = ""                  # https://www.omdbapi.com/apikey.aspx ; vacío = no busca metadatos, salvo que se cargue desde la app
 tmdb_api_key    = ""                  # sinopsis en español; vacío = sinopsis de OMDb en inglés
 idiomas_sinopsis = ["es-MX", "es-ES"] # se prueba en este orden
 audio_preferido = "es"

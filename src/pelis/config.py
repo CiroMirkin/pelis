@@ -53,3 +53,13 @@ def cargar(app_dir):
         audio_preferido=datos.get("audio_preferido", "es"),
         subs_preferido=datos.get("subs_preferido", "es"),
     )
+
+
+CLAVES = {"omdb": "omdb_api_key", "tmdb": "tmdb_api_key"}
+
+
+def aplicar_preferencias(config, preferencias):
+    """Las claves guardadas desde la app (preferencias.ini) ganan sobre las de pelis.toml una por una y una clave guardada como "" también gana para que borrarla desde la app no haga reaparecer la del toml."""
+    for nombre, atributo in CLAVES.items():
+        if preferencias.contains(f"claves/{nombre}"):
+            setattr(config, atributo, str(preferencias.value(f"claves/{nombre}", "")).strip())

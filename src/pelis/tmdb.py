@@ -5,6 +5,7 @@ import requests
 from .omdb import ErrorRed
 
 URL = "https://api.themoviedb.org/3/find/{imdb_id}"
+URL_CONFIGURACION = "https://api.themoviedb.org/3/configuration"
 TIMEOUT = 15
 
 
@@ -33,3 +34,15 @@ class Tmdb:
             if texto:
                 return texto, idioma
         return None, None
+
+    def clave_valida(self):
+        """Lanza ErrorRed si no se pudo saber (sin red, error del servidor...)."""
+        try:
+            r = self.sesion.get(URL_CONFIGURACION, params={"api_key": self.api_key}, timeout=TIMEOUT)
+        except requests.RequestException as e:
+            raise ErrorRed(str(e)) from e
+        if r.status_code == 200:
+            return True
+        if r.status_code == 401:
+            return False
+        raise ErrorRed(f"HTTP {r.status_code}")
