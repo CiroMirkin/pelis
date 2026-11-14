@@ -59,6 +59,7 @@ def test_carpeta_de_datos_en_linux(monkeypatch, tmp_path):
     monkeypatch.setattr(cfg.sys, "platform", "linux")
     monkeypatch.delenv("XDG_DATA_HOME", raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Path.home() en Windows no mira HOME
     assert cfg.carpeta_de_datos() == tmp_path / ".local" / "share" / "pelis"
 
 

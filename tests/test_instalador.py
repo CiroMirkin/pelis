@@ -33,8 +33,10 @@ def _con_pkexec_en_el_path(monkeypatch, tmp_path, hay):
     bin_falso = tmp_path / "bin-pkexec"
     bin_falso.mkdir()
     if hay:
-        (bin_falso / "pkexec").write_text("#!/bin/sh\n")
-        (bin_falso / "pkexec").chmod(0o755)
+        # En Windows shutil.which solo encuentra ejecutables con extensión
+        falso = bin_falso / ("pkexec.exe" if sys.platform == "win32" else "pkexec")
+        falso.write_text("#!/bin/sh\n")
+        falso.chmod(0o755)
     monkeypatch.setenv("PATH", str(bin_falso))
 
 
