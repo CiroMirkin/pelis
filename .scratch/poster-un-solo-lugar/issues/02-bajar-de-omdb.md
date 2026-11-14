@@ -1,6 +1,6 @@
 # destino_omdb y registrar_omdb: una sola regla de descarga
 
-Status: ready-for-agent
+Status: done
 
 Blocked by: 01
 
@@ -11,7 +11,7 @@ Blocked by: 01
 - `"poster.jpg"` y el origen `"omdb"` como literales solo en `poster.py`
 
 ## Criterio de terminado
-- [ ] El escaneo no baja si hay un póster `existente` ni si ya hay uno de OMDb
-- [ ] Corregir match pisa el de OMDb y no toca uno `existente`
-- [ ] La bajada de la edición sigue corriendo fuera del hilo de la UI
-- [ ] `grep '"poster.jpg"'` en `src/` solo encuentra `poster.py`
+- [x] El escaneo no baja si hay un póster `existente` ni si ya hay uno de OMDb
+- [x] Corregir match pisa el de OMDb y no toca uno `existente`
+- [x] La bajada de la edición sigue corriendo fuera del hilo de la UI
+- [x] `grep '"poster.jpg"'` en `src/` solo encuentra `poster.py`

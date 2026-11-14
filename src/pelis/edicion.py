@@ -49,31 +49,6 @@ def candidatos(omdb, texto):
     ]
 
 
-def bajar_poster(omdb, url, destino):
-    """Baja el poster de OMDb a `destino` (de `destino_poster`); devuelve si se pudo. Corre fuera del hilo de la UI."""
-    if destino is None or not url:
-        return False
-    try:
-        destino.parent.mkdir(exist_ok=True)
-        omdb.bajar_poster(url, destino)
-    except ErrorRed:
-        return False
-    return True
-
-
-def destino_poster(conn, biblioteca, pelicula_id):
-    """Dónde bajar el poster de OMDb, o None si la película solo tiene imágenes propias.
-
-    Si ya hay un póster bajado de OMDb, se reemplaza aunque el actual sea una imagen propia:
-    era el de un match equivocado y, si no, seguiría en la rotación. Si no hay ninguna imagen,
-    también se baja.
-    """
-    p = db.pelicula(conn, pelicula_id)
-    if not poster._bajados(conn, pelicula_id) and poster._posters_de(biblioteca, p["folder_path"]):
-        return None
-    return poster._carpeta_posters(Path(biblioteca) / p["folder_path"]) / "poster.jpg"
-
-
 def aplicar_omdb(conn, biblioteca, pelicula_id, datos, poster_bajado):
     """Reemplaza los metadatos (y personas) por los traídos de OMDb. Devuelve un aviso o "".
 
@@ -85,14 +60,7 @@ def aplicar_omdb(conn, biblioteca, pelicula_id, datos, poster_bajado):
     aviso = metadatos.aplicar(conn, biblioteca, pelicula_id,
                               {**datos, "titulo": p["titulo"], "year": datos.get("year") or p["year"]}, explicita=True)
     if poster_bajado:
-        destino = poster._carpeta_posters(Path(biblioteca) / p["folder_path"]) / "poster.jpg"
-        relativa = destino.relative_to(biblioteca).as_posix()
-        actual = poster._actual(conn, pelicula_id)
-        if actual is None or actual["origen"] == "omdb":
-            poster._usar(conn, pelicula_id, relativa, "omdb")
-        else:
-            poster.registrar(conn, pelicula_id, relativa, "omdb")
-        conn.commit()
+        poster.registrar_omdb(conn, biblioteca, pelicula_id)
     return aviso
 
 

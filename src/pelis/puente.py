@@ -459,7 +459,7 @@ class Puente(QObject):
     @Slot(int, str)
     def usarImdb(self, pelicula_id, imdb_id):
         """Reemplaza los metadatos por los de `imdb_id` (corregir match o resincronizar)."""
-        destino = edicion.destino_poster(self.conn, self.config.biblioteca, pelicula_id)
+        destino = poster.destino_omdb(self.conn, self.config.biblioteca, pelicula_id, reemplazar=True)
         idiomas = self.config.idiomas_sinopsis
 
         def trabajo(omdb, tmdb):
@@ -467,7 +467,14 @@ class Puente(QObject):
             if datos is None:
                 return {"error": f"IMDb no tiene una película con el ID {imdb_id}."}
             encontrados, aviso = metadatos.obtener(datos, tmdb, idiomas)
-            bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+            bajado = False
+            if destino is not None and encontrados["poster_url"]:
+                try:
+                    destino.parent.mkdir(exist_ok=True)
+                    omdb.bajar_poster(encontrados["poster_url"], destino)
+                    bajado = True
+                except ErrorRed:
+                    pass
             return {"aplicar": (pelicula_id, encontrados, bajado), "aviso": aviso}
 
         self._consultar(trabajo)

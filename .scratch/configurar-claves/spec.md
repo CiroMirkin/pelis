@@ -1,6 +1,6 @@
 # Configurar las claves desde la app
 
-Status: ready-for-agent
+Status: done
 
 Anotada el 2026-11-01. Decisiones cerradas en un grilling el 2026-11-08.
 

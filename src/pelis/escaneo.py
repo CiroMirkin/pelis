@@ -173,17 +173,20 @@ class Escaneo:
         aviso = metadatos.aplicar(self.conn, self.biblioteca, pelicula_id, datos, explicita)
         if aviso and not archivo_invalido:  # el inválido ya está en archivos_invalidos
             self.informe.archivos_sin_escribir.append((carpeta.name, aviso))
-        self._bajar_poster(pelicula_id, carpeta, datos.get("poster_url"))
+        self._bajar_poster(pelicula_id, datos.get("poster_url"))
 
-    def _bajar_poster(self, pelicula_id, carpeta, url):
-        if url and self.omdb is not None and not self.omdb_caido and poster._actual(self.conn, pelicula_id) is None:
-            destino = poster._carpeta_posters(carpeta)
-            destino.mkdir(exist_ok=True)
-            try:
-                self.omdb.bajar_poster(url, destino / "poster.jpg")
-            except ErrorRed:
-                return
-            poster._usar(self.conn, pelicula_id, f"{carpeta.name}/{destino.name}/poster.jpg", "omdb")
+    def _bajar_poster(self, pelicula_id, url):
+        if not url or self.omdb is None or self.omdb_caido:
+            return
+        destino = poster.destino_omdb(self.conn, self.biblioteca, pelicula_id)
+        if destino is None:
+            return
+        destino.parent.mkdir(exist_ok=True)
+        try:
+            self.omdb.bajar_poster(url, destino)
+        except ErrorRed:
+            return
+        poster.registrar_omdb(self.conn, self.biblioteca, pelicula_id)
 
 
 def escanear(conn, biblioteca, omdb, progreso=lambda actual, total, nombre: None, tmdb=None,

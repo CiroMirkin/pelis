@@ -13,6 +13,7 @@ EXTENSIONES_POSTER = {".jpg", ".jpeg", ".png"}
 # En orden de preferencia; la palabra puede estar en cualquier parte del nombre ("Alien-poster", "poster_2")
 PALABRAS_POSTER = ["poster", "folder", "cover"]
 DIAS_ROTACION = 7
+NOMBRE_OMDB = "poster.jpg"
 
 
 def revisar(conn, biblioteca, pelicula_id):
@@ -115,6 +116,37 @@ def _cambiar(conn, pelicula_id, imagenes, elegir):
     actual = _actual(conn, pelicula_id)
     _usar(conn, pelicula_id, elegir(actual["path"] if actual else None), "existente")  # ya registrada: conserva su origen
     return True
+
+
+def destino_omdb(conn, biblioteca, pelicula_id, reemplazar=False):
+    """Dónde bajar el póster de OMDb (`posters/poster.jpg`), o None si no hay que bajarlo.
+
+    Sin `reemplazar` (escaneo) solo se baja si la película no tiene ningún póster. Con `reemplazar`
+    (corregir match) se pisa el de OMDb aunque el actual sea una imagen propia, porque era el de un
+    match equivocado y, si no, seguiría en la rotación; sin póster de OMDb y con imágenes propias no se baja.
+    La carpeta `posters` la crea quien baja. No usa la red.
+    """
+    folder_path = conn.execute("SELECT folder_path FROM peliculas WHERE id = ?", (pelicula_id,)).fetchone()[0]
+    if reemplazar:
+        if not _bajados(conn, pelicula_id) and _posters_de(biblioteca, folder_path):
+            return None
+    elif _actual(conn, pelicula_id) is not None:
+        return None
+    return _carpeta_posters(Path(biblioteca) / folder_path) / NOMBRE_OMDB
+
+
+def registrar_omdb(conn, biblioteca, pelicula_id):
+    """Tras bajar el póster a `destino_omdb`, lo deja registrado. Pasa a ser el actual solo si no había
+    ninguno o el actual era de OMDb: una imagen propia que es la actual se respeta. Hace commit."""
+    folder_path = conn.execute("SELECT folder_path FROM peliculas WHERE id = ?", (pelicula_id,)).fetchone()[0]
+    destino = _carpeta_posters(Path(biblioteca) / folder_path) / NOMBRE_OMDB
+    relativa = destino.relative_to(biblioteca).as_posix()
+    actual = _actual(conn, pelicula_id)
+    if actual is None or actual["origen"] == "omdb":
+        _usar(conn, pelicula_id, relativa, "omdb")
+    else:
+        registrar(conn, pelicula_id, relativa, "omdb")
+    conn.commit()
 
 
 def _carpeta_posters(carpeta):

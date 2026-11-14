@@ -14,6 +14,14 @@ DATOS_ALIENS = {
 }
 
 
+def bajar(omdb, url, destino):
+    if destino is None:
+        return False
+    destino.parent.mkdir(exist_ok=True)
+    omdb.bajar_poster(url, destino)
+    return True
+
+
 class OmdbConBusqueda(OmdbFalso):
     def __init__(self, respuestas=None, busquedas=None):
         super().__init__(respuestas)
@@ -145,9 +153,9 @@ def test_corregir_match_reemplaza_metadatos_personas_y_poster_de_omdb(biblioteca
     escanear(conn, biblioteca, OmdbFalso({("Aliens", 1986): DATOS_ALIEN}))
     omdb = OmdbConBusqueda({"tt0090605": DATOS_ALIENS})
 
-    destino = edicion.destino_poster(conn, biblioteca, 1)
+    destino = poster.destino_omdb(conn, biblioteca, 1, reemplazar=True)
     encontrados, aviso = metadatos.obtener(omdb.por_id("tt0090605"), None, [])
-    bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+    bajado = bajar(omdb, encontrados["poster_url"], destino)
     edicion.aplicar_omdb(conn, biblioteca, 1, encontrados, bajado)
 
     p = db.pelicula(conn, 1)
@@ -162,7 +170,7 @@ def test_corregir_match_reemplaza_metadatos_personas_y_poster_de_omdb(biblioteca
 def test_corregir_match_no_pisa_un_poster_propio(biblioteca, conn):
     carpeta(biblioteca, "Aliens (1986)", "Aliens.mp4", "folder.jpg")
     escanear(conn, biblioteca, OmdbFalso({("Aliens", 1986): DATOS_ALIEN}))
-    assert edicion.destino_poster(conn, biblioteca, 1) is None
+    assert poster.destino_omdb(conn, biblioteca, 1, reemplazar=True) is None
 
 
 def test_corregir_match_reemplaza_el_poster_bajado_aunque_el_actual_sea_propio(biblioteca, conn):
@@ -175,9 +183,9 @@ def test_corregir_match_reemplaza_el_poster_bajado_aunque_el_actual_sea_propio(b
     assert poster._actual(conn, 1)["path"] == "Aliens (1986)/folder.jpg"
 
     omdb = OmdbConBusqueda({"tt0090605": DATOS_ALIENS})
-    destino = edicion.destino_poster(conn, biblioteca, 1)
+    destino = poster.destino_omdb(conn, biblioteca, 1, reemplazar=True)
     encontrados, _ = metadatos.obtener(omdb.por_id("tt0090605"), None, [])
-    bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+    bajado = bajar(omdb, encontrados["poster_url"], destino)
     edicion.aplicar_omdb(conn, biblioteca, 1, encontrados, bajado)
 
     assert (biblioteca / "Aliens (1986)" / "posters" / "poster.jpg").read_bytes() == b"https://ejemplo/aliens.jpg"
@@ -195,9 +203,9 @@ def test_corregir_match_reemplaza_el_poster_bajado_actual_y_lo_mantiene_como_act
     assert (actual["path"], actual["origen"]) == ("Aliens (1986)/posters/poster.jpg", "omdb")
 
     omdb = OmdbConBusqueda({"tt0090605": DATOS_ALIENS})
-    destino = edicion.destino_poster(conn, biblioteca, 1)
+    destino = poster.destino_omdb(conn, biblioteca, 1, reemplazar=True)
     encontrados, _ = metadatos.obtener(omdb.por_id("tt0090605"), None, [])
-    bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+    bajado = bajar(omdb, encontrados["poster_url"], destino)
     edicion.aplicar_omdb(conn, biblioteca, 1, encontrados, bajado)
 
     assert archivo.read_bytes() == b"https://ejemplo/aliens.jpg" != previo
@@ -211,9 +219,9 @@ def test_corregir_match_con_solo_imagenes_propias_no_baja_nada(biblioteca, conn)
     escanear(conn, biblioteca, OmdbFalso({("Aliens", 1986): DATOS_ALIEN}))
 
     omdb = OmdbConBusqueda({"tt0090605": DATOS_ALIENS})
-    destino = edicion.destino_poster(conn, biblioteca, 1)
+    destino = poster.destino_omdb(conn, biblioteca, 1, reemplazar=True)
     encontrados, _ = metadatos.obtener(omdb.por_id("tt0090605"), None, [])
-    bajado = edicion.bajar_poster(omdb, encontrados["poster_url"], destino)
+    bajado = bajar(omdb, encontrados["poster_url"], destino)
     edicion.aplicar_omdb(conn, biblioteca, 1, encontrados, bajado)
 
     assert omdb.posters == []
