@@ -15,8 +15,10 @@ Hace falta un instalador para Windows y otro para Linux. La app tiene que seguir
 - Instalar es opcional. Nadie tiene que instalar para usar la app.
 - El instalador no cambia cómo funciona la versión portable.
 
+- Las instalaciones se actualizan con el mismo botón «Buscar actualización» que ya existe.
+- La Release publica los instaladores junto con los zips portables, y se distinguen en el nombre: los portables llevan «(Portable)».
+
 ## Por decidir
-- Windows: Inno Setup, y a qué carpeta instala (`C:\Program Files\Pelis` o por usuario).
-- Linux: `.deb`, AppImage o los dos.
-- Cómo se actualiza una instalación (hoy la app se actualiza reemplazando su carpeta, y en una carpeta de solo lectura eso no se puede).
-- Si el workflow de publicación adjunta los instaladores a la Release junto con los zips portables.
+- Windows: el instalador es un `.exe` armado con Inno Setup. Falta decidir si instala en `C:\Program Files\Pelis` o por usuario.
+- Linux: no hay un `.exe` equivalente. Opciones: `.deb` (nativo de Mint, se instala con doble clic), AppImage (un solo archivo que se ejecuta sin instalar) o los dos.
+- Qué hace el botón de actualizar en una instalación, porque no puede reemplazar su propia carpeta de solo lectura (por ejemplo, bajar el instalador nuevo y ejecutarlo).
