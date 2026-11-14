@@ -224,8 +224,8 @@ class ClienteFalso:
 
 
 def validar_con(monkeypatch, omdb=True, tmdb=True):
-    monkeypatch.setattr("pelis.puente.Omdb", ClienteFalso(omdb))
-    monkeypatch.setattr("pelis.puente.Tmdb", ClienteFalso(tmdb))
+    monkeypatch.setattr("pelis.claves.Omdb", ClienteFalso(omdb))
+    monkeypatch.setattr("pelis.claves.Tmdb", ClienteFalso(tmdb))
 
 
 def test_guardar_claves_validas_las_aplica_en_caliente_y_las_recuerda(puente, monkeypatch):

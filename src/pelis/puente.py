@@ -23,7 +23,7 @@ from .catalogo import (
 from .nombres import idioma_de, normalizar
 from .reproduccion import Sesion
 from .escaneo import escanear, importar_sin_red
-from .config import CLAVES, aplicar_preferencias
+from .claves import GestorClaves
 from .omdb import ErrorRed, Omdb
 from .tmdb import Tmdb
 
@@ -221,9 +221,7 @@ class Puente(QObject):
     imdbRespondio = Signal("QVariantMap")
     _imdbListo = Signal(object)  # desde el hilo de la consulta; se procesa en el de la UI
     validandoClavesChanged = Signal()
-    # Resultado de guardar las claves: {guardado, errores: {omdb?, tmdb?}, sinVerificar, omdbVacia (se borró la clave de OMDb en este guardado), pendientes}
     clavesRespondio = Signal("QVariantMap")
-    _clavesListas = Signal(object)  # desde el hilo de la validación
     capturaGuardada = Signal(bool)  # True = escrita; False = falló y el motivo va al log
     buscandoActualizacionChanged = Signal()
     actualizacionRespondio = Signal("QVariantMap")
@@ -241,9 +239,9 @@ class Puente(QObject):
         self._catalogo = ModeloCatalogo(self)
         # Preferencias de la app (no de la biblioteca): quedan junto a pelis.toml
         self._preferencias = QSettings(str(config.app_dir / "preferencias.ini"), QSettings.IniFormat)
-        aplicar_preferencias(config, self._preferencias)
-        self._validando_claves = False
-        self._clavesListas.connect(self._claves_listas)
+        self._claves = GestorClaves(config, self._preferencias, self.conn, self)
+        self._claves.validandoChanged.connect(self.validandoClavesChanged)
+        self._claves.respondio.connect(self.clavesRespondio)
         self._hilo = None
         self._trabajo = None
         self._escanear_despues = False  # pidieron escanear mientras corría la importación al abrir
@@ -476,57 +474,15 @@ class Puente(QObject):
 
     @Property(bool, notify=validandoClavesChanged)
     def validandoClaves(self):
-        return self._validando_claves
+        return self._claves.validando
 
     @Slot(result="QVariantMap")
     def claves(self):
-        return {nombre: getattr(self.config, atributo) for nombre, atributo in CLAVES.items()}
-
-    @Slot(result=int)
-    def cantidadPendientes(self):
-        return db.cantidad_pendientes(self.conn)
+        return self._claves.claves()
 
     @Slot(str, str)
     def guardarClaves(self, omdb, tmdb):
-        """Solo valida las claves que cambiaron y no guarda ninguna si alguna falla."""
-        if self._validando_claves:
-            return
-        nuevas = {"omdb": omdb.strip(), "tmdb": tmdb.strip()}
-        cambiadas = {n: c for n, c in nuevas.items() if c != self.claves()[n]}
-        clientes = {"omdb": Omdb, "tmdb": Tmdb}
-        self._validando_claves = True
-        self.validandoClavesChanged.emit()
-
-        def correr():
-            errores, sin_verificar = {}, False
-            for nombre, clave in cambiadas.items():
-                if not clave:
-                    continue
-                try:
-                    if not clientes[nombre](clave).clave_valida():
-                        errores[nombre] = "La clave no es válida."
-                except ErrorRed:
-                    # Sin conexión no se bloquea el guardado porque la clave se guarda igual y se avisa
-                    sin_verificar = True
-            self._clavesListas.emit((nuevas, cambiadas, errores, sin_verificar))
-
-        threading.Thread(target=correr, daemon=True).start()
-
-    def _claves_listas(self, resultado):
-        nuevas, cambiadas, errores, sin_verificar = resultado
-        self._validando_claves = False
-        self.validandoClavesChanged.emit()
-        if errores:
-            self.clavesRespondio.emit({"guardado": False, "errores": errores, "sinVerificar": False,
-                                       "omdbVacia": False, "pendientes": 0})
-            return
-        for nombre, clave in cambiadas.items():
-            self._preferencias.setValue(f"claves/{nombre}", clave)
-            setattr(self.config, CLAVES[nombre], clave)
-        self._preferencias.sync()
-        self.clavesRespondio.emit({"guardado": True, "errores": {}, "sinVerificar": sin_verificar,
-                                   "omdbVacia": "omdb" in cambiadas and not cambiadas["omdb"],
-                                   "pendientes": db.cantidad_pendientes(self.conn) if cambiadas.get("omdb") else 0})
+        self._claves.guardar(omdb, tmdb)
 
     def _consultar(self, trabajo):
         if self._consultando:
