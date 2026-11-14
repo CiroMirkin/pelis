@@ -10,6 +10,8 @@
 
 [Features](#features) • [Instalación](#instalación) • [Uso](#uso) • [Cómo funciona](#cómo-funciona) • [Configuración](#configuración) • [Desarrollo](#desarrollo)
 
+![Catálogo de Pelis, una grilla de pósters con buscador y filtros](docs/images/catalogo.png)
+
 </div>
 
 Pelis recorre una carpeta con una subcarpeta por película, busca los datos en OMDb (y la sinopsis en español en TMDb) y arma una grilla de pósters. Desde ahí abrís el detalle y la mirás en el reproductor propio, que guarda dónde quedaste. Sin servidor ni cuentas: la biblioteca, la base y los metadatos viven en el disco, y todo menos la búsqueda de datos y pósters funciona sin internet.
