@@ -15,7 +15,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtMultimedia import QMediaPlayer
 
-from . import __version__, actualizacion, capturas, db, edicion, metadatos, pantalla, poster, subtitulos
+from . import __version__, actualizacion, capturas, db, edicion, instalador, metadatos, pantalla, poster, subtitulos
 from .catalogo import (
     CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta,
     url_poster,
@@ -260,7 +260,7 @@ class Puente(QObject):
         self._nueva = None  # la última versión nueva encontrada
         self._actualizando = False
         self._cancelar_descarga = threading.Event()
-        self._descargado = None  # carpeta con la versión nueva, lista para el cambio
+        self._descargado = None  # carpeta con la versión nueva (portable) o instalador bajado, listo para el cambio
         self._descargaLista.connect(self._descarga_lista)
         self._pantalla = pantalla.Pantalla()
         self._recargar_catalogo()
@@ -622,13 +622,18 @@ class Puente(QObject):
         self._actualizando = True
         self.actualizandoChanged.emit()
         self._cancelar_descarga.clear()
-        inst = actualizacion.instalacion_actual()
         nueva = self._nueva
+        instalada = not self.config.portable
 
         def correr():
             try:
-                nuevo = actualizacion.preparar(inst, nueva, progreso=self.descargaProgreso.emit,
-                                               cancelado=self._cancelar_descarga.is_set)
+                if instalada:
+                    nuevo = instalador.preparar_instalador(nueva, progreso=self.descargaProgreso.emit,
+                                                              cancelado=self._cancelar_descarga.is_set)
+                else:
+                    nuevo = actualizacion.preparar(actualizacion.instalacion_actual(), nueva,
+                                                   progreso=self.descargaProgreso.emit,
+                                                   cancelado=self._cancelar_descarga.is_set)
                 resultado = {"nuevo": nuevo}
             except actualizacion.Cancelado:
                 resultado = {"cancelado": True}
@@ -660,8 +665,12 @@ class Puente(QObject):
         """Deja corriendo el script que hace el cambio y cierra la app como siempre (guarda lo pendiente)."""
         if self._descargado is None:
             return
-        inst = actualizacion.instalacion_actual()
-        actualizacion.lanzar(actualizacion.escribir_script(inst, self._descargado, os.getpid(), sys.argv[1:]))
+        if self.config.portable:
+            script = actualizacion.escribir_script(actualizacion.instalacion_actual(), self._descargado,
+                                                   os.getpid(), sys.argv[1:])
+        else:
+            script = instalador.escribir_script_instalador(self._descargado, os.getpid(), sys.argv[1:])
+        actualizacion.lanzar(script)
         QCoreApplication.quit()
 
     # --- faltantes ---

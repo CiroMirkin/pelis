@@ -3,7 +3,7 @@ import time
 import pytest
 from PySide6.QtCore import QCoreApplication
 
-from pelis import db, poster
+from pelis import actualizacion, db, instalador, poster
 from pelis.catalogo import url_poster
 from pelis.config import Config
 from pelis.omdb import ErrorRed
@@ -449,3 +449,29 @@ def test_el_aviso_solo_si_la_carpeta_nueva_no_tiene_ninguna_de_la_base(puente, t
     assert puente.cambiarBibliotecaPierdePeliculas(str(nueva))
     (nueva / "Alien").mkdir()  # con una sola de las dos alcanza para no avisar
     assert not puente.cambiarBibliotecaPierdePeliculas(str(nueva))
+
+
+@pytest.mark.parametrize("portable, esperado", [(False, ["instalador"]), (True, ["portable"])])
+def test_una_app_instalada_baja_el_instalador_y_una_portable_el_paquete(tmp_path, monkeypatch, portable, esperado):
+    QCoreApplication.instance() or QCoreApplication([])
+    biblioteca = tmp_path / "Peliculas"
+    biblioteca.mkdir()
+    puente = Puente(Config(tmp_path, biblioteca, "", "", [], "", "", portable=portable))
+    esperar_importacion(puente)
+    usados = []
+    monkeypatch.setattr(actualizacion, "en_build", lambda: True)
+    monkeypatch.setattr(actualizacion, "instalacion_actual", lambda: None)
+    monkeypatch.setattr(actualizacion, "preparar", lambda inst, nueva, **_: usados.append("portable") or tmp_path)
+    monkeypatch.setattr(instalador, "preparar_instalador", lambda nueva, **_: usados.append("instalador") or tmp_path)
+    monkeypatch.setattr(actualizacion, "escribir_script", lambda *a: usados.append("script portable") or "script")
+    monkeypatch.setattr(instalador, "escribir_script_instalador", lambda *a: usados.append("script instalador") or "script")
+    monkeypatch.setattr(actualizacion, "lanzar", lambda script: None)
+    puente._nueva = {"version": "0.2.0"}
+
+    puente.actualizar()
+    while puente._actualizando:
+        QCoreApplication.processEvents()
+    puente.reiniciarParaActualizar()
+
+    assert usados == [esperado[0], "script " + esperado[0]]
+    puente.conn.close()
