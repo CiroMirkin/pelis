@@ -4,6 +4,7 @@ import re
 import unicodedata
 
 RE_IMDB_CARPETA = re.compile(r"\[tt\d+\]", re.IGNORECASE)
+# Acepta cualquier cantidad de dígitos para sacar `[tt123]` del título aunque el ID se descarte
 RE_IMDB = re.compile(r"tt\d{7,}", re.IGNORECASE)
 RE_ANIO_AL_FINAL = re.compile(r"^(.*?)[\s(]+(\d{4})\)?\s*$")
 ANIO_MIN, ANIO_MAX = 1880, 2100
@@ -19,10 +20,7 @@ ALIAS_IDIOMA = {
 
 
 def imdb_id(texto):
-    """IMDb ID que aparece en `texto` (suelto, entre corchetes o en un link de imdb.com), en minúsculas, o None.
-
-    Un IMDb ID real es `tt` y 7 o más dígitos: `tt123` no lo es.
-    """
+    """IMDb ID que aparece en `texto` (suelto, entre corchetes o en un link de imdb.com) y solo vale con `tt` y 7 o más dígitos porque `tt123` no es un ID real."""
     m = RE_IMDB.search(texto or "")
     return m.group(0).lower() if m else None
 
@@ -32,7 +30,7 @@ def anio_valido(anio):
 
 
 def separar_anio(texto):
-    """"Alien 1979" o "Alien (1979)" -> ("Alien", 1979); sin año válido al final -> (texto, None)."""
+    """"Alien 1979" o "Alien (1979)" retorna ("Alien", 1979) y sin año válido al final retorna (texto, None)."""
     texto = texto.strip()
     m = RE_ANIO_AL_FINAL.match(texto)
     if m and m.group(1).strip() and anio_valido(int(m.group(2))):

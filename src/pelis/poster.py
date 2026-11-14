@@ -119,12 +119,11 @@ def _cambiar(conn, pelicula_id, imagenes, elegir):
 
 
 def destino_omdb(conn, biblioteca, pelicula_id, reemplazar=False):
-    """Dónde bajar el póster de OMDb (`posters/poster.jpg`), o None si no hay que bajarlo.
+    """Sin `reemplazar` (escaneo) solo se baja si la película no tiene ningún póster.
 
-    Sin `reemplazar` (escaneo) solo se baja si la película no tiene ningún póster. Con `reemplazar`
-    (corregir match) se pisa el de OMDb aunque el actual sea una imagen propia, porque era el de un
-    match equivocado y, si no, seguiría en la rotación; sin póster de OMDb y con imágenes propias no se baja.
-    La carpeta `posters` la crea quien baja. No usa la red.
+    Con `reemplazar` (corregir match) se pisa el de OMDb aunque el actual sea una imagen propia porque era el de
+    un match equivocado y si no seguiría en la rotación, y solo no se baja si no hay póster de OMDb y hay imágenes propias.
+    No usa la red y la carpeta `posters` la crea quien baja.
     """
     folder_path = conn.execute("SELECT folder_path FROM peliculas WHERE id = ?", (pelicula_id,)).fetchone()[0]
     if reemplazar:
@@ -136,8 +135,7 @@ def destino_omdb(conn, biblioteca, pelicula_id, reemplazar=False):
 
 
 def registrar_omdb(conn, biblioteca, pelicula_id):
-    """Tras bajar el póster a `destino_omdb`, lo deja registrado. Pasa a ser el actual solo si no había
-    ninguno o el actual era de OMDb: una imagen propia que es la actual se respeta. Hace commit."""
+    """Pasa a ser el póster actual solo si no había ninguno o el actual era de OMDb porque una imagen propia que es la actual se respeta, y hace commit."""
     folder_path = conn.execute("SELECT folder_path FROM peliculas WHERE id = ?", (pelicula_id,)).fetchone()[0]
     destino = _carpeta_posters(Path(biblioteca) / folder_path) / NOMBRE_OMDB
     relativa = destino.relative_to(biblioteca).as_posix()

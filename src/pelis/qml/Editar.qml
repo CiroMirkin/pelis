@@ -13,6 +13,7 @@ Page {
     property bool errorImdb: false
     property string errorGuardar: ""
     property bool guardando: false
+    property bool traidoDeImdb: false  // Los datos de IMDb ya se guardaron al traerlos entonces no hay nada más que guardar
     property string imdbPendiente: ""  // ID a aplicar cuando se confirme
 
     readonly property var campos: ({
@@ -60,6 +61,7 @@ Page {
 
     function aplicar(imdbId) {
         estadoImdb = ""
+        traidoDeImdb = false
         puente.usarImdb(peliculaId, imdbId)
     }
 
@@ -77,6 +79,7 @@ Page {
             } else if (r.aplicado) {
                 pagina.candidatos = []
                 pagina.cargar()
+                pagina.traidoDeImdb = true
                 pagina.estadoImdb = ["Listo: los datos son los de IMDb (" + pagina.d.imdbId + ").", r.aviso]
                     .filter(x => x).join("\n")
             }
@@ -325,11 +328,6 @@ Page {
                 }
             }
 
-            Nota {
-                visible: pagina.errorGuardar !== ""
-                text: pagina.errorGuardar
-                color: Tema.alerta
-            }
             RowLayout {
                 Layout.topMargin: Tema.px(8)
                 spacing: Tema.px(12)
@@ -344,6 +342,13 @@ Page {
                     text: "Descartar cambios"
                     visible: pagina.modificado
                     onClicked: { pagina.cargar(); pagina.errorGuardar = "" }
+                }
+                Nota {
+                    readonly property bool yaGuardado: pagina.traidoDeImdb && !pagina.modificado
+                    visible: pagina.errorGuardar !== "" || yaGuardado
+                    text: pagina.errorGuardar !== "" ? pagina.errorGuardar
+                          : "Los datos de IMDb ya quedaron guardados al traerlos."
+                    color: pagina.errorGuardar !== "" ? Tema.alerta : Tema.crema
                 }
             }
         }

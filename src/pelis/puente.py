@@ -450,7 +450,7 @@ class Puente(QObject):
 
     @Slot(str, result=str)
     def imdbIdDe(self, texto):
-        """IMDb ID que aparece en `texto` (un ID o un link de imdb.com), o ''."""
+        """Devuelve '' si no hay ID porque QML no tiene None."""
         return nombres.imdb_id(texto) or ""
 
     @Slot(int, str)
