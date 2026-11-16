@@ -1,6 +1,6 @@
 # Instalador de Windows con Inno Setup
 
-Status: ready-for-human
+Status: done
 Blocked by: 01
 
 Ver "Windows" en la spec.
@@ -15,10 +15,11 @@ Ver "Windows" en la spec.
 
 ## Criterio de terminado
 - [x] Se arma el `.exe` en `windows-latest`
-- [ ] Instalada, la app arranca en modo instalado y guarda los datos en `%APPDATA%\Pelis`
-- [ ] Desinstalar deja la base y las preferencias
+- [x] Instalada, la app arranca en modo instalado y guarda los datos en `%APPDATA%\Pelis`
+- [x] Desinstalar deja la base y las preferencias
 
 ## Comments
 
 - 14/11/2026: `tools/pelis.iss` escrito (por usuario, sin UAC, español, acceso directo, `skipifsilent` en el «Abrir Pelis»). No se pudo compilar ni probar acá (no hay Windows). Se prueba con el workflow (issue 07) y a mano (issue 08).
 - 14/11/2026: el workflow (run 43607256065) compiló `Pelis-windows-v0.3.0-rc9-setup.exe` en `windows-latest`. Falta instalarlo a mano en Windows (issue 08).
+- 15/11/2026: instalado a mano en Windows con el `-setup.exe`, todo funciona bien.
