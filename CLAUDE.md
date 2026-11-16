@@ -15,3 +15,7 @@ Un solo contexto: `GLOSSARY.md` y `docs/adr/` en la raíz. See `docs/agents/doma
 ## Comentarios
 
 Al tocar código corro siempre la skill `tool:review-comments` sobre lo que cambié y aplico todos sus cambios sin esperar aprobación, salvo los que requieren una decisión del usuario (por ejemplo un hueco cuyo motivo no se encuentra, o dividir un archivo por una sección). Esos los dejo listados.
+
+## Ramas
+
+Todo cambio se commitea en `dev`. En `main` solo entra la publicación de una versión (`/version`).
