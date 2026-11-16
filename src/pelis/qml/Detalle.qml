@@ -210,10 +210,12 @@ Page {
             ColumnLayout {
                 Layout.alignment: Qt.AlignTop
                 Layout.preferredWidth: Tema.px(280)
+                Layout.maximumWidth: Tema.px(280)
                 spacing: Tema.px(10)
 
             Rectangle {
-                Layout.fillWidth: true
+                // Tamaño fijo 2:3: en pantalla completa no se estira ni se deforma
+                Layout.preferredWidth: Tema.px(280)
                 Layout.preferredHeight: Tema.px(420)
                 radius: Tema.px(2)
                 color: Tema.caja
