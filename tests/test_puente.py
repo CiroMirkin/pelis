@@ -475,3 +475,18 @@ def test_una_app_instalada_baja_el_instalador_y_una_portable_el_paquete(tmp_path
 
     assert usados == [esperado[0], "script " + esperado[0]]
     puente.conn.close()
+
+
+def test_hay_actualizacion_se_marca_con_el_resultado_de_la_busqueda(puente):
+    avisos = []
+    puente.hayActualizacionChanged.connect(lambda: avisos.append(puente.hayActualizacion))
+    assert puente.hayActualizacion is False
+    puente._actualizacion_lista({"nueva": {"version": "9.9.9"}})
+    puente._actualizacion_lista({"alDia": True, "silencioso": True})
+    assert avisos == [True, False]
+
+
+def test_el_chequeo_silencioso_no_pisa_el_estado_buscando(puente):
+    puente._buscando_actualizacion = True
+    puente._actualizacion_lista({"alDia": True, "silencioso": True})
+    assert puente.buscandoActualizacion is True

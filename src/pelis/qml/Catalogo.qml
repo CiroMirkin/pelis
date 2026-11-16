@@ -99,6 +99,7 @@ Page {
         const avisos = puente.avisosIniciales()
         if (avisos.length > 0) avisar(avisos.join(" "))
         if (escanearAlEntrar) dialogo.iniciar()
+        puente.buscarActualizacionAlAbrir()
     }
     StackView.onActivated: grilla.forceActiveFocus()
 
@@ -208,6 +209,7 @@ Page {
                 alinearDerecha: true
                 enBarra: true
                 focusPolicy: Qt.TabFocus
+                avisar: puente.hayActualizacion
                 KeyNavigation.down: grilla
                 OpcionMenu {
                     text: "Escanear biblioteca"
@@ -273,6 +275,7 @@ Page {
                     enabled: puente.puedeActualizar && !puente.buscandoActualizacion
                     text: "Buscar actualización"
                     icono: "actualizar"
+                    avisar: puente.hayActualizacion
                     onTriggered: actualizacion.iniciar()
                 }
             }

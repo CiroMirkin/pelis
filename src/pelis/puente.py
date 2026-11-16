@@ -243,6 +243,7 @@ class Puente(QObject):
     clavesRespondio = Signal("QVariantMap")
     capturaGuardada = Signal(bool)  # True = escrita; False = falló y el motivo va al log
     buscandoActualizacionChanged = Signal()
+    hayActualizacionChanged = Signal()
     actualizacionRespondio = Signal("QVariantMap")
     _actualizacionLista = Signal(object)  # desde el hilo de la consulta
     actualizandoChanged = Signal()
@@ -277,6 +278,7 @@ class Puente(QObject):
         self._buscando_actualizacion = False
         self._actualizacionLista.connect(self._actualizacion_lista)
         self._nueva = None  # la última versión nueva encontrada
+        self._chequeo_al_abrir = False  # el catálogo se recrea al cambiar la biblioteca y no debe consultar GitHub cada vez
         self._actualizando = False
         self._cancelar_descarga = threading.Event()
         self._descargado = None  # carpeta con la versión nueva (portable) o instalador bajado, listo para el cambio
@@ -742,6 +744,27 @@ class Puente(QObject):
     def buscandoActualizacion(self):
         return self._buscando_actualizacion
 
+    @Property(bool, notify=hayActualizacionChanged)
+    def hayActualizacion(self):
+        return self._nueva is not None
+
+    @Slot()
+    def buscarActualizacionAlAbrir(self):
+        """Chequeo silencioso al abrir que solo marca `hayActualizacion` sin diálogo ni error si no hay red."""
+        if not actualizacion.en_build() or self._buscando_actualizacion or self._chequeo_al_abrir:
+            return
+        self._chequeo_al_abrir = True
+
+        def correr():
+            try:
+                nueva = actualizacion.buscar(prerelease=self._prerelease)
+            except actualizacion.ErrorRed as e:
+                log.info("No se pudo buscar actualización al abrir: %s", e)
+                return
+            self._actualizacionLista.emit({"nueva": nueva} if nueva else {"alDia": True, "silencioso": True})
+
+        threading.Thread(target=correr, daemon=True).start()
+
     @Slot()
     def buscarActualizacion(self):
         """Consulta la última Release en un hilo aparte y responde por `actualizacionRespondio`."""
@@ -762,10 +785,17 @@ class Puente(QObject):
         threading.Thread(target=correr, daemon=True).start()
 
     def _actualizacion_lista(self, resultado):
-        self._buscando_actualizacion = False
-        self.buscandoActualizacionChanged.emit()
+        # El chequeo silencioso no toca `_buscando_actualizacion` porque podría cortar una búsqueda manual en curso
+        silencioso = resultado.get("silencioso", False)
+        if not silencioso:
+            self._buscando_actualizacion = False
+            self.buscandoActualizacionChanged.emit()
+        hubo = self._nueva is not None
         self._nueva = resultado.get("nueva")
-        self.actualizacionRespondio.emit(resultado)
+        if hubo != (self._nueva is not None):
+            self.hayActualizacionChanged.emit()
+        if not silencioso:
+            self.actualizacionRespondio.emit(resultado)
 
     @Property(bool, notify=actualizandoChanged)
     def actualizando(self):

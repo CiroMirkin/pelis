@@ -5,6 +5,7 @@ import QtQuick.Controls
 MenuItem {
     id: opcion
     property string icono: ""
+    property bool avisar: false
     implicitHeight: visible ? Tema.px(40) : 0
     opacity: enabled ? 1 : 0.4
     leftPadding: Tema.px(12)
@@ -24,6 +25,12 @@ MenuItem {
             font.pixelSize: Tema.px(16)
             font.letterSpacing: 0.3
             color: Tema.crema
+        }
+        Rectangle {
+            visible: opcion.avisar
+            anchors.verticalCenter: parent.verticalCenter
+            width: Tema.px(9); height: width; radius: width / 2
+            color: Tema.etiqueta
         }
     }
     background: Rectangle {
