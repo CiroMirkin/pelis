@@ -91,7 +91,7 @@ Peliculas\
 ```
 
 - **El nombre de la carpeta es el título** que se muestra, siempre. El año puede ir al final `Alien (1979)` o al principio `(1979) Alien`.
-- **Pósters**: imágenes `.jpg`, `.jpeg` o `.png` dentro de `posters/`, o sueltas con `poster`, `folder` o `cover` en el nombre (en ese orden de preferencia). Si no hay ninguna, se baja la de OMDb a `posters/poster.jpg`. Una imagen agregada después reemplaza a la de OMDb al abrir el detalle o la app. Para sacar una de la rotación, borrala.
+- **Pósters**: imágenes `.jpg`, `.jpeg`, `.jpe`, `.png` o `.webp` dentro de `posters/`, o sueltas con `poster`, `folder` o `cover` en el nombre (en ese orden de preferencia). Si no hay ninguna, se baja la de OMDb a `posters/poster.jpg`. Una imagen agregada después reemplaza a la de OMDb al abrir el detalle o la app. Para sacar una de la rotación, borrala.
 - **Subtítulos externos**: sueltos al lado del video, nunca en subcarpetas. Se buscan al abrir el reproductor, así que no hace falta re-escanear.
 - **Forzar el match**: si OMDb no la encuentra por título, poné el IMDb ID en el nombre de la carpeta, `Alien (1979) [tt0078748]`, o creá un `pelis.json` con solo `{"imdb_id": "tt0078748"}`, y volvé a escanear.
 - **Copiar películas entre bibliotecas**: copiá la carpeta entera y abrí la app. Si trae su `pelis.json`, entra con todos los datos y el póster; si no, aparece con el título de la carpeta hasta el próximo escaneo. Lo visto y el progreso no viajan: viven en la base.
