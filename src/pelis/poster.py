@@ -9,7 +9,7 @@ import random
 import re
 from pathlib import Path
 
-EXTENSIONES_POSTER = {".jpg", ".jpeg", ".png"}
+EXTENSIONES_POSTER = {".jpg", ".jpeg", ".jpe", ".png", ".webp"}
 # En orden de preferencia; la palabra puede estar en cualquier parte del nombre ("Alien-poster", "poster_2")
 PALABRAS_POSTER = ["poster", "folder", "cover"]
 DIAS_ROTACION = 7

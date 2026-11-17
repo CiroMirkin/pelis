@@ -40,7 +40,7 @@ def actual(conn, pelicula_id):
 
 
 @pytest.mark.parametrize("nombre", ["poster.jpg", "Alien-poster.png", "POSTER Alien.jpeg", "poster-goodfelas.jpg", "alien_poster_2.jpg",
-                                    "AlienPoster.jpg"])
+                                    "AlienPoster.jpg", "poster.jpe", "Alien-poster.webp"])
 def test_poster_con_la_palabra_en_cualquier_parte(biblioteca, conn, nombre):
     p = pelicula(conn, biblioteca, "Alien (1979)", "Alien.mp4", "fanart.jpg", nombre)
     assert poster.revisar(conn, biblioteca, p)

@@ -187,7 +187,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 ## Pósters
 
 * Como dueño de la biblioteca, elijo el póster de una película poniendo una imagen en su carpeta.
-  * Imágenes `.jpg`, `.jpeg` o `.png`. Cuentan las que están en una subcarpeta `posters`, y las sueltas en la carpeta cuyo nombre contiene "poster", "folder" o "cover" (en ese orden de preferencia).
+  * Imágenes `.jpg`, `.jpeg`, `.jpe`, `.png` o `.webp`. Cuentan las que están en una subcarpeta `posters`, y las sueltas en la carpeta cuyo nombre contiene "poster", "folder" o "cover" (en ese orden de preferencia).
   * Si no hay ninguna, se usa el póster descargado de internet.
   * Una imagen agregada después reemplaza al póster descargado; aparece al abrir el detalle o la app.
   * Si se borra el póster que se estaba usando, se toma otro de la carpeta.
