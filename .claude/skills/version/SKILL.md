@@ -27,9 +27,11 @@ Con `/version help` o `/version ayuda`, mostrá esto y no corras nada:
 
 ## Pasos
 
-1. **Python**: `python3` en Linux, `py -3` en Windows. El script solo usa la biblioteca estándar, así que no hace falta el entorno de `uv`.
-2. **Vista previa**: `<python> tools/version.py <nivel> [--rc] --ver`. El nivel sale del pedido (`patch`, `minor`, `major` o `final`; `--rc` solo, sin nivel, para la siguiente RC). Si no lo dice, preguntalo. Si el script se niega («No se puede: …»), mostrá el motivo y pará: no arregles el repo por tu cuenta.
-3. **Notas**: mostrá la versión vieja → nueva y las notas tal como salieron. Las lee el usuario final en la app. Si te pide reescribirlas, hacelo en lenguaje de usuario, en español, sin nombres de módulos ni jerga, y conservá los encabezados `## Nuevo` y `## Arreglos`. Guardalas en un archivo del scratchpad.
-4. **Confirmación**: preguntá si publica. Pushear dispara la Release pública, así que no sigas sin un sí explícito para esta versión.
-5. **Publicar**: `<python> tools/version.py <nivel> [--rc] --si [--notas <archivo>]`.
-6. **Reportar** el tag publicado. Si el script avisó que `origin/main` cambió, pasá sus instrucciones para deshacer y no las corras sin que te lo pidan.
+1. **Preparar main**: el script solo corre en `main` y los cambios viven en `dev`. Si estás en `dev` con todo commiteado, pusheá `dev` (con `--force-with-lease` solo si el usuario lo pidió), pasá a `main` y traé `dev`: `git merge --ff-only dev`, y si `main` divergió (tiene su `chore: versión vX`, que `dev` no), `git merge dev -m "chore: merge dev en main"`. Pedí el sí del usuario antes del merge. Hecho cuando `git log main..dev` está vacío.
+2. **Python**: `python3` en Linux, `py -3` en Windows. El script solo usa la biblioteca estándar, así que no hace falta el entorno de `uv`.
+3. **Vista previa**: `<python> tools/version.py <nivel> [--rc] --ver`. El nivel sale del pedido (`patch`, `minor`, `major` o `final`; `--rc` solo, sin nivel, para la siguiente RC). Si no lo dice, preguntalo. Si el script se niega («No se puede: …»), mostrá el motivo y pará: no arregles el repo por tu cuenta.
+4. **Notas**: mostrá la versión vieja → nueva y las notas tal como salieron. Las lee el usuario final en la app. Si te pide reescribirlas, hacelo en lenguaje de usuario, en español, sin nombres de módulos ni jerga, y conservá los encabezados `## Nuevo` y `## Arreglos`. Guardalas en un archivo del scratchpad.
+5. **Confirmación**: preguntá si publica. Pushear dispara la Release pública, así que no sigas sin un sí explícito para esta versión.
+6. **Publicar**: `<python> tools/version.py <nivel> [--rc] --si [--notas <archivo>]`.
+7. **Volver a dev**: con el tag publicado, `git checkout dev && git merge --ff-only main` para que `dev` reciba el commit `chore: versión` y no vuelvan a divergir. Luego `git push origin dev`.
+8. **Reportar** el tag publicado. Si el script avisó que `origin/main` cambió, pasá sus instrucciones para deshacer y no las corras sin que te lo pidan.
