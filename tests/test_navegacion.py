@@ -3,7 +3,7 @@ from pathlib import Path
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtQml import QJSEngine
 
-FUENTE = (Path(__file__).parents[1] / "src/pelis/qml/navegacion.js").read_text().replace(".pragma library", "")
+FUENTE = (Path(__file__).parents[1] / "src/pelis/qml/navegacion.js").read_text(encoding="utf-8").replace(".pragma library", "")
 
 # Pila falsa con la misma forma que StackView: depth, get, push, pop(hasta) y replace(cual, url, props)
 PILA = """
@@ -68,5 +68,5 @@ QML = Path(__file__).parents[1] / "src/pelis/qml"
 def test_retroceso_vuelve_en_todas_las_pantallas_que_vuelven_con_esc():
     # Los tests no cargan QML entonces se comprueba en el fuente que cada pantalla que vuelve con Esc declare también Backspace
     for nombre in ("Detalle", "Persona", "Editar", "Faltantes", "Visor", "Reproductor"):
-        fuente = (QML / f"{nombre}.qml").read_text()
+        fuente = (QML / f"{nombre}.qml").read_text(encoding="utf-8")
         assert '"Backspace"' in fuente, nombre

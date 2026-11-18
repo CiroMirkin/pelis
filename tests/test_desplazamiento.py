@@ -3,7 +3,7 @@ from pathlib import Path
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtQml import QJSEngine
 
-FUENTE = (Path(__file__).parents[1] / "src/pelis/qml/desplazamiento.js").read_text().replace(".pragma library", "")
+FUENTE = (Path(__file__).parents[1] / "src/pelis/qml/desplazamiento.js").read_text(encoding="utf-8").replace(".pragma library", "")
 QML = Path(__file__).parents[1] / "src/pelis/qml"
 
 
@@ -35,6 +35,6 @@ def test_no_se_pasa_del_rango_de_scroll():
 
 def test_catalogo_y_persona_siguen_el_foco_pero_no_el_mouse():
     for nombre in ("Catalogo", "Persona"):
-        fuente = (QML / f"{nombre}.qml").read_text()
+        fuente = (QML / f"{nombre}.qml").read_text(encoding="utf-8")
         assert "contentYParaVer" in fuente, nombre
         assert "grilla.porMouse = true" in fuente, nombre
