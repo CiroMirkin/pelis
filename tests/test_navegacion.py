@@ -60,3 +60,13 @@ def test_no_pisa_una_pantalla_ajena_que_quedo_en_el_segundo_nivel():
         abrirPersona(pila, "Ridley Scott")
         pila.ruta()
     """) == "Catalogo.qml > 1 > Editar.qml > Ridley Scott"
+
+
+QML = Path(__file__).parents[1] / "src/pelis/qml"
+
+
+def test_retroceso_vuelve_en_todas_las_pantallas_que_vuelven_con_esc():
+    # Los tests no cargan QML entonces se comprueba en el fuente que cada pantalla que vuelve con Esc declare también Backspace
+    for nombre in ("Detalle", "Persona", "Editar", "Faltantes", "Visor", "Reproductor"):
+        fuente = (QML / f"{nombre}.qml").read_text()
+        assert '"Backspace"' in fuente, nombre

@@ -321,6 +321,8 @@ Page {
     Shortcut { enabled: pagina.activa; sequence: "Left"; onActivated: pagina.pasar(-1) }
     Shortcut { enabled: pagina.activa; sequence: "Right"; onActivated: pagina.pasar(1) }
     Shortcut { enabled: pagina.activa; sequence: "F"; onActivated: { botonPantalla.alternar(); pagina.mostrarControles() } }
+    // Retroceso siempre vuelve y no hace antes lo que hace Esc, como cerrar el panel o salir de pantalla completa
+    Shortcut { enabled: pagina.activa; sequence: "Backspace"; onActivated: pagina.salir() }
     Shortcut {
         enabled: pagina.activa
         sequence: "Esc"

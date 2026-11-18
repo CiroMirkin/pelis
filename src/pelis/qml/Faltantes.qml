@@ -35,7 +35,7 @@ Page {
     Component.onCompleted: { cargar(); filtroCampo.forceActiveFocus() }
 
     Shortcut {
-        sequence: "Esc"
+        sequences: ["Esc", "Backspace"]
         enabled: pagina.StackView.status === StackView.Active && !confirmar.opened
         onActivated: pagina.StackView.view.pop()
     }

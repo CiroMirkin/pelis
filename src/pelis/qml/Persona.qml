@@ -20,7 +20,7 @@ Page {
     StackView.onActivated: { recargar(); grilla.forceActiveFocus() }
 
     Shortcut {
-        sequence: "Esc"
+        sequences: ["Esc", "Backspace"]
         enabled: pagina.StackView.status === StackView.Active
         onActivated: pagina.StackView.view.pop()
     }
