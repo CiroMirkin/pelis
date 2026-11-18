@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Basic as Basic
 import QtQuick.Dialogs
 import QtQuick.Layouts
+import "desplazamiento.js" as Desplazamiento
 import "duracion.js" as Duracion
 
 Page {
@@ -393,6 +394,13 @@ Page {
         keyNavigationWraps: false
         model: puente.catalogo
         highlightFollowsCurrentItem: false
+        // El mouse también cambia currentIndex al pasar por encima y no debe mover la vista
+        property bool porMouse: false
+        onCurrentIndexChanged: {
+            if (porMouse || currentIndex < 0) return
+            contentY = Desplazamiento.contentYParaVer(contentY, height, Math.floor(currentIndex / columnas) * cellHeight, cellHeight,
+                                                      Tema.px(6), -topMargin, Math.max(-topMargin, contentHeight + bottomMargin - height))
+        }
         ScrollBar.vertical: ScrollBar {}
         Keys.onReturnPressed: if (currentItem) pagina.abrir(currentItem.peliculaId)
         Keys.onEnterPressed: if (currentItem) pagina.abrir(currentItem.peliculaId)
@@ -428,7 +436,7 @@ Page {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onEntered: grilla.currentIndex = celda.index
+                onEntered: { grilla.porMouse = true; grilla.currentIndex = celda.index; grilla.porMouse = false }
                 onClicked: pagina.abrir(celda.peliculaId)
             }
         }
