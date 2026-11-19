@@ -1,7 +1,11 @@
-"""Reglas del catálogo, sin Qt: épocas, tarjetas, incompletas y la recomendada."""
+"""Reglas del catálogo, sin Qt: épocas, duraciones, tarjetas, incompletas y la recomendada."""
 
 ULTIMA_DECADA = 2000  # las posteriores no se agrupan
 ANIOS_SUELTOS = 4  # los últimos años, incluido el actual, se filtran de a uno
+
+HORA_MS = 3_600_000
+MARGEN_HORA_MS = 35 * 60_000  # Hasta 1:35 cuenta como 1 h y 1:36 ya es 2 h
+MAX_HORAS = 3  # lo más largo también entra en la última opción
 
 CLAVES_TARJETA = ("peliculaId", "titulo", "anio", "poster", "progreso", "vista", "disco")
 
@@ -26,6 +30,21 @@ def en_periodo(anio, clave):
     if clave.endswith("s"):
         return anio // 10 * 10 == int(clave[:-1])
     return anio == int(clave)
+
+
+def horas(duracion_ms):
+    """Opción de duración de una película: 1, 2 o 3 horas (0 si todavía no se midió).
+
+    Cada hora llega hasta 35 minutos después, por ejemplo 1:35 es 1 h y 1:36 es 2 h.
+    Lo corto cuenta como 1 h y lo que pasa de 2:35 como MAX_HORAS.
+    """
+    if not duracion_ms or duracion_ms <= 0:
+        return 0
+    return min(MAX_HORAS, max(1, -(-(duracion_ms - MARGEN_HORA_MS) // HORA_MS)))
+
+
+def duraciones(horas_presentes):
+    return [(str(h), f"{h} h") for h in sorted({h for h in horas_presentes if h})]
 
 
 def url_poster(biblioteca, relativa):

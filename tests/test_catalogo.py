@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pelis import db, poster
 from pelis.catalogo import (
-    Recomendacion, es_incompleta, filmografia, periodos, tarjeta, url_poster,
+    Recomendacion, duraciones, es_incompleta, filmografia, horas, periodos, tarjeta, url_poster,
 )
 from pelis.puente import ModeloCatalogo
 
@@ -236,3 +236,75 @@ def test_recomendada_poster_y_duracion_sin_cambio_devuelven_false():
     assert r.duracion(1, 9000)
     assert r.datos["duracion"] == 9000
 
+
+
+MIN = 60_000
+
+
+def test_horas_corta_en_1_35_y_lo_largo_entra_en_3():
+    assert [horas(m * MIN) for m in (45, 90, 95, 96, 100, 155, 156, 250)] == [1, 1, 1, 2, 2, 2, 3, 3]
+    assert [horas(d) for d in (0, None)] == [0, 0]
+
+
+def test_duraciones_solo_las_presentes_sin_las_no_medidas():
+    assert duraciones([0, 3, 1, 3]) == [("1", "1 h"), ("3", "3 h")]
+
+
+def con_duraciones(*peliculas):
+    """peliculas: (titulo, year, minutos)"""
+    modelo, conn = catalogo(*[(t, y, False) for t, y, _ in peliculas])
+    for i, (_, _, minutos) in enumerate(peliculas, 1):
+        db.guardar_duracion(conn, i, minutos * MIN)
+    modelo.recargar(db.catalogo(conn), Path("."))
+    return modelo, conn
+
+
+def test_filtrar_por_duracion_y_combinar_con_epoca():
+    modelo, _ = con_duraciones(("Corta", 1985, 80), ("Media", 1986, 100), ("Larga", 1990, 170), ("Otra", 1987, 110))
+    assert [d["clave"] for d in modelo.duraciones] == ["1", "2", "3"]
+    modelo.filtrarDuracion("2")
+    assert titulos(modelo) == ["Media", "Otra"]
+    modelo.filtrarPeriodo("1980s")
+    modelo.filtrarDuracion("3")
+    assert titulos(modelo) == []
+    modelo.filtrarDuracion("")
+    assert titulos(modelo) == ["Corta", "Media", "Otra"]
+
+
+def test_peliculas_sin_duracion_solo_se_ven_en_todas():
+    modelo, _ = con_duraciones(("Medida", 1985, 100), ("Sin medir", 1986, 0), ("Larga", 1987, 150))
+    assert [d["clave"] for d in modelo.duraciones] == ["2"]
+    modelo.filtrarDuracion("2")
+    assert titulos(modelo) == ["Larga", "Medida"]
+
+
+def test_elegir_duracion_pasa_el_filtro_de_vistas_a_todas():
+    modelo, _ = con_duraciones(("Corta", 1985, 80), ("Media", 1986, 100))
+    modelo.filtrarVistas("noVistas")
+    modelo.filtrarDuracion("1")
+    assert modelo.vistas == "todas"
+    assert titulos(modelo) == ["Corta"]
+
+
+def test_duracion_elegida_que_desaparece_vuelve_a_todas():
+    modelo, conn = con_duraciones(("Corta", 1985, 80), ("Media", 1986, 100))
+    modelo.filtrarDuracion("1")
+    db.cambiar_estado(conn, 1, "faltante")
+    modelo.recargar(db.catalogo(conn), Path("."))
+    assert modelo.duracion == ""
+    assert titulos(modelo) == ["Media"]
+
+
+def test_cuenta_como_1_h_una_pelicula_de_30_minutos():
+    assert horas(30 * MIN) == 1
+
+
+def test_avisa_a_la_barra_cuando_aparecen_o_cambian_las_duraciones():
+    modelo, conn = con_duraciones(("Corta", 1985, 80), ("Media", 1986, 100))
+    avisos = []
+    modelo.duracionChanged.connect(lambda: avisos.append(("elegida", modelo.duracion)))
+    modelo.duracionesChanged.connect(lambda: avisos.append(("opciones", [d["clave"] for d in modelo.duraciones])))
+    modelo.filtrarDuracion("2")
+    db.guardar_duracion(conn, 1, 170 * MIN)
+    modelo.recargar(db.catalogo(conn), Path("."))
+    assert avisos == [("elegida", "2"), ("opciones", ["2", "3"])]

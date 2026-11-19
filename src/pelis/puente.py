@@ -19,8 +19,8 @@ from PySide6.QtMultimedia import QMediaPlayer
 
 from . import __version__, actualizacion, capturas, db, edicion, instalador, metadatos, pantalla, poster, subtitulos
 from .catalogo import (
-    CLAVES_TARJETA, Recomendacion, en_periodo, es_incompleta, filmografia, periodos, tarjeta,
-    url_poster,
+    CLAVES_TARJETA, Recomendacion, duraciones, en_periodo, es_incompleta, filmografia, horas, periodos,
+    tarjeta, url_poster,
 )
 from . import nombres
 from .nombres import idioma_de, normalizar
@@ -42,6 +42,8 @@ class ModeloCatalogo(QAbstractListModel):
 
     periodosChanged = Signal()
     periodoChanged = Signal()
+    duracionesChanged = Signal()
+    duracionChanged = Signal()
     vistasChanged = Signal()
     incompletasChanged = Signal()
 
@@ -54,6 +56,8 @@ class ModeloCatalogo(QAbstractListModel):
         self._anio_actual = anio_actual  # None = el de hoy
         self._periodo = ""  # "" = todos, "1960s" = una década, "2025" = un año
         self._periodos = []
+        self._duracion = ""  # "" = todas, "2" = las de 2 h
+        self._duraciones = []
         self._solo_incompletas = False
 
     def recargar(self, filas, biblioteca, discos=()):
@@ -74,6 +78,13 @@ class ModeloCatalogo(QAbstractListModel):
         if self._periodo and self._periodo not in [o["clave"] for o in opciones]:
             self._periodo = ""
             self.periodoChanged.emit()
+        opciones = [{"clave": c, "etiqueta": e} for c, e in duraciones([f["_horas"] for f in self._todas])]
+        if opciones != self._duraciones:
+            self._duraciones = opciones
+            self.duracionesChanged.emit()
+        if self._duracion and self._duracion not in [o["clave"] for o in opciones]:
+            self._duracion = ""
+            self.duracionChanged.emit()
         self._aplicar()
 
     @staticmethod
@@ -84,6 +95,7 @@ class ModeloCatalogo(QAbstractListModel):
                 "disco": etiqueta,
                 "_busqueda": normalizar(f"{f['titulo']} | {f['personas'] or ''}"),
                 "_incompleta": es_incompleta(f, biblioteca),
+                "_horas": horas(f["duracion_ms"]),
             }
             for f in filas
         ]
@@ -95,6 +107,14 @@ class ModeloCatalogo(QAbstractListModel):
     @Property(str, notify=periodoChanged)
     def periodo(self):
         return self._periodo
+
+    @Property(list, notify=duracionesChanged)
+    def duraciones(self):
+        return self._duraciones
+
+    @Property(str, notify=duracionChanged)
+    def duracion(self):
+        return self._duracion
 
     @Property(str, notify=vistasChanged)
     def vistas(self):
@@ -111,6 +131,16 @@ class ModeloCatalogo(QAbstractListModel):
             self._periodo = clave
             self.periodoChanged.emit()
             # Elegir otra época es pedir algo nuevo entonces se suelta el filtro de vistas
+            if clave:
+                self._poner_vistas("todas")
+        self._aplicar()
+
+    @Slot(str)
+    def filtrarDuracion(self, clave):
+        if clave != self._duracion:
+            self._duracion = clave
+            self.duracionChanged.emit()
+            # Pedir una duración nueva suelta el filtro de vistas igual que la época
             if clave:
                 self._poner_vistas("todas")
         self._aplicar()
@@ -153,6 +183,7 @@ class ModeloCatalogo(QAbstractListModel):
             f for f in self._todas
             if (vista is None or f["vista"] == vista)
             and en_periodo(f["anio"], self._periodo)
+            and (not self._duracion or str(f["_horas"]) == self._duracion)
             and (not self._solo_incompletas or f["_incompleta"])
             and all(p in f["_busqueda"] for p in self._palabras)
         ]
