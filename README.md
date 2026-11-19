@@ -20,7 +20,7 @@ Está pensada para un disco compartido (NTFS) que se monta tanto en Windows como
 
 ## Features
 
-- **Catálogo** en grilla de pósters: las que están a medias primero, con su barra de progreso, y las vistas al final. Filtros Todas / Sin ver / Vistas, por época (décadas y los últimos 4 años) y por datos o póster faltantes.
+- **Catálogo** en grilla de pósters: las que están a medias primero, con su barra de progreso, y las vistas al final. Filtros Todas / Sin ver / Vistas, por época (décadas y los últimos 4 años), por duración (1 h, 2 h, 3 h) y por datos o póster faltantes.
 - **Buscador** por título, director y reparto, sin distinguir mayúsculas ni acentos.
 - **Recomendación a pedido**: con un botón, una película al azar que no viste ni empezaste.
 - **Detalle** con sinopsis, año, género, país, dirección y elenco, y a qué hora termina si la empezás ahora. Reproducir, continuar, marcar como vista, abrir la carpeta o abrir con el reproductor del sistema.
@@ -172,7 +172,7 @@ src/pelis/
 ├── archivo_metadatos.py  lectura y escritura de pelis.json
 ├── edicion.py            edición a mano, corrección del match y faltantes
 ├── poster.py             set de pósters, el actual y la rotación
-├── catalogo.py           épocas, tarjetas, incompletas y la recomendada
+├── catalogo.py           épocas, duraciones, tarjetas, incompletas y la recomendada
 ├── capturas.py           guardar y listar capturas
 ├── omdb.py, tmdb.py      clientes de metadatos
 ├── subtitulos.py         subtítulos externos y elección de pistas
