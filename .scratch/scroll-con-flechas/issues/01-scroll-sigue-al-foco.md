@@ -6,7 +6,7 @@ Pista de causa (sin verificar): las grillas tienen `highlightFollowsCurrentItem:
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] En el catálogo, con `↓` repetido, el foco llega a filas que no se veían y la vista baja hasta mostrarlas por completo, incluido el halo del foco.
 - [ ] Con `↑` la vista sube igual cuando el foco sale por arriba.

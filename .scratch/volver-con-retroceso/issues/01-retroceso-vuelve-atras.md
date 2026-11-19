@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Retroceso vuelve a la vista anterior desde detalle, persona, editar, faltantes, visor y reproductor.
 - [ ] En el reproductor y el visor vuelve directo, aunque haya un panel abierto o esté en pantalla completa.

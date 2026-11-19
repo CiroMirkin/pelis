@@ -1,6 +1,6 @@
 # Disco externo: compartir la biblioteca con los discos
 
-Status: needs-triage
+Status: done
 
 Anotada el 2026-11-14. Decisiones cerradas el 2026-11-14.
 
