@@ -305,6 +305,9 @@ class Puente(QObject):
         self._sesion = None
         self._consultando = False
         self._midiendo = set()  # ids con una medición de duración en curso
+        self._tanda = None  # películas por medir en segundo plano, una por vez; None si no hay tanda
+        self._tanda_medidas = 0
+        self._sin_medir = set()  # ids que no se pudieron medir para no reintentarlos en bucle
         self._imdbListo.connect(self._imdb_listo)
         self._buscando_actualizacion = False
         self._actualizacionLista.connect(self._actualizacion_lista)
@@ -353,6 +356,47 @@ class Puente(QObject):
                 log.warning("No se pudo leer el catálogo de «%s»: %s", f.etiqueta, e)
         self._catalogo.recargar(filas, self.config.biblioteca or Path(), grupos)
         self.contadoresChanged.emit()
+
+    @Slot()
+    def medirPendientes(self):
+        """Mide una por vez las películas sin duración para que el filtro de duración las incluya.
+        Lo llama la UI porque crear un QMediaPlayer necesita el loop de Qt y no se puede desde el constructor."""
+        if self._tanda is not None:
+            return
+        pendientes = []
+        for fuente in self._fuentes():
+            if not fuente.escribible:
+                continue
+            try:
+                filas = fuente.conn.execute(
+                    "SELECT id, video_path FROM peliculas WHERE estado = 'activa' AND COALESCE(duracion_ms, 0) = 0"
+                ).fetchall()
+            except sqlite3.Error as e:  # un disco que se fue a mitad de la lectura
+                log.warning("No se pudo leer las duraciones de «%s»: %s", fuente.etiqueta, e)
+                continue
+            pendientes += [(fuente, f["id"], f["video_path"]) for f in filas
+                           if fuente.global_id(f["id"]) not in self._sin_medir]
+        if pendientes:
+            self._tanda = pendientes
+            self._tanda_medidas = 0
+            self._medir_siguiente()
+
+    def _medir_siguiente(self):
+        if not self._tanda:
+            medidas, self._tanda = self._tanda_medidas, None
+            if medidas:
+                self._recargar_catalogo()
+            return
+        fuente, local, video_path = self._tanda.pop()
+
+        def terminada(ok):
+            if ok:
+                self._tanda_medidas += 1
+            else:
+                self._sin_medir.add(fuente.global_id(local))
+            self._medir_siguiente()
+
+        self._medir_duracion(fuente, local, video_path, terminada)
 
     # --- discos externos ---
 
@@ -490,11 +534,14 @@ class Puente(QObject):
             if not p["duracion_ms"]:
                 self._medir_duracion(fuente, separar(p["id"])[1], p["video_path"])
 
-    def _medir_duracion(self, fuente, local, video_path):
+    def _medir_duracion(self, fuente, local, video_path, terminada=None):
         """La duración la da el reproductor al cargar; para la recomendada y el detalle se mide sin reproducir.
-        En un disco en solo lectura no se mide porque no hay dónde guardarla."""
+        En un disco en solo lectura no se mide porque no hay dónde guardarla.
+        `terminada(ok)` avisa cuando acabó, con ok falso si no se pudo medir y guardar."""
         pelicula_id = fuente.global_id(local)
         if pelicula_id in self._midiendo or not fuente.escribible:
+            if terminada:
+                terminada(False)
             return
         self._midiendo.add(pelicula_id)
         medidor = QMediaPlayer(self)
@@ -502,16 +549,20 @@ class Puente(QObject):
         def estado(status):
             if status not in (QMediaPlayer.LoadedMedia, QMediaPlayer.InvalidMedia):
                 return
+            ok = False
             if status == QMediaPlayer.LoadedMedia and medidor.duration() > 0:
                 try:
                     db.guardar_duracion(fuente.conn, local, medidor.duration())
                 except sqlite3.Error as e:  # el disco se fue mientras se medía
                     log.warning("No se pudo guardar la duración en «%s»: %s", fuente.etiqueta, e)
                 else:
+                    ok = True
                     self._avisar_recomendada(self._recomendacion.duracion(pelicula_id, medidor.duration()))
                     self.duracionMedida.emit(pelicula_id, medidor.duration())
             self._midiendo.discard(pelicula_id)
             medidor.deleteLater()
+            if terminada:
+                terminada(ok)
 
         medidor.mediaStatusChanged.connect(estado)
         medidor.setSource(QUrl.fromLocalFile(str(fuente.biblioteca / video_path)))

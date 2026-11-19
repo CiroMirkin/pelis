@@ -190,7 +190,7 @@ Page {
                 font.family: Tema.texto
                 font.pixelSize: Tema.px(14)
             }
-            SelectorEpoca {
+            SelectorFiltro {
                 id: selectorEpoca
                 visible: periodos.length > 1
                 Layout.preferredHeight: Tema.px(38)
