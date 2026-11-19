@@ -1,6 +1,6 @@
 .pragma library
 
-// Duración redondeada al minuto: "2 h 5 min", "2 h", "45 min"; vacío si no se conoce
+// Duración vacia si no existe o redondeada al minuto si existe: "2 h 5 min", "2 h", "45 min"
 function texto(ms) {
     const minutos = Math.round((ms || 0) / 60000)
     if (minutos <= 0)

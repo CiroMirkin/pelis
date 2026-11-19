@@ -63,7 +63,7 @@ Button {
                    ? (boton.down ? Qt.darker(Tema.etiqueta, 1.15) : Tema.etiqueta)
                    // Un checkable prendido (ej. la grilla de tercios del visor) queda como apretado
                    : (boton.down || boton.checked ? Tema.linea : boton.hovered ? Tema.caja : "transparent")
-            border.width: boton.principal || boton.sinBorde ? 0 : 2
+            border.width: boton.principal || boton.sinBorde || boton.enBarra ? 0 : 2
             border.color: Qt.alpha(Tema.crema, boton.enabled ? 0.55 : 0.2)
         }
     }

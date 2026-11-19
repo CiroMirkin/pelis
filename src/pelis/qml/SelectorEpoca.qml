@@ -58,8 +58,6 @@ AbstractButton {
             anchors.fill: parent
             radius: Tema.px(3)
             color: selector.down || lista.visible ? Tema.linea : selector.hovered ? Tema.caja : "transparent"
-            border.width: 2
-            border.color: Qt.alpha(Tema.crema, 0.55)
         }
     }
 
@@ -122,7 +120,6 @@ AbstractButton {
                     anchors.leftMargin: Tema.px(28)
                     anchors.verticalCenter: parent.verticalCenter
                     text: fila.modelData.etiqueta
-                    // En la condensada: la Atkinson dibuja el cero tachado (Regla del Lomo)
                     font.family: Tema.rotulo
                     font.pixelSize: Tema.px(16)
                     font.letterSpacing: 0.3
