@@ -217,7 +217,6 @@ Page {
                 // A la grilla y no a la ✕: un Enter de más gastaría la recomendación de esta apertura
                 onClicked: { puente.recomendar(); grilla.forceActiveFocus() }
             }
-            BotonPantallaCompleta { enBarra: true }
             BotonMas {
                 alinearDerecha: true
                 enBarra: true
@@ -270,12 +269,12 @@ Page {
                 }
                 OpcionMenu {
                     text: "Agregar disco…"
-                    icono: "carpeta"
+                    icono: "agregar-disco"
                     onTriggered: elegirDisco.open()
                 }
                 OpcionMenu {
                     text: "Discos…"
-                    icono: "carpeta"
+                    icono: "disco"
                     onTriggered: discos.iniciar()
                 }
                 OpcionMenu {
@@ -292,6 +291,7 @@ Page {
                     onTriggered: actualizacion.iniciar()
                 }
             }
+            BotonPantallaCompleta { enBarra: true }
         }
     }
 
