@@ -12,7 +12,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
 * **[Biblioteca](#biblioteca)**: una carpeta por película en el disco; el nombre de la carpeta es el título.
 * **[Películas nuevas al abrir](#películas-nuevas-al-abrir)**: la app suma sola, sin internet, lo que se copió desde la última vez.
 * **[Escanear biblioteca](#escanear-biblioteca)**: busca en internet los datos y pósters de las películas que no los tienen, y muestra un informe.
-* **[Catálogo](#catálogo)**: grilla de pósters con búsqueda y filtros por vistas, época y datos incompletos.
+* **[Catálogo](#catálogo)**: grilla de pósters con búsqueda y filtros por vistas, época, duración y datos incompletos.
 * **[Recomendación a pedido](#recomendación-a-pedido)**: con un botón, sugiere al azar una película que no se vio ni se empezó.
 * **[Detalle](#detalle)**: sinopsis, datos, dirección y elenco, a qué hora termina, y acceso a reproducir.
 * **[Personas](#personas)**: ver todas las películas de la biblioteca de un director o actor.
@@ -86,6 +86,12 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
   * Los años intermedios, como 2015, no tienen opción propia: esas películas solo se ven en "Todos".
   * Solo aparecen las épocas que tienen películas en la biblioteca, y el filtro solo se muestra si hay más de una.
 
+* Como espectador, puedo filtrar por duración.
+  * Las opciones son 1 h, 2 h y 3 h: 1 h llega hasta 1:35 (incluye lo más corto), 2 h hasta 2:35 y 3 h es todo lo que pasa de eso.
+  * Se combina con la época; elegir una duración vuelve el filtro de vistas a Todas.
+  * Las películas cuya duración todavía no se midió solo se ven en "Todas".
+  * Solo aparecen las duraciones que tienen películas, y el filtro solo se muestra si hay más de una.
+
 * Como dueño de la biblioteca, puedo ver solo las películas a las que les faltan datos o póster.
   * Se ve cuántas hay; si no hay ninguna, el filtro no se ofrece.
 
@@ -105,7 +111,7 @@ Pelis es un catálogo y reproductor de escritorio para una colección propia de 
   * El botón no aparece si no hay ninguna película sin ver y sin empezar, y aparece si un escaneo trae alguna. Marcar todas como vistas no gasta un botón que no usé.
   * Tocándola abro su detalle.
   * Desaparece si la descarto, si la empiezo a ver o si la marco como vista (sola o junto con todas las demás).
-  * El botón y la franja se ocultan mientras busco o filtro por vistas, por época o por datos incompletos.
+  * El botón y la franja se ocultan mientras busco o filtro por vistas, por época, por duración o por datos incompletos.
 
 ## Detalle
 

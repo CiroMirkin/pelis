@@ -490,3 +490,50 @@ def test_el_chequeo_silencioso_no_pisa_el_estado_buscando(puente):
     puente._buscando_actualizacion = True
     puente._actualizacion_lista({"alDia": True, "silencioso": True})
     assert puente.buscandoActualizacion is True
+
+
+def sin_duracion(puente, nombre):
+    return db.insertar_pelicula(puente.conn, nombre, None, nombre, f"{nombre}/{nombre}.mp4")
+
+
+def medidor_falso(puente, monkeypatch, fallan=()):
+    """Reemplaza la medición real (necesita el reproductor de Qt) y devuelve los videos que se pidieron medir."""
+    pedidos = []
+
+    def medir(fuente, local, video_path, terminada=None):
+        pedidos.append(video_path)
+        ok = video_path not in fallan
+        if ok:
+            db.guardar_duracion(fuente.conn, local, 100 * 60_000)
+        terminada(ok)
+
+    monkeypatch.setattr(puente, "_medir_duracion", medir)
+    return pedidos
+
+
+def test_mide_solo_las_peliculas_sin_duracion(puente, monkeypatch):
+    pelicula(puente, "Medida")
+    sin_duracion(puente, "Alien")
+    sin_duracion(puente, "Brazil")
+    pedidos = medidor_falso(puente, monkeypatch)
+    puente.medirPendientes()
+    assert sorted(pedidos) == ["Alien/Alien.mp4", "Brazil/Brazil.mp4"]
+
+
+def test_no_reintenta_las_que_no_se_pudieron_medir(puente, monkeypatch):
+    sin_duracion(puente, "Alien")
+    sin_duracion(puente, "Rota")
+    pedidos = medidor_falso(puente, monkeypatch, fallan={"Rota/Rota.mp4"})
+    puente.medirPendientes()
+    puente.medirPendientes()
+    assert sorted(pedidos) == ["Alien/Alien.mp4", "Rota/Rota.mp4"]
+
+
+def test_al_terminar_la_tanda_el_filtro_ofrece_la_duracion_medida(puente, monkeypatch):
+    sin_duracion(puente, "Alien")
+    pelicula(puente, "Corta")
+    puente._recargar_catalogo()
+    assert [d["clave"] for d in puente.catalogo.duraciones] == ["1"]
+    medidor_falso(puente, monkeypatch)
+    puente.medirPendientes()
+    assert [d["clave"] for d in puente.catalogo.duraciones] == ["1", "2"]
