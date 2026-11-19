@@ -19,3 +19,5 @@
 **Progreso**: la posición desde la que sigue una película al volver a reproducirla. Queda en 0 si no se llegó a ver 3 minutos o si se llegó al final.
 
 **Vista**: la película se vio hasta el final, o el usuario la marcó así. Marcarla vista no borra el progreso.
+
+**Calidad**: Alta o Baja, según la resolución del archivo de video: Alta si el ancho es 1280 o más, o la altura 720 o más; Baja en cualquier otro caso. Es técnica, no una valoración. Se mide junto con la duración y se muestra en el detalle.
