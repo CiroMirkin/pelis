@@ -4,7 +4,7 @@ Catalogo 1.0 Catalogo.qml
 Detalle 1.0 Detalle.qml
 Reproductor 1.0 Reproductor.qml
 DialogoEscaneo 1.0 DialogoEscaneo.qml
-SelectorEpoca 1.0 SelectorEpoca.qml
+SelectorFiltro 1.0 SelectorFiltro.qml
 EtiquetaVista 1.0 EtiquetaVista.qml
 Campo 1.0 Campo.qml
 Editar 1.0 Editar.qml

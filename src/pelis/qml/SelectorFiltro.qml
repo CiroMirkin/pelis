@@ -1,14 +1,16 @@
 import QtQuick
 import QtQuick.Controls
 
-// Selector de época: un botón que despliega las décadas y los años recientes presentes en la biblioteca
+// Selector de filtro: un botón que despliega las opciones presentes en la biblioteca (épocas, duraciones)
 AbstractButton {
     id: selector
+    property string rotulo: "Época"  // lo que dice el botón sin filtro
+    property string rotuloTodas: "Todos"
     property var periodos: []  // [{clave, etiqueta}], armados en Python
     property string periodo: ""
     signal elegido(string clave)
 
-    readonly property var todas: [{ clave: "", etiqueta: "Todos" }].concat(periodos)
+    readonly property var todas: [{ clave: "", etiqueta: rotuloTodas }].concat(periodos)
 
     function etiqueta(clave) {
         const o = todas.find(o => o.clave === clave)
@@ -29,7 +31,7 @@ AbstractButton {
         spacing: Tema.px(6)
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: selector.periodo === "" ? "Época" : selector.etiqueta(selector.periodo)
+            text: selector.periodo === "" ? selector.rotulo : selector.etiqueta(selector.periodo)
             font.family: Tema.rotulo
             font.pixelSize: Tema.px(15)
             font.weight: Font.DemiBold

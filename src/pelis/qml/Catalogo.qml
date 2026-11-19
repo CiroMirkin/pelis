@@ -12,11 +12,12 @@ Page {
 
     // Texto con el que se filtró la grilla por última vez (el campo puede ir adelantado por la espera)
     property string filtro: ""
-    // Vale "todas", "vistas" o "noVistas" y vive en el modelo para que buscar o elegir época lo restablezca
+    // Vale "todas", "vistas" o "noVistas" y vive en el modelo para que buscar o elegir época o duración lo restablezca
     readonly property string vistas: puente.catalogo.vistas
     // La recomendación (botón y franja) solo se ofrece con el catálogo sin buscar ni filtrar
     readonly property bool sinFiltros: filtro === "" && puente.catalogo.vistas !== "vistas"
-                                       && puente.catalogo.periodo === "" && !puente.catalogo.soloIncompletas
+                                       && puente.catalogo.periodo === "" && puente.catalogo.duracion === ""
+                                       && !puente.catalogo.soloIncompletas
 
     function filtrarVistas(cuales) { puente.catalogo.filtrarVistas(cuales) }
 
@@ -175,6 +176,7 @@ Page {
                 Connections {
                     target: puente
                     function onAvisoDisco(texto) { pagina.avisar(texto) }
+                    function onEscaneoTerminado() { puente.medirPendientes() }
                     function onImportacionTerminada(n) {
                         sumadas.text = n === 1 ? "Se sumó 1 película" : "Se sumaron " + n + " películas"
                         sumadas.visible = true
@@ -195,6 +197,16 @@ Page {
                 periodos: puente.catalogo.periodos
                 periodo: puente.catalogo.periodo
                 onElegido: (clave) => puente.catalogo.filtrarPeriodo(clave)
+            }
+            SelectorFiltro {
+                id: selectorDuracion
+                visible: periodos.length > 1
+                Layout.preferredHeight: Tema.px(38)
+                rotulo: "Duración"
+                rotuloTodas: "Todas"
+                periodos: puente.catalogo.duraciones
+                periodo: puente.catalogo.duracion
+                onElegido: (clave) => puente.catalogo.filtrarDuracion(clave)
             }
             Boton {
                 visible: puente.puedeRecomendar && pagina.sinFiltros
@@ -449,10 +461,13 @@ Page {
               ? "Ninguna película coincide con «" + pagina.filtro + "».\nEsc para ver todas."
               : puente.catalogo.soloIncompletas
                 ? "No hay películas sin datos o sin portada"
-                  + (pagina.vistas !== "todas" || puente.catalogo.periodo !== "" ? " con estos filtros." : ".")
-              : puente.catalogo.periodo !== ""
+                  + (pagina.vistas !== "todas" || puente.catalogo.periodo !== "" || puente.catalogo.duracion !== ""
+                     ? " con estos filtros." : ".")
+              : puente.catalogo.periodo !== "" || puente.catalogo.duracion !== ""
                 ? "No hay películas " + (pagina.vistas === "vistas" ? "vistas " : pagina.vistas === "noVistas" ? "sin ver " : "")
-                  + "de " + selectorEpoca.etiqueta(puente.catalogo.periodo).toLowerCase() + "."
+                  + [puente.catalogo.periodo !== "" ? "de " + selectorEpoca.etiqueta(puente.catalogo.periodo).toLowerCase() : "",
+                     puente.catalogo.duracion !== "" ? "de " + selectorDuracion.etiqueta(puente.catalogo.duracion) : ""]
+                    .filter(x => x).join(" y ") + "."
               : pagina.vistas === "vistas" ? "Todavía no marcaste ninguna película como vista."
               : pagina.vistas === "noVistas" ? "Ya viste todas las películas."
               : "Todavía no hay películas.\nTocá «…» › «Escanear biblioteca» para cargarlas."
