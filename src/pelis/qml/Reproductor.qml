@@ -183,20 +183,38 @@ Page {
 
     // Overlay propio de subtítulos externos. Los embebidos los dibuja el VideoOutput: pasar los
     // frames por un sink intermedio para quitarles el texto los copiaba a RAM y la peli se trababa.
-    Text {
+    Item {
+        id: subsExternos
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: pagina.controlesVisibles ? barra.height + 16 : 48
         width: parent.width * 0.85
-        horizontalAlignment: Text.AlignHCenter
-        wrapMode: Text.WordWrap
-        color: puente.subsColor
-        style: Text.Outline
-        styleColor: "black"
-        font.family: Tema.texto
-        font.bold: true
-        font.pixelSize: Math.max(20, pagina.height / 24) * puente.subsTamano
-        text: pagina.modoSubs === 1 ? (pagina.revisionExterno, puente.textoEn(player.position)) : ""
+        height: textoSubs.height
+        readonly property real tamano: Math.max(20, pagina.height / 24) * puente.subsTamano
+        // Contorno negro fijo de 5 px que se dibuja con copias desplazadas porque el Text.Outline de Qt es de 1 px
+        readonly property real grosor: 5
+        readonly property string contenido: pagina.modoSubs === 1 ? (pagina.revisionExterno, puente.textoEn(player.position)) : ""
+
+        component Linea: Text {
+            width: subsExternos.width
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            font.family: Tema.texto
+            font.bold: true
+            font.pixelSize: subsExternos.tamano
+            text: subsExternos.contenido
+        }
+
+        Repeater {
+            model: 16
+            Linea {
+                required property int index
+                color: "black"
+                x: Math.round(Math.cos(index * Math.PI / 8) * subsExternos.grosor)
+                y: Math.round(Math.sin(index * Math.PI / 8) * subsExternos.grosor)
+            }
+        }
+        Linea { id: textoSubs; color: puente.subsColor }
     }
 
     Label {
