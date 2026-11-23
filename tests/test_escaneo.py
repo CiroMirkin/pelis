@@ -195,7 +195,24 @@ def test_cambiar_el_archivo_de_video_no_afecta_a_la_pelicula(biblioteca, conn):
     assert p["video_path"] == "Alien (1979)/Alien.1080p.mkv"
     assert p["duracion_ms"] is None
     assert (p["estado"], p["progreso_ms"], p["omdb_estado"]) == ("activa", 5000, "encontrada")
-    assert omdb.consultas == [] and informe.agregadas == 0 and informe.problemas == []
+    assert omdb.consultas == []
+    assert informe.agregadas == 0
+    assert informe.problemas == []
+
+
+def test_conserva_el_video_registrado_si_la_carpeta_tiene_dos_videos(biblioteca, conn):
+    c = carpeta(biblioteca, "Alien (1979)", "Alien.mp4")
+    escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
+    conn.execute("UPDATE peliculas SET duracion_ms = 7000000 WHERE id = 1")
+
+    (c / "Alien.mp4").unlink()
+    (c / "Alien.mkv").touch()
+    (c / "Alien.avi").touch()
+    escanear(conn, biblioteca, OmdbFalso())
+
+    p = db.pelicula(conn, 1)
+    assert p["video_path"] == "Alien (1979)/Alien.mp4"
+    assert p["duracion_ms"] == 7000000
 
 
 # --- pelis.json ---
