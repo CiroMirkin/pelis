@@ -66,7 +66,7 @@ def conectar(ruta):
 # --- escaneo ---
 
 def peliculas_por_carpeta(conn):
-    return {r["folder_path"]: r for r in conn.execute("SELECT id, folder_path, estado, omdb_estado FROM peliculas")}
+    return {r["folder_path"]: r for r in conn.execute("SELECT id, folder_path, estado, omdb_estado, video_path FROM peliculas")}
 
 
 def insertar_pelicula(conn, titulo, year, folder_path, video_path):
@@ -124,6 +124,11 @@ def con_omdb_id(conn, omdb_id, fuera_de):
         if fila["folder_path"] not in fuera_de:
             return fila["id"]
     return None
+
+
+def cambiar_video(conn, pelicula_id, video_path):
+    """Olvida la duración porque era la del archivo anterior y así se vuelve a medir."""
+    conn.execute("UPDATE peliculas SET video_path = ?, duracion_ms = NULL WHERE id = ?", (video_path, pelicula_id))
 
 
 def reasignar(conn, pelicula_id, folder_path, video_path):

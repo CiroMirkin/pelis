@@ -80,6 +80,7 @@ class Escaneo:
                     db.cambiar_estado(self.conn, fila["id"], "activa")
                     self.informe.reactivadas.append(carpeta.name)
                 if fila["estado"] != "papelera":
+                    self._revisar_video(fila, carpeta)
                     poster.revisar(self.conn, self.biblioteca, fila["id"])
                     if fila["omdb_estado"] == "pendiente":
                         self._metadatos(fila["id"], carpeta)
@@ -94,6 +95,18 @@ class Escaneo:
                 self.informe.faltantes.append(folder_path)
         self.conn.commit()
         return self.informe
+
+    def _revisar_video(self, fila, carpeta):
+        """El archivo de video es independiente de la película entonces si se reemplazó o renombró se sigue el nuevo.
+
+        Con cero o varios videos no se toca nada para que un disco a medio copiar no rompa la película.
+        """
+        videos = [p for p in carpeta.iterdir() if p.is_file() and p.suffix.lower() in EXTENSIONES_VIDEO]
+        if len(videos) != 1:
+            return
+        video_path = f"{carpeta.name}/{videos[0].name}"
+        if video_path != fila["video_path"]:
+            db.cambiar_video(self.conn, fila["id"], video_path)
 
     def _sincronizar_archivos(self):
         invalidos, sin_escribir = metadatos.sincronizar(self.conn, self.biblioteca)

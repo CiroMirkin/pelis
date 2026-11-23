@@ -181,6 +181,23 @@ def test_existentes_no_se_tocan_y_faltantes_se_ocultan(biblioteca, conn):
     assert len(db.catalogo(conn)) == 1
 
 
+def test_cambiar_el_archivo_de_video_no_afecta_a_la_pelicula(biblioteca, conn):
+    c = carpeta(biblioteca, "Alien (1979)", "Alien.mp4")
+    escanear(conn, biblioteca, OmdbFalso({("Alien", 1979): DATOS_ALIEN}))
+    db.guardar_progreso(conn, 1, 5000)
+    conn.execute("UPDATE peliculas SET duracion_ms = 7000000 WHERE id = 1")
+
+    (c / "Alien.mp4").rename(c / "Alien.1080p.mkv")
+    omdb = OmdbFalso()
+    informe = escanear(conn, biblioteca, omdb)
+
+    p = db.pelicula(conn, 1)
+    assert p["video_path"] == "Alien (1979)/Alien.1080p.mkv"
+    assert p["duracion_ms"] is None
+    assert (p["estado"], p["progreso_ms"], p["omdb_estado"]) == ("activa", 5000, "encontrada")
+    assert omdb.consultas == [] and informe.agregadas == 0 and informe.problemas == []
+
+
 # --- pelis.json ---
 
 def leer_json(c):
